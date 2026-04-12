@@ -334,9 +334,8 @@ html, body {
 /* === Sticky Note START === */
 .sticky-note {
     position: absolute;
-    min-width: var(--note-min-w);
+    width: var(--note-min-w);
     min-height: var(--note-min-h);
-    max-width: var(--note-max-w);
     max-height: var(--note-max-h);
     padding: 16px 16px 28px 16px;
     border-radius: 2px;
@@ -1150,9 +1149,8 @@ html, body {
         font-size: 11px;
     }
     .sticky-note {
-        min-width: 220px;
+        width: 220px;
         min-height: 190px;
-        max-width: 340px;
     }
     .note-content {
         font-size: 17px;
