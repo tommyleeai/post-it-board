@@ -243,6 +243,9 @@ PostIt.Board = (function () {
 
         // ===== 帳號控制台 =====
         bindAccountSettingsEvents();
+        
+        // ===== 歷史歸檔區 =====
+        bindArchiveModalEvents();
 
         // ===== 單卡樣式設定 =====
         bindCardStyleEvents();
@@ -966,6 +969,105 @@ PostIt.Board = (function () {
         const g = Math.round(parseFloat(match[1]));
         const b = Math.round(parseFloat(match[2]));
         return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+    }
+
+    // ======== 歷史歸檔區事件綁定 ========
+    function bindArchiveModalEvents() {
+        const btnViewArchive = document.getElementById('btn-view-archive');
+        const archiveModal = document.getElementById('archive-modal');
+        const overlay = document.getElementById('archive-modal-overlay');
+        const btnClose = document.getElementById('btn-close-archive');
+        const grid = document.getElementById('archive-grid');
+
+        if (!btnViewArchive || !archiveModal) return;
+
+        const openArchive = async () => {
+            overlay.classList.remove('hidden');
+            archiveModal.classList.add('visible');
+            await renderArchiveGrid();
+        };
+
+        const closeArchive = () => {
+            archiveModal.classList.remove('visible');
+            overlay.classList.add('hidden');
+        };
+
+        btnViewArchive.addEventListener('click', openArchive);
+        btnClose.addEventListener('click', closeArchive);
+        overlay.addEventListener('click', closeArchive);
+
+        // 渲染歸檔清單
+        async function renderArchiveGrid() {
+            grid.innerHTML = '<div class="archive-empty-state">載入中...</div>';
+            const notes = await PostIt.Note.getArchivedNotes();
+
+            if (notes.length === 0) {
+                grid.innerHTML = '<div class="archive-empty-state">目前沒有任何已完成的歷史紀錄。</div>';
+                return;
+            }
+
+            grid.innerHTML = '';
+            notes.forEach(noteData => {
+                const card = document.createElement('div');
+                card.className = 'archived-note-card';
+                card.style.setProperty('--note-color', noteData.color || '#FFF176');
+                
+                // 嘗試套用字型設定
+                const settings = PostIt.Settings.getAccountSettings();
+                const effectiveFont = noteData.fontFamily || settings.fontFamily || 'Caveat';
+                const effectiveSize = (noteData.fontSize || settings.fontSize || 20) + 'px';
+                const effectiveColor = noteData.fontColor || settings.fontColor || 'rgba(0,0,0,0.78)';
+                
+                card.style.setProperty('--font-family', `"${effectiveFont}", cursive`);
+                card.style.setProperty('--font-size', effectiveSize);
+                card.style.setProperty('--font-color', effectiveColor);
+
+                // 日期格式化
+                const dateRaw = noteData.completedAt ? noteData.completedAt.toDate() : new Date();
+                const dateStr = dateRaw.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                card.innerHTML = `
+                    <div class="archived-content">${noteData.content || ''}</div>
+                    <div class="archived-footer">
+                        <span class="archived-date">${dateStr}</span>
+                        <div class="archived-actions">
+                            <button class="btn-archive-action btn-archive-restore" data-id="${noteData.archiveId}" title="復原至白板">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </button>
+                            <button class="btn-archive-action btn-archive-delete" data-id="${noteData.archiveId}" title="永久刪除">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // 綁定動態卡片按鈕事件
+            grid.querySelectorAll('.btn-archive-restore').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.currentTarget.dataset.id;
+                    const card = e.currentTarget.closest('.archived-note-card');
+                    card.style.opacity = '0.5';
+                    await PostIt.Note.unarchive(id);
+                    await renderArchiveGrid(); // 重新渲染
+                    showToast('已復原至白板！', 'success');
+                });
+            });
+
+            grid.querySelectorAll('.btn-archive-delete').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    if (!confirm('確定要永久刪除這筆紀錄嗎？這無法復原喔！')) return;
+                    
+                    const id = e.currentTarget.dataset.id;
+                    const card = e.currentTarget.closest('.archived-note-card');
+                    card.style.opacity = '0.5';
+                    await PostIt.Note.deleteArchive(id);
+                    await renderArchiveGrid(); // 重新渲染
+                    showToast('已永久刪除。');
+                });
+            });
+        }
     }
 
     return { init, showToast, handleResize };

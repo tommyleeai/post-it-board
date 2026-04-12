@@ -56,6 +56,9 @@
                 </div>
             </div>
             <div class="toolbar-right">
+                <button id="btn-view-archive" class="btn-toolbar" title="歷史歸檔">
+                    <i class="fa-solid fa-box-archive"></i>
+                </button>
                 <button id="btn-account-settings" class="btn-toolbar" title="帳號設定">
                     <i class="fa-solid fa-sliders"></i>
                 </button>
@@ -234,6 +237,23 @@
                     <button id="btn-reset-account-settings" class="btn-reset-settings">
                         <i class="fa-solid fa-rotate-left"></i> 重設
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 歷史歸檔 Archive Modal ===== -->
+        <div id="archive-modal-overlay" class="account-modal-overlay"></div>
+        <div id="archive-modal" class="account-modal archive-modal-container">
+            <div class="account-modal-header">
+                <h2><i class="fa-solid fa-box-archive"></i> 歷史歸檔區</h2>
+                <button id="btn-close-archive" class="btn-icon" title="關閉">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="account-modal-body archive-modal-body">
+                <div id="archive-grid" class="archive-grid">
+                    <!-- 動態由 JS 產生迷你歷史卡片 -->
+                    <div class="archive-empty-state">加載中...</div>
                 </div>
             </div>
         </div>

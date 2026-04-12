@@ -245,6 +245,51 @@ PostIt.Note = (function () {
         }
     }
 
+    // -------- 永久刪除歸檔紀錄 --------
+    async function deleteArchive(archiveId) {
+        const uid = PostIt.Auth.getUid();
+        if (!uid || !archiveId) return;
+
+        try {
+            const db = PostIt.Firebase.getDb();
+            const archiveRef = db.collection('users').doc(uid).collection('postit_archived').doc(archiveId);
+            
+            await archiveRef.delete();
+            console.log('[Note] 歸檔紀錄已永久刪除');
+        } catch (error) {
+            console.error('[Note] 永久刪除失敗:', error);
+            PostIt.Board.showToast('刪除失敗', 'error');
+        }
+    }
+
+    // -------- 取得所有歷史歸檔 --------
+    async function getArchivedNotes() {
+        const uid = PostIt.Auth.getUid();
+        if (!uid) return [];
+
+        try {
+            const db = PostIt.Firebase.getDb();
+            const archiveQuery = db.collection('users')
+                .doc(uid)
+                .collection('postit_archived')
+                .orderBy('completedAt', 'desc');
+            
+            const snapshot = await archiveQuery.get();
+            const results = [];
+            snapshot.forEach(doc => {
+                results.push({
+                    archiveId: doc.id,
+                    ...doc.data()
+                });
+            });
+            return results;
+        } catch (error) {
+            console.error('[Note] 取得歷史歸檔失敗:', error);
+            PostIt.Board.showToast('無法取得歷史歸檔', 'error');
+            return [];
+        }
+    }
+
     // -------- 刪除貼紙 --------
     async function remove(noteId) {
         const ref = getNotesRef();
@@ -346,7 +391,7 @@ PostIt.Note = (function () {
 
     return {
         subscribe, cleanup, create, updateContent, updatePosition,
-        updateColor, updateStyle, archive, unarchive, remove, uploadImage, detectType,
+        updateColor, updateStyle, archive, unarchive, deleteArchive, getArchivedNotes, remove, uploadImage, detectType,
         getCache, getCount, getNote, getActiveNoteId, setActiveNoteId
     };
 })();

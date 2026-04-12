@@ -1302,7 +1302,130 @@ html, body {
     .account-modal.visible {
         transform: translateY(0);
     }
+/* === Archive Modal START === */
+.archive-modal-container {
+    width: 90%;
+    max-width: 1000px;
+    height: 85vh;
 }
+
+.archive-modal-body {
+    padding: 24px;
+    background: #f8f9fa;
+    overflow-y: auto;
+}
+
+.archive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px;
+    align-items: start;
+}
+
+.archive-empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.archived-note-card {
+    position: relative;
+    background: var(--note-color, #FFF176);
+    border-radius: 2px;
+    padding: 16px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.08);
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.archived-note-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1), 0 3px 6px rgba(0,0,0,0.08);
+}
+
+.archived-note-card::before {
+    content: '';
+    position: absolute;
+    top: -7px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 1px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    z-index: 1;
+}
+
+.archived-content {
+    flex: 1;
+    overflow: hidden;
+    color: var(--font-color, rgba(0,0,0,0.78));
+    font-family: var(--font-family, 'Caveat'), cursive;
+    font-size: var(--font-size, 20px);
+    line-height: 1.4;
+    word-break: break-word;
+    /* 加入遮罩讓文字過多時底部漸淡 */
+    mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+}
+
+.archived-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(0,0,0,0.1);
+    font-size: 12px;
+    color: rgba(0,0,0,0.5);
+    z-index: 2;
+}
+
+.archived-date {
+    font-family: var(--font-ui);
+    font-weight: 500;
+}
+
+.archived-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-archive-action {
+    background: rgba(255, 255, 255, 0.5);
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(0,0,0,0.6);
+    transition: all 0.2s;
+}
+
+.btn-archive-action:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: scale(1.1);
+}
+
+.btn-archive-restore:hover {
+    color: var(--primary);
+}
+
+.btn-archive-delete:hover {
+    color: var(--danger);
+}
+/* === Archive Modal END === */
+
 /* === Responsive END === */
 
 /* === Toast Notifications START === */
