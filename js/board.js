@@ -705,7 +705,7 @@ PostIt.Board = (function () {
                     const aiResult = await PostIt.AI.parseIntent(newContent);
                     if (aiResult && aiResult.hasIntent) {
                         PostIt.Note.updateReminderLogic(noteId, aiResult);
-                    } else if (aiResult && aiResult.hasIntent === false) {
+                    } else if (aiResult && aiResult.hasIntent === false && !aiResult.error) {
                         PostIt.Note.updateReminderLogic(noteId, null);
                     }
                 }

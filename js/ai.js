@@ -68,15 +68,18 @@ PostIt.AI = (function () {
             }
 
             const data = await response.json();
-            const textResult = data.candidates[0].content.parts[0].text;
+            let textResult = data.candidates[0].content.parts[0].text;
             
+            // 強制清除可能出現的 markdown 區塊
+            textResult = textResult.replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/i, '').trim();
+
             const resultObj = JSON.parse(textResult);
             
             // 防呆：強制移除可能導致時區錯亂的 Z 或 +08:00
-            if (resultObj.eventTime) {
+            if (resultObj.eventTime && typeof resultObj.eventTime === 'string') {
                 resultObj.eventTime = resultObj.eventTime.replace(/Z|[+-]\d{2}:\d{2}$/, '');
             }
-            if (resultObj.alertTime) {
+            if (resultObj.alertTime && typeof resultObj.alertTime === 'string') {
                 resultObj.alertTime = resultObj.alertTime.replace(/Z|[+-]\d{2}:\d{2}$/, '');
             }
 
