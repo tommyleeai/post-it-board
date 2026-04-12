@@ -38,14 +38,18 @@ PostIt.Stamp = (function () {
             stampMenu.appendChild(btn);
         });
 
-        // Hover 展開選單
-        fabStamp.addEventListener('mouseenter', () => stampMenu.classList.add('open'));
-        fabStamp.addEventListener('mouseleave', (e) => {
-            if (!stampMenu.contains(e.relatedTarget)) stampMenu.classList.remove('open');
-        });
-        stampMenu.addEventListener('mouseleave', (e) => {
-            if (e.relatedTarget !== fabStamp) stampMenu.classList.remove('open');
-        });
+        // 整個 fab-group Hover 時展開選單（避免 gap 間距誤觸 mouseleave）
+        const fabGroup = fabStamp.closest('.fab-group');
+        if (fabGroup) {
+            fabGroup.addEventListener('mouseenter', () => stampMenu.classList.add('open'));
+            fabGroup.addEventListener('mouseleave', () => stampMenu.classList.remove('open'));
+        } else {
+            // 降級：直接監聽 fab-stamp
+            fabStamp.addEventListener('mouseenter', () => stampMenu.classList.add('open'));
+            fabStamp.addEventListener('mouseleave', (e) => {
+                if (!stampMenu.contains(e.relatedTarget)) stampMenu.classList.remove('open');
+            });
+        }
 
         // 游標追蹤
         document.addEventListener('mousemove', onMouseMove);
