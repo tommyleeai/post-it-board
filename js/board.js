@@ -188,8 +188,12 @@ PostIt.Board = (function () {
             if (noteId) {
                 // 立即更新位置到點擊位置
                 PostIt.Note.updatePosition(noteId, xPercent - 5, yPercent - 5, PostIt.Drag.getMaxZIndex() + 1);
-                // 標記這張新卡片，等渲染完後自動進入編輯模式
-                pendingAutoFocusId = noteId;
+                // 等 DOM 渲染完成後，直接抓元素並自動進入編輯模式
+                // 不依賴 renderNotes 的 snapshot 時序，避免 race condition
+                setTimeout(() => {
+                    const newEl = document.querySelector(`.sticky-note[data-note-id="${noteId}"]`);
+                    if (newEl) startEditing(newEl, noteId);
+                }, 350);
             }
         });
 
@@ -386,10 +390,7 @@ PostIt.Board = (function () {
                     setTimeout(() => noteEl.classList.remove('entering'), 500);
 
                     // 若是使用者雙擊新增的這張卡片，自動進入編輯模式
-                    if (pendingAutoFocusId && note.id === pendingAutoFocusId) {
-                        pendingAutoFocusId = null;
-                        setTimeout(() => startEditing(noteEl, note.id), 100);
-                    }
+                    // (自動聚焦已移至 dblclick handler 的 setTimeout，此處不再處理)
                 });
             } else {
                 // 更新已存在的元素
