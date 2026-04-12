@@ -1089,6 +1089,10 @@ PostIt.Board = (function () {
 
                     document.getElementById('account-bg-image-url').value = downloadURL;
                     applyBoardBgImage(downloadURL); // 即時套用預覽
+
+                    // 自動儲存到設定檔
+                    await PostIt.Settings.save({ boardBgImage: downloadURL });
+                    
                     showToast('背景上傳成功！✅', 'success');
                 } catch (error) {
                     console.error('上傳背景失敗:', error);

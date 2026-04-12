@@ -66,7 +66,7 @@ PostIt.Settings = (function () {
                 settings: newSettings
             }, { merge: true });
 
-            accountSettings = { ...DEFAULTS, ...newSettings };
+            accountSettings = { ...(accountSettings || DEFAULTS), ...newSettings };
             console.log('[Settings] 帳號設定已儲存:', accountSettings);
         } catch (error) {
             console.error('[Settings] 儲存設定失敗:', error);
