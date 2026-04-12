@@ -41,6 +41,9 @@ PostIt.Board = (function () {
             document.getElementById('user-avatar').src = user.photoURL || '';
             document.getElementById('user-name').textContent = user.displayName || user.email;
 
+            // 載入帳號設定
+            await PostIt.Settings.load();
+
             // 訂閱筆記
             PostIt.Note.subscribe(renderNotes);
 
@@ -192,6 +195,12 @@ PostIt.Board = (function () {
 
         // ===== 還原位置按鈕 =====
         document.getElementById('btn-restore-pos').addEventListener('click', restorePositions);
+
+        // ===== 帳號控制台 =====
+        bindAccountSettingsEvents();
+
+        // ===== 單卡樣式設定 =====
+        bindCardStyleEvents();
     }
 
     // ======== 自動排列 ========
@@ -219,8 +228,8 @@ PostIt.Board = (function () {
         // 計算網格參數
         const padding = 20; // 邊距 px
         const gap = 16;     // 間距 px
-        const noteW = 200;  // 估計貼紙寬度 px
-        const noteH = 180;  // 估計貼紙高度 px
+        const noteW = 340;  // 估計貼紙寬度 px（加倍後）
+        const noteH = 300;  // 估計貼紙高度 px（加倍後）
 
         const availW = boardRect.width - padding * 2;
         const cols = Math.max(1, Math.floor(availW / (noteW + gap)));
@@ -395,11 +404,61 @@ PostIt.Board = (function () {
         });
         el.appendChild(settingsBtn);
 
+        // 垃圾桶快速刪除按鈕（右上角）
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'note-delete-btn';
+        deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+        deleteBtn.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+        });
+        deleteBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            // 播放離開動畫
+            el.classList.add('leaving');
+            await new Promise(r => setTimeout(r, 300));
+            await PostIt.Note.remove(note.id);
+        });
+        el.appendChild(deleteBtn);
+
+        // 右上角 hover 1秒延遲顯現垃圾桶
+        let deleteTimer = null;
+        let isInCorner = false;
+
+        el.addEventListener('mousemove', (e) => {
+            const rect = el.getBoundingClientRect();
+            const localX = e.clientX - rect.left;
+            const localY = e.clientY - rect.top;
+
+            // 右上角 50x50 區域
+            const inCorner = localX > (rect.width - 50) && localY < 50;
+
+            if (inCorner && !isInCorner) {
+                isInCorner = true;
+                deleteTimer = setTimeout(() => {
+                    deleteBtn.classList.add('note-delete-visible');
+                }, 1000);
+            } else if (!inCorner && isInCorner) {
+                isInCorner = false;
+                clearTimeout(deleteTimer);
+                deleteBtn.classList.remove('note-delete-visible');
+            }
+        });
+
+        el.addEventListener('mouseleave', () => {
+            isInCorner = false;
+            clearTimeout(deleteTimer);
+            deleteBtn.classList.remove('note-delete-visible');
+        });
+
         // 雙擊編輯
         contentEl.addEventListener('dblclick', (e) => {
             e.stopPropagation();
             startEditing(el, note.id);
         });
+
+        // 套用字型樣式
+        applyNoteStyle(el, note);
 
         return el;
     }
@@ -427,6 +486,9 @@ PostIt.Board = (function () {
         if (contentEl && contentEl.getAttribute('contenteditable') !== 'true') {
             contentEl.innerHTML = renderContent(note);
         }
+
+        // 套用字型樣式
+        applyNoteStyle(el, note);
     }
 
     // ======== 渲染不同類型的內容 ========
@@ -507,6 +569,16 @@ PostIt.Board = (function () {
         document.querySelectorAll('#color-picker .color-swatch').forEach((swatch) => {
             swatch.classList.toggle('active', swatch.dataset.color === note.color);
         });
+
+        // 更新單卡樣式設定
+        document.getElementById('card-font-family').value = note.fontFamily || '';
+        const fontSizeInput = document.getElementById('card-font-size');
+        fontSizeInput.value = note.fontSize || '';
+        fontSizeInput.placeholder = PostIt.Settings.getAccountSettings().fontSize || '20';
+
+        const fontColorInput = document.getElementById('card-font-color');
+        const effective = PostIt.Settings.getEffective(note);
+        fontColorInput.value = rgbaToHex(note.fontColor || effective.fontColor);
 
         // 顯示面板
         document.getElementById('note-settings').classList.remove('hidden');
@@ -610,6 +682,210 @@ PostIt.Board = (function () {
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();
+    }
+
+    // ======== 套用字型樣式到貼紙 ========
+    function applyNoteStyle(el, note) {
+        const style = PostIt.Settings.getEffective(note);
+        const contentEl = el.querySelector('.note-content');
+        if (!contentEl) return;
+
+        contentEl.style.fontFamily = `'${style.fontFamily}', cursive`;
+        contentEl.style.fontSize = style.fontSize + 'px';
+        contentEl.style.color = style.fontColor;
+    }
+
+    // ======== 帳號控制台事件 ========
+    function bindAccountSettingsEvents() {
+        const modal = document.getElementById('account-modal');
+        const overlay = document.getElementById('account-modal-overlay');
+        const btnOpen = document.getElementById('btn-account-settings');
+        const btnClose = document.getElementById('btn-close-account');
+        const btnSave = document.getElementById('btn-save-account-settings');
+        const btnReset = document.getElementById('btn-reset-account-settings');
+        const fontFamily = document.getElementById('account-font-family');
+        const fontSize = document.getElementById('account-font-size');
+        const fontSizeValue = document.getElementById('account-font-size-value');
+        const fontColorCustom = document.getElementById('account-font-color-custom');
+        const previewText = document.getElementById('settings-preview-text');
+        const previewBg = document.getElementById('settings-preview');
+
+        let selectedFontColor = 'rgba(0,0,0,0.78)';
+        let selectedNoteColor = '#FFF176';
+
+        function openAccountModal() {
+            const settings = PostIt.Settings.getAccountSettings();
+
+            // 填充當前值
+            fontFamily.value = settings.fontFamily || 'Caveat';
+            fontSize.value = settings.fontSize || 20;
+            fontSizeValue.textContent = (settings.fontSize || 20) + 'px';
+            selectedFontColor = settings.fontColor || 'rgba(0,0,0,0.78)';
+            selectedNoteColor = settings.defaultNoteColor || '#FFF176';
+
+            // 產生字體顏色色票
+            renderFontColorSwatches();
+
+            // 更新貼紙顏色選擇
+            document.querySelectorAll('#account-note-color .color-swatch').forEach(s => {
+                s.classList.toggle('active', s.dataset.color === selectedNoteColor);
+            });
+
+            // 更新預覽
+            updatePreview();
+
+            // 顯示 Modal
+            modal.classList.add('visible');
+            overlay.classList.add('visible');
+        }
+
+        function closeAccountModal() {
+            modal.classList.remove('visible');
+            overlay.classList.remove('visible');
+        }
+
+        function renderFontColorSwatches() {
+            const container = document.getElementById('font-color-swatches');
+            container.innerHTML = '';
+            const presets = PostIt.Settings.getFontColorPresets();
+            presets.forEach(color => {
+                const swatch = document.createElement('button');
+                swatch.className = 'font-color-swatch';
+                swatch.style.backgroundColor = color;
+                swatch.dataset.color = color;
+                if (color === selectedFontColor) swatch.classList.add('active');
+                swatch.addEventListener('click', () => {
+                    selectedFontColor = color;
+                    container.querySelectorAll('.font-color-swatch').forEach(s => s.classList.remove('active'));
+                    swatch.classList.add('active');
+                    updatePreview();
+                });
+                container.appendChild(swatch);
+            });
+        }
+
+        function updatePreview() {
+            previewText.style.fontFamily = `'${fontFamily.value}', cursive`;
+            previewText.style.fontSize = fontSize.value + 'px';
+            previewText.style.color = selectedFontColor;
+            previewBg.style.backgroundColor = selectedNoteColor;
+        }
+
+        // 事件綁定
+        btnOpen.addEventListener('click', openAccountModal);
+        btnClose.addEventListener('click', closeAccountModal);
+        overlay.addEventListener('click', closeAccountModal);
+
+        fontFamily.addEventListener('change', updatePreview);
+        fontSize.addEventListener('input', () => {
+            fontSizeValue.textContent = fontSize.value + 'px';
+            updatePreview();
+        });
+
+        fontColorCustom.addEventListener('input', (e) => {
+            selectedFontColor = e.target.value;
+            document.querySelectorAll('#font-color-swatches .font-color-swatch').forEach(s => s.classList.remove('active'));
+            updatePreview();
+        });
+
+        // 貼紙顏色選擇
+        document.querySelectorAll('#account-note-color .color-swatch').forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                selectedNoteColor = swatch.dataset.color;
+                document.querySelectorAll('#account-note-color .color-swatch').forEach(s => s.classList.remove('active'));
+                swatch.classList.add('active');
+                updatePreview();
+            });
+        });
+
+        // 儲存
+        btnSave.addEventListener('click', async () => {
+            try {
+                await PostIt.Settings.save({
+                    fontFamily: fontFamily.value,
+                    fontSize: parseInt(fontSize.value),
+                    fontColor: selectedFontColor,
+                    defaultNoteColor: selectedNoteColor
+                });
+                showToast('帳號設定已儲存 ✅', 'success');
+                closeAccountModal();
+                // 重新渲染所有貼紙以套用新預設
+                renderNotes(PostIt.Note.getCache());
+            } catch (err) {
+                showToast('儲存失敗，請再試一次', 'error');
+            }
+        });
+
+        // 重設
+        btnReset.addEventListener('click', async () => {
+            try {
+                await PostIt.Settings.reset();
+                showToast('已重設為系統預設 ↩️');
+                openAccountModal(); // 重新填充 UI
+                renderNotes(PostIt.Note.getCache());
+            } catch (err) {
+                showToast('重設失敗', 'error');
+            }
+        });
+    }
+
+    // ======== 單卡樣式設定事件 ========
+    function bindCardStyleEvents() {
+        const cardFontFamily = document.getElementById('card-font-family');
+        const cardFontSize = document.getElementById('card-font-size');
+        const cardFontColor = document.getElementById('card-font-color');
+        const btnResetCard = document.getElementById('btn-reset-card-style');
+
+        // 字型變更
+        cardFontFamily.addEventListener('change', () => {
+            const noteId = PostIt.Note.getActiveNoteId();
+            if (noteId) {
+                PostIt.Note.updateStyle(noteId, { fontFamily: cardFontFamily.value || null });
+            }
+        });
+
+        // 字體大小變更
+        cardFontSize.addEventListener('change', () => {
+            const noteId = PostIt.Note.getActiveNoteId();
+            if (noteId) {
+                const val = cardFontSize.value ? parseInt(cardFontSize.value) : null;
+                PostIt.Note.updateStyle(noteId, { fontSize: val });
+            }
+        });
+
+        // 字體顏色變更
+        cardFontColor.addEventListener('input', () => {
+            const noteId = PostIt.Note.getActiveNoteId();
+            if (noteId) {
+                PostIt.Note.updateStyle(noteId, { fontColor: cardFontColor.value });
+            }
+        });
+
+        // 重設單卡樣式
+        btnResetCard.addEventListener('click', () => {
+            const noteId = PostIt.Note.getActiveNoteId();
+            if (noteId) {
+                PostIt.Note.updateStyle(noteId, { fontFamily: null, fontSize: null, fontColor: null });
+                // 重設 UI
+                cardFontFamily.value = '';
+                cardFontSize.value = '';
+                cardFontColor.value = rgbaToHex(PostIt.Settings.getAccountSettings().fontColor || 'rgba(0,0,0,0.78)');
+                showToast('已重設為帳號預設');
+            }
+        });
+    }
+
+    // ======== rgba 轉 hex 工具 ========
+    function rgbaToHex(rgba) {
+        if (!rgba) return '#000000';
+        if (rgba.startsWith('#')) return rgba;
+        // 解析 rgba/rgb
+        const match = rgba.match(/[\d.]+/g);
+        if (!match || match.length < 3) return '#000000';
+        const r = Math.round(parseFloat(match[0]));
+        const g = Math.round(parseFloat(match[1]));
+        const b = Math.round(parseFloat(match[2]));
+        return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
     }
 
     return { init, showToast, handleResize };

@@ -63,9 +63,14 @@ PostIt.Note = (function () {
         const ref = getNotesRef();
         if (!ref) return null;
 
-        // 隨機顏色
+        // 使用帳號預設顏色，若無設定則隨機
         if (!color) {
-            color = COLORS[Math.floor(Math.random() * COLORS.length)];
+            const acctSettings = PostIt.Settings.getAccountSettings();
+            if (acctSettings.defaultNoteColor) {
+                color = acctSettings.defaultNoteColor;
+            } else {
+                color = COLORS[Math.floor(Math.random() * COLORS.length)];
+            }
         }
 
         // 隨機位置（白板中央附近）
@@ -148,6 +153,27 @@ PostIt.Note = (function () {
             });
         } catch (error) {
             console.error('[Note] 更新顏色失敗:', error);
+        }
+    }
+
+    // -------- 更新字型樣式（單卡覆蓋） --------
+    async function updateStyle(noteId, styleObj) {
+        const ref = getNotesRef();
+        if (!ref || !noteId) return;
+
+        const updateData = {
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        // 只更新有傳入的欄位（null 代表清除單卡設定，回歸帳號預設）
+        if ('fontFamily' in styleObj) updateData.fontFamily = styleObj.fontFamily || null;
+        if ('fontSize' in styleObj) updateData.fontSize = styleObj.fontSize || null;
+        if ('fontColor' in styleObj) updateData.fontColor = styleObj.fontColor || null;
+
+        try {
+            await ref.doc(noteId).update(updateData);
+        } catch (error) {
+            console.error('[Note] 更新樣式失敗:', error);
         }
     }
 
@@ -252,7 +278,7 @@ PostIt.Note = (function () {
 
     return {
         subscribe, cleanup, create, updateContent, updatePosition,
-        updateColor, remove, uploadImage, detectType,
+        updateColor, updateStyle, remove, uploadImage, detectType,
         getCache, getCount, getNote, getActiveNoteId, setActiveNoteId
     };
 })();

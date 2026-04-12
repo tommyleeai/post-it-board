@@ -13,7 +13,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=Comic+Neue:wght@400;700&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -56,6 +56,9 @@
                 </div>
             </div>
             <div class="toolbar-right">
+                <button id="btn-account-settings" class="btn-toolbar" title="帳號設定">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
                 <button id="btn-auto-sort" class="btn-toolbar" title="自動排列">
                     <i class="fa-solid fa-table-cells"></i>
                 </button>
@@ -119,6 +122,33 @@
                     </button>
                     <input type="file" id="file-input" accept="image/*" style="display:none">
                 </div>
+                <!-- 單卡樣式設定 -->
+                <div class="settings-section card-style-section">
+                    <label>文字樣式（此卡專用）</label>
+                    <div class="card-style-row">
+                        <label>字型</label>
+                        <select id="card-font-family">
+                            <option value="">使用帳號預設</option>
+                            <option value="Caveat">Caveat（手寫風）</option>
+                            <option value="Noto Sans TC">Noto Sans TC（中文正黑）</option>
+                            <option value="Inter">Inter（現代無襯線）</option>
+                            <option value="Comic Neue">Comic Neue（漫畫風）</option>
+                            <option value="Kalam">Kalam（手寫風）</option>
+                        </select>
+                    </div>
+                    <div class="card-style-row">
+                        <label>字體大小</label>
+                        <input type="number" id="card-font-size" min="12" max="48" placeholder="預設">
+                    </div>
+                    <div class="card-style-row">
+                        <label>字體顏色</label>
+                        <input type="color" id="card-font-color" value="#000000">
+                    </div>
+                    <button id="btn-reset-card-style" class="btn-reset-card-style">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>重設為帳號預設</span>
+                    </button>
+                </div>
                 <!-- 刪除 -->
                 <div class="settings-section">
                     <button id="btn-delete-note" class="btn-delete">
@@ -131,6 +161,75 @@
 
         <!-- ===== 貼紙設定面板背景遮罩 ===== -->
         <div id="settings-overlay" class="settings-overlay hidden"></div>
+
+        <!-- ===== 帳號控制台 Modal ===== -->
+        <div id="account-modal-overlay" class="account-modal-overlay"></div>
+        <div id="account-modal" class="account-modal">
+            <div class="account-modal-header">
+                <h2><i class="fa-solid fa-sliders"></i> 帳號預設設定</h2>
+                <button id="btn-close-account" class="btn-icon" title="關閉">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="account-modal-body">
+                <!-- 字型 -->
+                <div class="account-section">
+                    <label>預設字型</label>
+                    <select id="account-font-family">
+                        <option value="Caveat">Caveat（手寫風）</option>
+                        <option value="Noto Sans TC">Noto Sans TC（中文正黑）</option>
+                        <option value="Inter">Inter（現代無襯線）</option>
+                        <option value="Comic Neue">Comic Neue（漫畫風）</option>
+                        <option value="Kalam">Kalam（手寫風）</option>
+                    </select>
+                </div>
+                <!-- 字體大小 -->
+                <div class="account-section">
+                    <label>預設字體大小</label>
+                    <div class="range-wrapper">
+                        <input type="range" id="account-font-size" min="14" max="36" value="20">
+                        <span id="account-font-size-value" class="range-value">20px</span>
+                    </div>
+                </div>
+                <!-- 字體顏色 -->
+                <div class="account-section">
+                    <label>預設字體顏色</label>
+                    <div class="font-color-picker">
+                        <div class="font-color-swatches" id="font-color-swatches">
+                            <!-- JS 動態產生 -->
+                        </div>
+                        <div class="font-color-custom">
+                            <input type="color" id="account-font-color-custom" value="#000000" title="自訂顏色">
+                        </div>
+                    </div>
+                </div>
+                <!-- 預設貼紙顏色 -->
+                <div class="account-section">
+                    <label>預設貼紙顏色</label>
+                    <div id="account-note-color" class="color-picker">
+                        <button class="color-swatch" data-color="#FFF176" style="background:#FFF176" title="黃色"></button>
+                        <button class="color-swatch" data-color="#F48FB1" style="background:#F48FB1" title="粉紅"></button>
+                        <button class="color-swatch" data-color="#A5D6A7" style="background:#A5D6A7" title="綠色"></button>
+                        <button class="color-swatch" data-color="#90CAF9" style="background:#90CAF9" title="藍色"></button>
+                        <button class="color-swatch" data-color="#FFCC80" style="background:#FFCC80" title="橘色"></button>
+                        <button class="color-swatch" data-color="#CE93D8" style="background:#CE93D8" title="紫色"></button>
+                    </div>
+                </div>
+                <!-- 預覽 -->
+                <div class="settings-preview" id="settings-preview">
+                    <span class="settings-preview-text" id="settings-preview-text">預覽文字效果 Preview</span>
+                </div>
+                <!-- 操作按鈕 -->
+                <div class="account-modal-actions">
+                    <button id="btn-save-account-settings" class="btn-save-settings">
+                        <i class="fa-solid fa-check"></i> 儲存設定
+                    </button>
+                    <button id="btn-reset-account-settings" class="btn-reset-settings">
+                        <i class="fa-solid fa-rotate-left"></i> 重設
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Firebase SDK (compat) -->
@@ -143,6 +242,7 @@
     <script src="js/firebase-config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/drag.js"></script>
+    <script src="js/settings.js"></script>
     <script src="js/note.js"></script>
     <script src="js/board.js"></script>
 </body>

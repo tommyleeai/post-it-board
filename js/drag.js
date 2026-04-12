@@ -33,8 +33,9 @@ PostIt.Drag = (function () {
         const note = e.target.closest('.sticky-note');
         if (!note) return;
 
-        // 如果點的是設定按鈕，不拖曳
+        // 如果點的是設定按鈕或垃圾桶，不拖曳
         if (e.target.closest('.note-settings-trigger')) return;
+        if (e.target.closest('.note-delete-btn')) return;
 
         // 如果正在編輯（contenteditable），不啟動拖曳
         const content = note.querySelector('.note-content');
