@@ -108,6 +108,22 @@ PostIt.Settings = (function () {
         return accountSettings || { ...DEFAULTS };
     }
 
+    // -------- AI API Key 管理 (純本地端儲存) --------
+    const AI_KEY_STORAGE_KEY = 'postit_gemini_api_key';
+    const DEFAULT_AI_KEY = 'AIzaSyA4rngnyQfawDPXU1W2clDtUHbrqHB8DnU'; // 預設使用提供的金鑰
+
+    function getAiKey() {
+        return localStorage.getItem(AI_KEY_STORAGE_KEY) || DEFAULT_AI_KEY;
+    }
+
+    function setAiKey(key) {
+        if (!key || key.trim() === '') {
+            localStorage.removeItem(AI_KEY_STORAGE_KEY);
+        } else {
+            localStorage.setItem(AI_KEY_STORAGE_KEY, key.trim());
+        }
+    }
+
     // -------- 取得系統預設 --------
     function getDefaults() {
         return { ...DEFAULTS };
@@ -126,6 +142,7 @@ PostIt.Settings = (function () {
     return {
         load, save, reset,
         getEffective, getAccountSettings, getDefaults,
-        getFontOptions, getFontColorPresets
+        getFontOptions, getFontColorPresets,
+        getAiKey, setAiKey
     };
 })();

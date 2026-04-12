@@ -382,6 +382,42 @@ PostIt.Note = (function () {
         return 'text';
     }
 
+    // -------- AI 鬧鐘邏輯更新 --------
+    function updateReminderLogic(noteId, aiResult) {
+        const ref = getNotesRef();
+        if (!ref) return;
+        
+        if (!aiResult) {
+            ref.doc(noteId).update({
+                alertTime: firebase.firestore.FieldValue.delete(),
+                reminderStatus: firebase.firestore.FieldValue.delete(),
+                aiReason: firebase.firestore.FieldValue.delete(),
+                needsClarification: firebase.firestore.FieldValue.delete(),
+                clarificationQuestion: firebase.firestore.FieldValue.delete(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).catch(e => console.error(e));
+            return;
+        }
+
+        ref.doc(noteId).update({
+            alertTime: aiResult.alertTime || null,
+            reminderStatus: aiResult.alertTime ? 'pending' : null,
+            aiReason: aiResult.reason || null,
+            needsClarification: !!aiResult.needsClarification,
+            clarificationQuestion: aiResult.clarificationQuestion || null,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(e => console.error(e));
+    }
+
+    function updateReminderStatus(noteId, status) {
+        const ref = getNotesRef();
+        if (!ref) return;
+        ref.doc(noteId).update({ 
+            reminderStatus: status,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(e => console.error(e));
+    }
+
     // -------- Getters --------
     function getCache() { return notesCache; }
     function getCount() { return Object.keys(notesCache).length; }
@@ -392,6 +428,7 @@ PostIt.Note = (function () {
     return {
         subscribe, cleanup, create, updateContent, updatePosition,
         updateColor, updateStyle, archive, unarchive, deleteArchive, getArchivedNotes, remove, uploadImage, detectType,
+        updateReminderLogic, updateReminderStatus,
         getCache, getCount, getNote, getActiveNoteId, setActiveNoteId
     };
 })();

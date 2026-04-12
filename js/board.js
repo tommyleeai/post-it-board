@@ -394,6 +394,11 @@ PostIt.Board = (function () {
         // 更新計數
         updateNoteCount();
 
+        // 同步鬧鐘狀態
+        if (typeof PostIt.Alarm !== 'undefined') {
+            PostIt.Alarm.sync(notes);
+        }
+
         // 更新空白板提示
         const emptyHint = document.getElementById('empty-hint');
         if (Object.keys(notes).length === 0) {
@@ -523,11 +528,21 @@ PostIt.Board = (function () {
             if (e.target.closest('.note-settings-trigger') || e.target.closest('.note-delete-btn')) return;
 
             e.stopPropagation();
+            
+            // 如果正在響鈴，單擊只是用來解除鬧鐘，不進入編輯模式
+            if (el.classList.contains('alarming')) {
+                if(typeof PostIt.Alarm !== 'undefined') PostIt.Alarm.dismissAlarm(note.id);
+                return;
+            }
+
             startEditing(el, note.id);
         });
 
         // 套用字型樣式
         applyNoteStyle(el, note);
+
+        // 渲染鬧鐘徽章
+        renderAlarmBadge(el, note);
 
         return el;
     }
@@ -559,6 +574,62 @@ PostIt.Board = (function () {
 
         // 套用字型樣式
         applyNoteStyle(el, note);
+
+        // 渲染鬧鐘徽章
+        renderAlarmBadge(el, note);
+    }
+
+    // ======== 渲染 AI 鬧鐘徽章 ========
+    function renderAlarmBadge(el, note) {
+        let badgeEl = el.querySelector('.ai-alarm-badge');
+        
+        if (note.needsClarification && note.clarificationQuestion) {
+            if (!badgeEl) {
+                badgeEl = document.createElement('div');
+                badgeEl.className = 'ai-alarm-badge';
+                el.appendChild(badgeEl);
+            }
+            badgeEl.innerHTML = `<i class="fa-solid fa-circle-question"></i> 反問`;
+            badgeEl.title = note.clarificationQuestion;
+            badgeEl.style.cursor = 'pointer';
+            badgeEl.style.color = '#fff';
+            badgeEl.style.background = 'rgba(231, 76, 60, 0.95)';
+            badgeEl.onclick = (e) => {
+                e.stopPropagation();
+                const ans = prompt("系統詢問：" + note.clarificationQuestion);
+                if (ans && ans.trim() !== '') {
+                    // 將答案附掛上去重新解析
+                    const newText = (note.content || '') + "\n(備註: " + ans + ")";
+                    PostIt.Note.updateContent(note.id, newText);
+                    if (typeof PostIt.AI !== 'undefined') {
+                        PostIt.AI.parseIntent(newText).then(res => {
+                            if(res && res.hasIntent) PostIt.Note.updateReminderLogic(note.id, res);
+                        });
+                    }
+                }
+            };
+        } else if (note.alertTime && note.reminderStatus !== 'acknowledged') {
+            if (!badgeEl) {
+                badgeEl = document.createElement('div');
+                badgeEl.className = 'ai-alarm-badge';
+                el.appendChild(badgeEl);
+            }
+            const dt = new Date(note.alertTime);
+            // 格式化為 HH:mm 顯示
+            badgeEl.innerHTML = `<i class="fa-regular fa-clock"></i> ${dt.getHours()}:${dt.getMinutes().toString().padStart(2, '0')}`;
+            if (note.aiReason) badgeEl.title = note.aiReason;
+            badgeEl.style.cursor = 'default';
+            badgeEl.style.color = 'rgba(231, 76, 60, 0.95)';
+            badgeEl.style.background = 'rgba(255,255,255,0.85)';
+            badgeEl.onclick = null;
+        } else {
+            if (badgeEl) badgeEl.remove();
+        }
+
+        // 當狀態變成已確認，主動消除抖動
+        if (note.reminderStatus === 'acknowledged') {
+            el.classList.remove('alarming');
+        }
     }
 
     // ======== 渲染不同類型的內容 ========
@@ -620,11 +691,26 @@ PostIt.Board = (function () {
         sel.addRange(range);
 
         // 失焦時儲存
-        const onBlur = () => {
+        const onBlur = async () => {
             contentEl.removeAttribute('contenteditable');
             // innerText 會保留 Shift+Enter 產生的換行
             const newContent = contentEl.innerText.trim();
-            PostIt.Note.updateContent(noteId, newContent);
+            
+            // 只有內容改變才更新並呼叫 AI
+            if (newContent !== (note.content || '')) {
+                PostIt.Note.updateContent(noteId, newContent);
+                
+                // AI 背景語意解析
+                if (typeof PostIt.AI !== 'undefined') {
+                    const aiResult = await PostIt.AI.parseIntent(newContent);
+                    if (aiResult && aiResult.hasIntent) {
+                        PostIt.Note.updateReminderLogic(noteId, aiResult);
+                    } else if (aiResult && aiResult.hasIntent === false) {
+                        PostIt.Note.updateReminderLogic(noteId, null);
+                    }
+                }
+            }
+
             contentEl.removeEventListener('blur', onBlur);
             contentEl.removeEventListener('keydown', onKeyDown);
         };
@@ -820,7 +906,11 @@ PostIt.Board = (function () {
             fontSize.value = settings.fontSize || 20;
             fontSizeValue.textContent = (settings.fontSize || 20) + 'px';
             selectedFontColor = settings.fontColor || 'rgba(0,0,0,0.78)';
-            selectedNoteColor = settings.defaultNoteColor || '#FFF176';
+            selectedNoteColor = settings.defaultNoteColor || 'random';
+
+            // 填充 AI 金鑰 (如果為預設金鑰則不顯示)
+            const aiKeyInput = document.getElementById('account-ai-key');
+            aiKeyInput.value = PostIt.Settings.getAiKey() === 'AIzaSyA4rngnyQfawDPXU1W2clDtUHbrqHB8DnU' ? '' : PostIt.Settings.getAiKey();
 
             // 產生字體顏色色票
             renderFontColorSwatches();
@@ -906,6 +996,11 @@ PostIt.Board = (function () {
         // 儲存
         btnSave.addEventListener('click', async () => {
             try {
+                // 儲存 AI Key (本地)
+                const aiKeyInput = document.getElementById('account-ai-key');
+                PostIt.Settings.setAiKey(aiKeyInput.value);
+
+                // 儲存其他設定 (雲端)
                 await PostIt.Settings.save({
                     fontFamily: fontFamily.value,
                     fontSize: parseInt(fontSize.value),

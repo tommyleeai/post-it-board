@@ -1501,3 +1501,43 @@ html, body {
     color: #fff176;
 }
 /* === Toast Notifications END === */
+
+/* === AI 鬧鐘提醒特效 START === */
+@keyframes intense-shake {
+    0% { transform: rotate(0deg) translateX(0); }
+    25% { transform: rotate(5deg) translateX(8px); }
+    50% { transform: rotate(0deg) translateX(0); }
+    75% { transform: rotate(-5deg) translateX(-8px); }
+    100% { transform: rotate(0deg) translateX(0); }
+}
+
+.sticky-note.alarming {
+    animation: intense-shake 0.3s infinite !important;
+    box-shadow: 0 0 25px rgba(255, 30, 30, 0.8), 4px 4px 10px rgba(0,0,0,0.2) !important;
+    z-index: 9999 !important; /* 確保鬧鐘響起時強制浮在最上方 */
+}
+
+/* 時鐘小圖示 */
+.ai-alarm-badge {
+    position: absolute;
+    bottom: 8px;
+    left: 12px;
+    font-size: 11px;
+    color: rgba(231, 76, 60, 0.95);
+    background: rgba(255,255,255,0.85);
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    pointer-events: none;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.ai-alarm-badge i {
+    font-size: 10px;
+}
+/* === AI 鬧鐘提醒特效 END === */
