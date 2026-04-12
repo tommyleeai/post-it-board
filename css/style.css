@@ -346,60 +346,76 @@ html, body {
         box-shadow 0.3s ease,
         transform 0.3s ease;
 
-    /* 貼紙陰影 */
-    box-shadow:
-        3px 4px 10px rgba(0, 0, 0, 0.25),
-        1px 2px 4px rgba(0, 0, 0, 0.15),
-        0 0 2px rgba(0, 0, 0, 0.08);
+    /* 移除原生陰影與背景設定，改由 ::before 處理擬真裁切切角 */
+    box-shadow: none;
+    border-radius: 0;
+    background: transparent !important;
+}
 
-    /* 紙質紋理 */
-    background-image:
+/* === 便利貼捲角翻頁效果 START === */
+/* 置放底色與形狀的層 */
+.sticky-note::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--note-bg-color, var(--note-yellow));
+    background-image: 
+        /* 紙背紋理 */
         linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%),
         url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    /* 強制精準裁切右下角一個 40px 正方形區塊，不管母體長寬比，切線永遠完美 45 度 */
+    clip-path: polygon(0% 0%, 100% 0%, 100% calc(100% - 40px), calc(100% - 40px) 100%, 0% 100%);
+    border-radius: 2px;
+    filter: drop-shadow(3px 4px 6px rgba(0, 0, 0, 0.25));
+    transition: filter 0.2s ease;
 }
 
-/* 膠帶效果（改用 JS 動態 .note-tape DOM 元素） */
-.sticky-note::before {
-    display: none;
-}
-
-/* 右下角捲起效果 */
+/* 建立捲上來的紙背（擬真狗耳朵翻摺） */
 .sticky-note::after {
     content: '';
     position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 28px;
-    height: 28px;
+    bottom: 0px;
+    right: 0px;
+    width: 42px;
+    height: 42px;
+    /* 將透明起始點退縮至 45%，確保白角往前推進覆蓋紫色的底紙邊緣，消除因誤差產生的紫色斜線 */
     background: linear-gradient(
-        315deg,
-        rgba(0, 0, 0, 0.08) 0%,
-        rgba(0, 0, 0, 0.03) 35%,
-        rgba(255, 255, 255, 0.3) 45%,
-        transparent 60%
+        315deg, 
+        transparent 45%, 
+        rgba(235, 235, 235, 0.8) 47%, 
+        rgba(255, 255, 255, 0.95) 100%
     );
-    border-radius: 0 0 0 0;
-    cursor: pointer;
-    z-index: 2;
-    transition: width 0.2s ease, height 0.2s ease;
+    /* 唯一需要倒角的地方是指向左上方的紙張尖角 */
+    border-top-left-radius: 8px;
+    z-index: 10;
+    /* 陰影投射在黃紙上，向左上打 */
+    filter: drop-shadow(-2px -2px 3px rgba(0, 0, 0, 0.15));
+    /* 改用 all 讓圓角也能流暢過場 */
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: bottom right;
+    pointer-events: none;
 }
 
-/* 捲角 hover 放大 */
-.sticky-note:not(.dragging)::after:hover {
-    width: 36px;
-    height: 36px;
+/* 捲角 hover 放大呈現互動感，同時陰影擴散 */
+.sticky-note:not(.dragging):hover::after {
+    /* 不使用 scale 或 rotate，避免邊界錯位導致紫線再次露出 */
+    /* 透過加深尖角彎曲度與推長陰影，創造視覺上向內彎並騰起離開紙面的錯覺 */
+    border-top-left-radius: 22px;
+    filter: drop-shadow(-5px -5px 8px rgba(0, 0, 0, 0.35));
 }
 
 /* 拖曳中狀態 */
 .sticky-note.dragging {
     cursor: grabbing;
-    box-shadow:
-        8px 12px 28px rgba(0, 0, 0, 0.25),
-        0 4px 10px rgba(0, 0, 0, 0.15);
     transform: scale(1.04) rotate(0deg) !important;
     z-index: 9999 !important;
-    transition: box-shadow 0.2s ease;
 }
+
+.sticky-note.dragging::before {
+    filter: drop-shadow(8px 12px 14px rgba(0, 0, 0, 0.25));
+}
+/* === END === */
 
 /* 貼紙內容區 */
 .note-content {
@@ -456,8 +472,9 @@ html, body {
 /* 設定按鈕（捲角區域的觸發器） */
 .note-settings-trigger {
     position: absolute;
-    bottom: 0;
-    right: 0;
+    /* 原為 0，現在配合 42px 的翻起角，移動到中央地帶 */
+    bottom: 12px;
+    right: 12px;
     width: 32px;
     height: 32px;
     display: flex;
@@ -466,10 +483,12 @@ html, body {
     background: transparent;
     border: none;
     cursor: pointer;
-    color: rgba(0, 0, 0, 0.15);
+    /* 稍微加深透明度，因為現在是放在灰白漸層的紙面上 */
+    color: rgba(0, 0, 0, 0.25);
     font-size: 11px;
-    z-index: 3;
-    transition: color 0.2s ease;
+    /* 將層級拉高超過捲角 pseudo element 的 10 */
+    z-index: 20;
+    transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .note-settings-trigger:hover {

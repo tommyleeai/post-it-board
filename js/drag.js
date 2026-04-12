@@ -12,6 +12,7 @@ PostIt.Drag = (function () {
     let startY = 0;
     let hasMoved = false;
     let maxZIndex = 10;
+    let justDragged = false;
 
     // 拖曳開始的最小距離（避免誤觸）
     const DRAG_THRESHOLD = 5;
@@ -129,6 +130,8 @@ PostIt.Drag = (function () {
 
         // 如果有移動，儲存位置
         if (wasDragging) {
+            justDragged = true;
+            setTimeout(() => { justDragged = false; }, 100); // 防抖，避免放開瞬間觸發原生的點擊事件
             saveNotePosition(note);
         }
     }
@@ -157,7 +160,7 @@ PostIt.Drag = (function () {
     }
 
     function getIsDragging() {
-        return isDragging;
+        return isDragging || justDragged;
     }
 
     return { init, getMaxZIndex, setMaxZIndex, getIsDragging };

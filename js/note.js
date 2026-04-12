@@ -63,10 +63,10 @@ PostIt.Note = (function () {
         const ref = getNotesRef();
         if (!ref) return null;
 
-        // 使用帳號預設顏色，若無設定則隨機
+        // 使用帳號預設顏色，若無設定或設定為隨機則取隨機色
         if (!color) {
             const acctSettings = PostIt.Settings.getAccountSettings();
-            if (acctSettings.defaultNoteColor) {
+            if (acctSettings.defaultNoteColor && acctSettings.defaultNoteColor !== 'random') {
                 color = acctSettings.defaultNoteColor;
             } else {
                 color = COLORS[Math.floor(Math.random() * COLORS.length)];

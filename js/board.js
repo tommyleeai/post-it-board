@@ -422,7 +422,8 @@ PostIt.Board = (function () {
         el.style.transform = `rotate(${rotation}deg)`;
 
         // 顏色
-        el.style.backgroundColor = note.color || '#FFF176';
+        el.style.backgroundColor = 'transparent';
+        el.style.setProperty('--note-bg-color', note.color || '#FFF176');
 
         // z-index
         if (note.zIndex) {
@@ -516,8 +517,11 @@ PostIt.Board = (function () {
             deleteBtn.classList.remove('note-delete-visible');
         });
 
-        // 雙擊編輯
-        contentEl.addEventListener('dblclick', (e) => {
+        // 單擊進入編輯（點擊卡片任一處即可）
+        el.addEventListener('click', (e) => {
+            // 不阻擋特定按鈕的點擊（設定齒輪或刪除按鈕）
+            if (e.target.closest('.note-settings-trigger') || e.target.closest('.note-delete-btn')) return;
+
             e.stopPropagation();
             startEditing(el, note.id);
         });
@@ -531,7 +535,8 @@ PostIt.Board = (function () {
     // ======== 更新貼紙 DOM ========
     function updateNoteElement(el, note) {
         // 顏色
-        el.style.backgroundColor = note.color || '#FFF176';
+        el.style.backgroundColor = 'transparent';
+        el.style.setProperty('--note-bg-color', note.color || '#FFF176');
 
         // 位置（只在非拖曳時更新）
         if (!el.classList.contains('dragging')) {
@@ -560,21 +565,29 @@ PostIt.Board = (function () {
     function renderContent(note) {
         if (!note.content) return '';
 
+        const text = note.content.trim();
+
+        // 智慧判斷：如果整段內容純粹就是一個圖片網址，直接渲染為圖片
+        const isImageUrl = /^https?:\/\/.*?\.(jpg|jpeg|png|gif|webp|svg|bmp)(?:\?.*)?$/i.test(text) || /^data:image\/[a-zA-Z0-9+]+;base64,/.test(text);
+        if (isImageUrl) {
+            return `<img src="${escapeHtml(text)}" alt="圖片" loading="lazy" draggable="false">`;
+        }
+
         switch (note.type) {
             case 'url':
                 // 嘗試顯示漂亮的連結
                 try {
-                    const url = new URL(note.content);
-                    return `<a href="${escapeHtml(note.content)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(note.content)}">${escapeHtml(url.hostname + url.pathname)}</a>`;
+                    const url = new URL(text);
+                    return `<a href="${escapeHtml(text)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(text)}">${escapeHtml(url.hostname + url.pathname)}</a>`;
                 } catch {
-                    return `<a href="${escapeHtml(note.content)}" target="_blank" rel="noopener noreferrer">${escapeHtml(note.content)}</a>`;
+                    return `<a href="${escapeHtml(text)}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`;
                 }
 
             case 'image':
-                return `<img src="${escapeHtml(note.content)}" alt="上傳的圖片" loading="lazy" draggable="false">`;
+                return `<img src="${escapeHtml(text)}" alt="上傳的圖片" loading="lazy" draggable="false">`;
 
             default:
-                return escapeHtml(note.content).replace(/\n/g, '<br>');
+                return escapeHtml(text).replace(/\n/g, '<br>');
         }
     }
 
@@ -588,6 +601,9 @@ PostIt.Board = (function () {
 
         // 圖片型不支持文字編輯
         if (note.type === 'image') return;
+
+        // 如果已經在編輯狀態中，不要重新設定以免覆蓋使用者正在輸入的內容並導致游標重製跳動
+        if (contentEl.getAttribute('contenteditable') === 'true') return;
 
         // 設為可編輯
         contentEl.setAttribute('contenteditable', 'true');
@@ -851,7 +867,13 @@ PostIt.Board = (function () {
             previewText.style.fontFamily = `'${fontFamily.value}', cursive`;
             previewText.style.fontSize = fontSize.value + 'px';
             previewText.style.color = selectedFontColor;
-            previewBg.style.backgroundColor = selectedNoteColor;
+            
+            if (selectedNoteColor === 'random') {
+                // 預覽區遇到隨機時，預設顯示一個混和色彩或黃底作為代表
+                previewBg.style.backgroundColor = '#FFF176';
+            } else {
+                previewBg.style.backgroundColor = selectedNoteColor;
+            }
         }
 
         // 事件綁定
