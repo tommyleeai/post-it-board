@@ -28,7 +28,7 @@ PostIt.Board = (function () {
     }
 
     // ======== 登入狀態變化 ========
-    function onAuthStateChanged(user) {
+    async function onAuthStateChanged(user) {
         const loginScreen = document.getElementById('login-screen');
         const app = document.getElementById('app');
 
