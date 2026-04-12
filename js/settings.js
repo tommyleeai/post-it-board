@@ -9,7 +9,8 @@ PostIt.Settings = (function () {
         fontFamily: 'Caveat',
         fontSize: 20,
         fontColor: 'rgba(0,0,0,0.78)',
-        defaultNoteColor: 'random'
+        defaultNoteColor: 'random',
+        boardBgImage: '' // 白板背景（空白表示預設紋理）
     };
 
     // 可用字型清單

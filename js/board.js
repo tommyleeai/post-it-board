@@ -52,10 +52,13 @@ PostIt.Board = (function () {
             // 載入帳號設定
             await PostIt.Settings.load();
 
+            // 套用白板背景
+            applyBoardBgImage(PostIt.Settings.getAccountSettings().boardBgImage);
+
             // 訂閱筆記
             PostIt.Note.subscribe(renderNotes);
 
-            // 啟動圖釘連線系統
+            // 啟提圖釘連線系統
             if (typeof PostIt.Connect !== 'undefined') PostIt.Connect.start();
 
             console.log('[Board] 使用者已登入:', user.displayName);
@@ -955,6 +958,10 @@ PostIt.Board = (function () {
             selectedFontColor = settings.fontColor || 'rgba(0,0,0,0.78)';
             selectedNoteColor = settings.defaultNoteColor || 'random';
 
+            // 填充選定的背景
+            const bgImageInput = document.getElementById('account-bg-image-url');
+            if (bgImageInput) bgImageInput.value = settings.boardBgImage || '';
+
             // 填充 AI 金鑰 (如果為預設金鑰則不顯示)
             const aiKeyInput = document.getElementById('account-ai-key');
             aiKeyInput.value = PostIt.Settings.getAiKey() === 'AIzaSyA4rngnyQfawDPXU1W2clDtUHbrqHB8DnU' ? '' : PostIt.Settings.getAiKey();
@@ -1040,6 +1047,45 @@ PostIt.Board = (function () {
             });
         });
 
+        // 白板背景上傳
+        const btnUploadBg = document.getElementById('btn-upload-bg-image');
+        const bgFileInput = document.getElementById('bg-file-input');
+        if (btnUploadBg && bgFileInput) {
+            btnUploadBg.addEventListener('click', () => bgFileInput.click());
+            bgFileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const uid = PostIt.Auth.getUid();
+                if (!uid) return;
+
+                // 檢查檔案大小（最大 5MB）
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('圖片太大了，最多 5MB', 'error');
+                    return;
+                }
+
+                showToast('背景上傳中...⏳');
+                try {
+                    let ext = 'jpg';
+                    if (file.name && file.name.includes('.')) ext = file.name.split('.').pop();
+                    else if (file.type) ext = file.type.split('/').pop();
+
+                    const timestamp = Date.now();
+                    const storagePath = `users/${uid}/settings/bg_${timestamp}.${ext}`;
+                    const storageRef = PostIt.Firebase.getStorage().ref(storagePath);
+                    const snapshot = await storageRef.put(file);
+                    const downloadURL = await snapshot.ref.getDownloadURL();
+
+                    document.getElementById('account-bg-image-url').value = downloadURL;
+                    showToast('背景上傳成功！✅', 'success');
+                } catch (error) {
+                    console.error('上傳背景失敗:', error);
+                    showToast('上傳失敗', 'error');
+                }
+            });
+        }
+
         // 儲存
         btnSave.addEventListener('click', async () => {
             try {
@@ -1048,12 +1094,17 @@ PostIt.Board = (function () {
                 PostIt.Settings.setAiKey(aiKeyInput.value);
 
                 // 儲存其他設定 (雲端)
+                const bgImageUrl = document.getElementById('account-bg-image-url') ? document.getElementById('account-bg-image-url').value.trim() : '';
                 await PostIt.Settings.save({
                     fontFamily: fontFamily.value,
                     fontSize: parseInt(fontSize.value),
                     fontColor: selectedFontColor,
-                    defaultNoteColor: selectedNoteColor
+                    defaultNoteColor: selectedNoteColor,
+                    boardBgImage: bgImageUrl
                 });
+                
+                // 套用到 UI
+                applyBoardBgImage(bgImageUrl);
                 showToast('帳號設定已儲存 ✅', 'success');
                 closeAccountModal();
                 // 重新渲染所有貼紙以套用新預設
@@ -1069,6 +1120,7 @@ PostIt.Board = (function () {
                 await PostIt.Settings.reset();
                 showToast('已重設為系統預設 ↩️');
                 openAccountModal(); // 重新填充 UI
+                applyBoardBgImage('');
                 renderNotes(PostIt.Note.getCache());
             } catch (err) {
                 showToast('重設失敗', 'error');
@@ -1231,6 +1283,23 @@ PostIt.Board = (function () {
                     showToast('已永久刪除。');
                 });
             });
+        }
+    }
+
+    // ======== 依據設定套用白板背景 ========
+    function applyBoardBgImage(url) {
+        if (!boardEl) return;
+        if (url) {
+            boardEl.style.backgroundImage = `url("${url}")`;
+            boardEl.style.backgroundSize = 'cover';
+            boardEl.style.backgroundPosition = 'center';
+            boardEl.style.backgroundRepeat = 'no-repeat';
+        } else {
+            // 清除，恢復 style.css 中擬真的預設背景設定
+            boardEl.style.backgroundImage = '';
+            boardEl.style.backgroundSize = '';
+            boardEl.style.backgroundPosition = '';
+            boardEl.style.backgroundRepeat = '';
         }
     }
 

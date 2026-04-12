@@ -266,6 +266,17 @@
                     <label>Gemini API 金鑰（AI 提醒解析）</label>
                     <input type="password" id="account-ai-key" class="settings-input" placeholder="AIzaSy... (選填)">
                 </div>
+                <!-- 白板背景圖片設定 -->
+                <div class="account-section">
+                    <label>自訂白板背景（圖片網址）</label>
+                    <div class="bg-settings-row" style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" id="account-bg-image-url" class="settings-input" placeholder="留空使用預設，也可貼上網址或上傳" style="flex: 1;">
+                        <button id="btn-upload-bg-image" class="btn-toolbar" title="上傳自訂背景" style="padding: 10px; height: auto;">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                        </button>
+                        <input type="file" id="bg-file-input" accept="image/*" style="display:none">
+                    </div>
+                </div>
                 <!-- 預覽 -->
                 <div class="settings-preview" id="settings-preview">
                     <span class="settings-preview-text" id="settings-preview-text">預覽文字效果 Preview</span>
