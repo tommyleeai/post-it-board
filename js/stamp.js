@@ -44,12 +44,17 @@ PostIt.Stamp = (function () {
             fabGroup.addEventListener('mouseenter', () => stampMenu.classList.add('open'));
             fabGroup.addEventListener('mouseleave', () => stampMenu.classList.remove('open'));
         } else {
-            // 降級：直接監聽 fab-stamp
             fabStamp.addEventListener('mouseenter', () => stampMenu.classList.add('open'));
             fabStamp.addEventListener('mouseleave', (e) => {
                 if (!stampMenu.contains(e.relatedTarget)) stampMenu.classList.remove('open');
             });
         }
+
+        // 點印章按鈕本身：蓋章模式中再點一次 → 取消
+        fabStamp.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (activeStamp) exitStampMode();
+        });
 
         // 游標追蹤
         document.addEventListener('mousemove', onMouseMove);
