@@ -175,7 +175,7 @@ PostIt.Connect = (function () {
                 if (!pinEl) {
                     pinEl = document.createElement('div');
                     pinEl.className = 'persistent-pin';
-                    pinEl.innerHTML = '<i class="fa-solid fa-thumbtack"></i>';
+                    pinEl.innerHTML = '<img src="assets/pin.png" alt="pin" class="board-pin-img">';
                     noteEl.appendChild(pinEl);
                 }
             } else {
@@ -212,10 +212,11 @@ PostIt.Connect = (function () {
             g.querySelector('.conn-line')?.setAttribute('y1', from.y);
             g.querySelector('.conn-line')?.setAttribute('x2', to.x);
             g.querySelector('.conn-line')?.setAttribute('y2', to.y);
-            g.querySelector('.pin-head-from')?.setAttribute('cx', from.x);
-            g.querySelector('.pin-head-from')?.setAttribute('cy', from.y);
-            g.querySelector('.pin-head-to')  ?.setAttribute('cx', to.x);
-            g.querySelector('.pin-head-to')  ?.setAttribute('cy', to.y);
+            g.querySelector('.conn-line')?.setAttribute('x1', from.x);
+            g.querySelector('.conn-line')?.setAttribute('y1', from.y);
+            g.querySelector('.conn-line')?.setAttribute('x2', to.x);
+            g.querySelector('.conn-line')?.setAttribute('y2', to.y);
+            // 移除了 SVG 小紅圈的更新，因為已被實體圖片取代
         });
 
         // 移除孤兒 group（已從 pairs 移除的）
@@ -262,23 +263,8 @@ PostIt.Connect = (function () {
         line.style.filter = 'drop-shadow(2px 3px 3px rgba(0,0,0,0.5))';
         line.classList.add('conn-line');
 
-        // 兩端圖釘頭（小圓點）
-        const c1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        c1.setAttribute('r', '5');
-        c1.setAttribute('fill', CONN_COLOR);
-        c1.style.pointerEvents = 'none';
-        c1.classList.add('pin-head-from');
-
-        const c2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        c2.setAttribute('r', '5');
-        c2.setAttribute('fill', CONN_COLOR);
-        c2.style.pointerEvents = 'none';
-        c2.classList.add('pin-head-to');
-
         g.appendChild(hitLine);
         g.appendChild(line);
-        g.appendChild(c1);
-        g.appendChild(c2);
 
         return g;
     }
@@ -300,7 +286,7 @@ PostIt.Connect = (function () {
         const noteRect  = noteEl.getBoundingClientRect();
         dot.style.left = (noteRect.left - boardRect.left + noteRect.width / 2) + 'px';
         dot.style.top  = (noteRect.top  - boardRect.top) + 'px';
-        dot.innerHTML = '<i class="fa-solid fa-thumbtack"></i>';
+        dot.innerHTML = '<img src="assets/pin.png" alt="pin" class="board-pin-img">';
         boardEl.appendChild(dot);
         setTimeout(() => dot.remove(), 650);
     }
