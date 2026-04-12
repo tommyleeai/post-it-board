@@ -1506,11 +1506,11 @@ html, body {
 
 /* === AI 鬧鐘提醒特效 START === */
 @keyframes intense-shake {
-    0% { translate: 0px 0px; filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
-    25% { translate: 6px -3px; filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.95)); }
-    50% { translate: 0px 0px; filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
-    75% { translate: -6px 3px; filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.95)); }
-    100% { translate: 0px 0px; filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
+    0% { transform: translate3d(0px, 0px, 0) rotate(var(--note-rotation, 0deg)); filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
+    25% { transform: translate3d(6px, -3px, 0) rotate(var(--note-rotation, 0deg)); filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.95)); }
+    50% { transform: translate3d(0px, 0px, 0) rotate(var(--note-rotation, 0deg)); filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
+    75% { transform: translate3d(-6px, 3px, 0) rotate(var(--note-rotation, 0deg)); filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.95)); }
+    100% { transform: translate3d(0px, 0px, 0) rotate(var(--note-rotation, 0deg)); filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
 }
 
 .sticky-note.alarming {
