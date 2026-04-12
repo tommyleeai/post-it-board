@@ -682,11 +682,12 @@ PostIt.Board = (function () {
         if (PostIt.Drag.getIsDragging()) return;
 
         const contentEl = noteEl.querySelector('.note-content');
-        const note = PostIt.Note.getNote(noteId);
-        if (!contentEl || !note) return;
+        if (!contentEl) return;
 
-        // 圖片型不支持文字編輯
-        if (note.type === 'image') return;
+        // 如果 note 還在 cache 中（可能是新建立尚未同步），允許繼續
+        const note = PostIt.Note.getNote(noteId);
+        // 圖片型不支持文字編輯（僅當 note 已載入時才判斷）
+        if (note && note.type === 'image') return;
 
         // 如果已經在編輯狀態中，不要重新設定以免覆蓋使用者正在輸入的內容並導致游標重製跳動
         if (contentEl.getAttribute('contenteditable') === 'true') return;
