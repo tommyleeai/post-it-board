@@ -177,6 +177,37 @@ PostIt.Note = (function () {
         }
     }
 
+    // -------- 蓋章歸檔貼紙 --------
+    async function archive(noteId) {
+        const uid = PostIt.Auth.getUid();
+        if (!uid || !noteId) return;
+
+        const note = notesCache[noteId];
+        if (!note) return;
+
+        try {
+            const db = PostIt.Firebase.getDb();
+            const archiveRef = db.collection('users').doc(uid).collection('postit_archived');
+
+            // 複製到歸檔集合
+            const archiveData = { ...note };
+            delete archiveData.id; // 移除本地 id 欄位
+            archiveData.completedAt = firebase.firestore.FieldValue.serverTimestamp();
+            archiveData.archivedFrom = noteId;
+
+            await archiveRef.add(archiveData);
+
+            // 從原集合刪除
+            const ref = getNotesRef();
+            await ref.doc(noteId).delete();
+
+            console.log('[Note] 貼紙已歸檔:', noteId);
+        } catch (error) {
+            console.error('[Note] 歸檔失敗:', error);
+            PostIt.Board.showToast('歸檔失敗，請再試一次', 'error');
+        }
+    }
+
     // -------- 刪除貼紙 --------
     async function remove(noteId) {
         const ref = getNotesRef();
@@ -278,7 +309,7 @@ PostIt.Note = (function () {
 
     return {
         subscribe, cleanup, create, updateContent, updatePosition,
-        updateColor, updateStyle, remove, uploadImage, detectType,
+        updateColor, updateStyle, archive, remove, uploadImage, detectType,
         getCache, getCount, getNote, getActiveNoteId, setActiveNoteId
     };
 })();

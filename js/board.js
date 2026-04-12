@@ -107,6 +107,40 @@ PostIt.Board = (function () {
             fileInput.value = '';
         });
 
+        // 蓋章完成歸檔
+        document.getElementById('btn-stamp-complete').addEventListener('click', async () => {
+            const noteId = PostIt.Note.getActiveNoteId();
+            if (!noteId) return;
+
+            const noteEl = document.querySelector(`[data-note-id="${noteId}"]`);
+            if (!noteEl) return;
+
+            closeSettings();
+
+            // 建立印章 DOM
+            const overlay = document.createElement('div');
+            overlay.className = 'note-stamp-overlay';
+            const stamp = document.createElement('div');
+            stamp.className = 'note-stamp';
+            stamp.textContent = '已完成';
+            overlay.appendChild(stamp);
+            noteEl.appendChild(overlay);
+
+            // 觸發蓋章動畫
+            requestAnimationFrame(() => {
+                stamp.classList.add('stamping');
+            });
+
+            // 等動畫完成再漸灰
+            await new Promise(r => setTimeout(r, 600));
+            noteEl.classList.add('stamped-archiving');
+
+            // 等灰階效果完成再歸檔
+            await new Promise(r => setTimeout(r, 1800));
+            await PostIt.Note.archive(noteId);
+            showToast('已完成！貼紙已歸檔 ✅', 'success');
+        });
+
         // 刪除貼紙
         document.getElementById('btn-delete-note').addEventListener('click', async () => {
             const noteId = PostIt.Note.getActiveNoteId();
