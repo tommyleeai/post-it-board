@@ -10,16 +10,17 @@ PostIt.AI = (function () {
 
 {
   "hasIntent": true或false, // 是否包含時間排程意圖
-  "eventTime": "ISO 8601 時間戳", // 若可解析，回傳該事件的原始時間，否則為 null
-  "alertTime": "ISO 8601 時間戳", // 若為實體會議/外出，自動提早1小時提醒；若為線上，提早5~10分鐘。若僅為日常提醒則與 eventTime 相同。否則為 null
+  "eventTime": "YYYY-MM-DDTHH:mm:ss", // 若可解析，回傳該事件的原始時間，例如 2026-04-12T15:30:00 (絕對不要加上 Z 或時區)
+  "alertTime": "YYYY-MM-DDTHH:mm:ss", // 若為實體會議/外出，自動提早1小時提醒；若為線上，提早5~10分鐘。若僅為日常提醒則與 eventTime 相同。(絕對不要加上 Z 或時區)
   "reason": "字串", // 給使用者的簡短對話語氣解釋，例如「已為您提早一小時提醒以便出發前往 Costco」。若不需要特別解釋，可留空。
   "needsClarification": true或false, // 若使用者提及如「我生日那天」但缺乏確切資訊無法計算，則設為 true
   "clarificationQuestion": "字串" // 若需釐清，反問使用者的問題
 }
 
 注意事項：
-1. 你的回答將直接被程式 parsing，嚴禁回傳 \`\`\`json 等任何 markdown！
-2. 請根據邏輯推演合理的提醒時間。若文字毫無時間概念，請回傳 {"hasIntent": false}。`;
+1. 請嚴格依照給定的「目前本地時間」進行推算，並且回傳的時間字串「絕對不要」包含結尾的 Z 或是任何時區偏移（例如 +08:00）！
+2. 你的回答將直接被程式 parsing，嚴禁回傳 \`\`\`json 等任何 markdown！
+3. 請根據邏輯推演合理的提醒時間。若文字毫無時間概念，請回傳 {"hasIntent": false}。`;
 
     async function parseIntent(noteText) {
         if (!noteText || noteText.trim() === '') return { hasIntent: false };
@@ -30,10 +31,17 @@ PostIt.AI = (function () {
             return { hasIntent: false, error: 'NO_API_KEY' };
         }
 
-        const tzOffset = new Date().getTimezoneOffset();
         const now = new Date();
-        // 將 Date 轉成清楚的當前時區表達方式，讓 AI 參考
-        const prompt = `目前使用者的本地時間為: ${now.toISOString()} (UTC${tzOffset <= 0 ? '+' : '-'}${Math.abs(tzOffset)/60})\n\n使用者的便利貼內容:\n"${noteText}"`;
+        const year = now.getFullYear();
+        const mon = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hr = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        const sec = String(now.getSeconds()).padStart(2, '0');
+        const localTimeStr = `${year}-${mon}-${day}T${hr}:${min}:${sec}`;
+
+        // 將清楚的無時區本地時間交給 AI 推算
+        const prompt = `目前使用者的本地時間為: ${localTimeStr}\n\n使用者的便利貼內容:\n"${noteText}"`;
 
         try {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -63,6 +71,15 @@ PostIt.AI = (function () {
             const textResult = data.candidates[0].content.parts[0].text;
             
             const resultObj = JSON.parse(textResult);
+            
+            // 防呆：強制移除可能導致時區錯亂的 Z 或 +08:00
+            if (resultObj.eventTime) {
+                resultObj.eventTime = resultObj.eventTime.replace(/Z|[+-]\d{2}:\d{2}$/, '');
+            }
+            if (resultObj.alertTime) {
+                resultObj.alertTime = resultObj.alertTime.replace(/Z|[+-]\d{2}:\d{2}$/, '');
+            }
+
             return resultObj;
 
         } catch (error) {
