@@ -1506,18 +1506,18 @@ html, body {
 
 /* === AI 鬧鐘提醒特效 START === */
 @keyframes intense-shake {
-    0% { margin-left: 0px; margin-top: 0px; filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
-    25% { margin-left: 6px; margin-top: -3px; filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.95)); }
-    50% { margin-left: 0px; margin-top: 0px; filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
-    75% { margin-left: -6px; margin-top: 3px; filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.95)); }
-    100% { margin-left: 0px; margin-top: 0px; filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
+    0% { translate: 0px 0px; filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
+    25% { translate: 6px -3px; filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.95)); }
+    50% { translate: 0px 0px; filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
+    75% { translate: -6px 3px; filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.95)); }
+    100% { translate: 0px 0px; filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
 }
 
 .sticky-note.alarming {
     animation: intense-shake 0.12s ease-in-out infinite;
     z-index: 9999 !important; /* 確保鬧鐘響起時強制浮在最上方 */
     transition: none !important; /* 關閉平滑補間，確保抖動不被抵銷 */
-    will-change: margin, filter; /* 提升渲染效能 */
+    will-change: transform, filter; /* 提升渲染效能 */
 }
 
 /* 時鐘小圖示 */
