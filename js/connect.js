@@ -269,12 +269,14 @@ PostIt.Connect = (function () {
         return g;
     }
 
-    // -------- 便利貼連線錨點座標（原中央，現改為正上方圖釘處）--------
+    // -------- 便利貼連線錨點座標（原中央，現改為真實圖釘的針點處）--------
     function getNoteCenter(noteEl, boardRect) {
         const r = noteEl.getBoundingClientRect();
+        // 真實圖釘圖片 (寬約 30px, 高 40px) 放置於 top: -15px, left: 50%
+        // 針尖（入紙點）的位置大約在圖片左下角，即相對中央偏左約 10px，相對卡片頂部向下約 20px
         return {
-            x: r.left - boardRect.left + r.width  / 2,
-            y: r.top  - boardRect.top  - 2 // 線連接在圖釘尖端附近（靠近便利貼上緣）
+            x: r.left - boardRect.left + r.width  / 2 - 10,
+            y: r.top  - boardRect.top  + 20
         };
     }
 
