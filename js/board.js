@@ -1301,16 +1301,16 @@ PostIt.Board = (function () {
     function applyBoardBgImage(url) {
         if (!boardEl) return;
         if (url) {
-            boardEl.style.backgroundImage = `url("${url}")`;
-            boardEl.style.backgroundSize = 'cover';
-            boardEl.style.backgroundPosition = 'center';
-            boardEl.style.backgroundRepeat = 'no-repeat';
+            boardEl.style.setProperty('background-image', `url("${url}")`, 'important');
+            boardEl.style.setProperty('background-size', 'cover', 'important');
+            boardEl.style.setProperty('background-position', 'center', 'important');
+            boardEl.style.setProperty('background-repeat', 'no-repeat', 'important');
         } else {
             // 清除，恢復 style.css 中擬真的預設背景設定
-            boardEl.style.backgroundImage = '';
-            boardEl.style.backgroundSize = '';
-            boardEl.style.backgroundPosition = '';
-            boardEl.style.backgroundRepeat = '';
+            boardEl.style.removeProperty('background-image');
+            boardEl.style.removeProperty('background-size');
+            boardEl.style.removeProperty('background-position');
+            boardEl.style.removeProperty('background-repeat');
         }
     }
 
