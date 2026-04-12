@@ -560,6 +560,13 @@ PostIt.Board = (function () {
 
         // 單擊進入編輯（點擊卡片任一處即可）
         el.addEventListener('click', (e) => {
+            // 果如目前是圖釘連線模式，交由 Connect 處理，不觸發編輯
+            if (typeof PostIt.Connect !== 'undefined' && PostIt.Connect.isPinModeActive()) {
+                e.stopPropagation();
+                PostIt.Connect.handleNotePin(el);
+                return;
+            }
+
             // 不阻擋特定按鈕的點擊（設定齒輪或刪除按鈕）
             if (e.target.closest('.note-settings-trigger') || e.target.closest('.note-delete-btn')) return;
 

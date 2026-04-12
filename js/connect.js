@@ -37,7 +37,7 @@ PostIt.Connect = (function () {
         });
 
         // 追蹤游標位置
-        document.addEventListener('mousemove', (e) => {
+        document.addEventListener('pointermove', (e) => {
             cursorPos = { x: e.clientX, y: e.clientY };
             if (cursorEl && pinModeActive) {
                 cursorEl.style.left = (e.clientX - 10) + 'px';
@@ -330,5 +330,8 @@ PostIt.Connect = (function () {
         return Math.random().toString(36).substr(2, 9);
     }
 
-    return { init, start, exitPinMode };
+    // -------- Getters --------
+    function isPinModeActive() { return pinModeActive; }
+
+    return { init, start, exitPinMode, isPinModeActive, handleNotePin };
 })();
