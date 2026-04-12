@@ -22,6 +22,9 @@ PostIt.Board = (function () {
         // 初始化拖曳引擎
         PostIt.Drag.init();
 
+        // 初始化印章系統
+        if (typeof PostIt.Stamp !== 'undefined') PostIt.Stamp.init();
+
         // 初始化登入模組
         PostIt.Auth.init(onAuthStateChanged);
 

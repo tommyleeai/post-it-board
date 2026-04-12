@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css?v=5.0">
+    <link rel="stylesheet" href="css/style.css?v=6.0">
     <link rel="stylesheet" href="css/animations.css">
 </head>
 <body>
@@ -90,10 +90,24 @@
             </div>
         </main>
 
-        <!-- 新增貼紙按鈕 (FAB) -->
-        <button id="fab-add" class="fab-add" title="新增貼紙">
-            <i class="fa-solid fa-plus"></i>
-        </button>
+        <!-- 右下角 FAB 群組 -->
+        <div class="fab-group">
+            <!-- 印章展開選單 -->
+            <div id="stamp-menu" class="stamp-menu"></div>
+
+            <!-- 印章 FAB 按鈕 -->
+            <button id="fab-stamp" class="fab-stamp" title="印章">
+                <i class="fa-solid fa-stamp"></i>
+            </button>
+
+            <!-- 新增貼紙按鈕 (FAB) -->
+            <button id="fab-add" class="fab-add" title="新增貼紙">
+                <i class="fa-solid fa-plus"></i>
+            </button>
+        </div>
+
+        <!-- 自訂印章游標 -->
+        <div id="stamp-cursor" class="stamp-cursor" style="display:none"></div>
 
         <!-- ===== 貼紙設定面板 ===== -->
         <div id="note-settings" class="note-settings hidden">
@@ -280,5 +294,6 @@
     <script src="js/alarm.js"></script>
     <script src="js/note.js"></script>
     <script src="js/board.js"></script>
+    <script src="js/stamp.js"></script>
 </body>
 </html>

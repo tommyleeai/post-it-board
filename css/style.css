@@ -638,10 +638,18 @@ html, body {
 /* === Sticky Note END === */
 
 /* === FAB Button START === */
-.fab-add {
+.fab-group {
     position: fixed;
     bottom: 28px;
     right: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    z-index: 200;
+}
+
+.fab-add {
     width: var(--fab-size);
     height: var(--fab-size);
     border: none;
@@ -653,7 +661,6 @@ html, body {
     box-shadow:
         0 6px 20px rgba(74, 144, 217, 0.4),
         0 2px 6px rgba(0, 0, 0, 0.15);
-    z-index: 200;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
@@ -676,7 +683,160 @@ html, body {
     cursor: not-allowed;
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
+
 /* === FAB Button END === */
+
+/* === 印章系統 START === */
+.fab-stamp {
+    width: var(--fab-size);
+    height: var(--fab-size);
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #9b59b6 0%, #7d3c98 100%);
+    color: #fff;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow:
+        0 6px 20px rgba(155, 89, 182, 0.4),
+        0 2px 6px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fab-stamp:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow:
+        0 10px 30px rgba(155, 89, 182, 0.5),
+        0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.fab-stamp:active {
+    transform: translateY(0) scale(0.97);
+}
+
+/* 印章展開選單 */
+.stamp-menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+    pointer-events: none;
+}
+
+.stamp-menu.open {
+    max-height: 400px;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.stamp-menu-item {
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stamp-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2.5px solid currentColor;
+    background: rgba(255, 255, 255, 0.95);
+    font-weight: 900;
+    font-size: 13px;
+    font-family: 'Noto Sans TC', serif;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
+}
+
+.stamp-menu-item:hover .stamp-preview {
+    transform: scale(1.12);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+
+/* 自訂游標 */
+.stamp-cursor {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    transform: rotate(-20deg);
+}
+
+.stamp-cursor-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid currentColor;
+    background: rgba(255, 255, 255, 0.9);
+    font-weight: 900;
+    font-size: 14px;
+    font-family: 'Noto Sans TC', serif;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    user-select: none;
+}
+
+/* 蓋章模式：隱藏真實游標 */
+body.stamp-mode {
+    cursor: none !important;
+}
+
+/* 蓋章模式：便利貼 hover 提示 */
+.sticky-note.stampable:hover {
+    filter: drop-shadow(0 0 12px rgba(155, 89, 182, 0.6)) !important;
+}
+
+/* 蓋在便利貼中間的印章 */
+.stamp-on-note {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-12deg);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 15px;
+    font-family: 'Noto Sans TC', serif;
+    opacity: 0;          /* 初始透明，由動畫播出 */
+    pointer-events: none;
+    z-index: 5;          /* 在文字下面 */
+    user-select: none;
+}
+
+/* 蓋章按壓動畫 */
+@keyframes stamp-press {
+    0%   { transform: translate(-50%, -80%) rotate(-12deg) scale(1.4); opacity: 0; }
+    35%  { transform: translate(-50%, -50%) rotate(-12deg) scale(1.05); opacity: 0.5; }
+    55%  { transform: translate(-50%, -50%) rotate(-12deg) scale(0.95); opacity: 0.35; }
+    75%  { transform: translate(-50%, -50%) rotate(-12deg) scale(1.0);  opacity: 0.32; }
+    100% { transform: translate(-50%, -50%) rotate(-12deg) scale(1.0);  opacity: 0.30; }
+}
+
+.stamp-on-note.stamp-press {
+    animation: stamp-press 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+/* === 印章系統 END === */
 
 /* === 帳號控制台 Modal START === */
 .account-modal-overlay {
