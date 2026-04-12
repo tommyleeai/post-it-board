@@ -1301,7 +1301,8 @@ PostIt.Board = (function () {
     function applyBoardBgImage(url) {
         if (!boardEl) return;
         if (url) {
-            boardEl.style.setProperty('background-image', `url("${url}")`, 'important');
+            // 加入 35% 的黑色半透明遮罩，壓暗過度鮮豔的圖片與降低紋理噪聲，藉此凸顯前景便利貼
+            boardEl.style.setProperty('background-image', `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url("${url}")`, 'important');
             boardEl.style.setProperty('background-size', 'cover', 'important');
             boardEl.style.setProperty('background-position', 'center', 'important');
             boardEl.style.setProperty('background-repeat', 'no-repeat', 'important');
