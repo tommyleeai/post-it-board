@@ -158,6 +158,30 @@ PostIt.Connect = (function () {
     function renderLoop() {
         const boardRect = svgEl.getBoundingClientRect();
 
+        // 分析需要有「圖釘」的便利貼 IDs
+        const pinnedIds = new Set();
+        if (firstNote) pinnedIds.add(firstNote.dataset.noteId);
+        pairs.forEach(p => {
+            pinnedIds.add(p.from);
+            pinnedIds.add(p.to);
+        });
+
+        // 動態賦予/移除實體圖釘
+        document.querySelectorAll('.sticky-note').forEach(noteEl => {
+            const hasPin = pinnedIds.has(noteEl.dataset.noteId);
+            let pinEl = noteEl.querySelector('.persistent-pin');
+            if (hasPin) {
+                if (!pinEl) {
+                    pinEl = document.createElement('div');
+                    pinEl.className = 'persistent-pin';
+                    pinEl.innerHTML = '<i class="fa-solid fa-thumbtack"></i>';
+                    noteEl.appendChild(pinEl);
+                }
+            } else {
+                if (pinEl) pinEl.remove();
+            }
+        });
+
         // 更新已儲存的連線
         pairs.forEach(pair => {
             const fromEl = document.querySelector(`.sticky-note[data-note-id="${pair.from}"]`);
@@ -257,12 +281,12 @@ PostIt.Connect = (function () {
         return g;
     }
 
-    // -------- 便利貼中心座標（相對於 SVG/board）--------
+    // -------- 便利貼連線錨點座標（原中央，現改為正上方圖釘處）--------
     function getNoteCenter(noteEl, boardRect) {
         const r = noteEl.getBoundingClientRect();
         return {
             x: r.left - boardRect.left + r.width  / 2,
-            y: r.top  - boardRect.top  + r.height / 2
+            y: r.top  - boardRect.top  - 2 // 線連接在圖釘尖端附近（靠近便利貼上緣）
         };
     }
 

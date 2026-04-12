@@ -1840,7 +1840,7 @@ body.stamp-mode {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 60; /* 在便利貼之上、但不阻擋拖曳 */
+    z-index: 999999; /* 確保線出現在便利貼前方 */
     overflow: visible;
 }
 
@@ -1866,6 +1866,19 @@ body.pin-mode {
     filter: drop-shadow(0 0 14px rgba(231, 76, 60, 0.8)) !important;
     outline: 2px dashed #e74c3c;
     outline-offset: 4px;
+}
+
+/* 實體圖釘 (駐留於便利貼上方) */
+.persistent-pin {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-15deg);
+    color: #e74c3c;
+    font-size: 26px;
+    z-index: 100;
+    pointer-events: auto; /* 允許本身互動（如果有需要） */
+    filter: drop-shadow(2px 3px 2px rgba(0,0,0,0.4));
 }
 
 /* 釘入動畫元素 */
