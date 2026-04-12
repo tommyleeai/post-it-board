@@ -350,6 +350,10 @@ html, body {
     box-shadow: none;
     border-radius: 0;
     background: transparent !important;
+    /* 陰影改放在父層，一次投射出整張裁切紙張＋狗耳朵捲角的完美外緣陰影 */
+    filter: drop-shadow(3px 5px 8px rgba(0, 0, 0, 0.25));
+    /* 優化效能 */
+    will-change: filter, transform;
 }
 
 /* === 便利貼捲角翻頁效果 START === */
@@ -367,8 +371,6 @@ html, body {
     /* 強制精準裁切右下角一個 40px 正方形區塊，不管母體長寬比，切線永遠完美 45 度 */
     clip-path: polygon(0% 0%, 100% 0%, 100% calc(100% - 40px), calc(100% - 40px) 100%, 0% 100%);
     border-radius: 2px;
-    filter: drop-shadow(3px 4px 6px rgba(0, 0, 0, 0.25));
-    transition: filter 0.2s ease;
 }
 
 /* 建立捲上來的紙背（擬真狗耳朵翻摺） */
@@ -410,10 +412,7 @@ html, body {
     cursor: grabbing;
     transform: scale(1.04) rotate(0deg) !important;
     z-index: 9999 !important;
-}
-
-.sticky-note.dragging::before {
-    filter: drop-shadow(8px 12px 14px rgba(0, 0, 0, 0.25));
+    filter: drop-shadow(8px 12px 16px rgba(0, 0, 0, 0.35));
 }
 /* === END === */
 
