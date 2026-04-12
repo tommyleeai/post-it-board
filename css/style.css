@@ -1503,17 +1503,17 @@ html, body {
 
 /* === AI 鬧鐘提醒特效 START === */
 @keyframes intense-shake {
-    0% { transform: rotate(0deg) translateX(0); }
-    25% { transform: rotate(5deg) translateX(8px); }
-    50% { transform: rotate(0deg) translateX(0); }
-    75% { transform: rotate(-5deg) translateX(-8px); }
-    100% { transform: rotate(0deg) translateX(0); }
+    0% { transform: rotate(0deg) translateX(0); filter: drop-shadow(0 0 15px rgba(255, 50, 50, 0.7)); }
+    25% { transform: rotate(5deg) translateX(8px); filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.9)); }
+    50% { transform: rotate(0deg) translateX(0); filter: drop-shadow(0 0 15px rgba(255, 50, 50, 0.7)); }
+    75% { transform: rotate(-5deg) translateX(-8px); filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.9)); }
+    100% { transform: rotate(0deg) translateX(0); filter: drop-shadow(0 0 15px rgba(255, 50, 50, 0.7)); }
 }
 
 .sticky-note.alarming {
     animation: intense-shake 0.3s infinite !important;
-    box-shadow: 0 0 25px rgba(255, 30, 30, 0.8), 4px 4px 10px rgba(0,0,0,0.2) !important;
     z-index: 9999 !important; /* 確保鬧鐘響起時強制浮在最上方 */
+    transition: none !important; /* 取消所有過場，避免與 keyframes 動畫互相抵銷 (這就是不抖動的主因) */
 }
 
 /* 時鐘小圖示 */

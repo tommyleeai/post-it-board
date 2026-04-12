@@ -47,27 +47,43 @@ PostIt.Alarm = (function () {
             
             const playSingleBeep = () => {
                 if(audioCtx.state === 'suspended') return;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
                 
-                osc.type = 'square';
-                // 高頻警報聲
-                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.15);
+                const t = audioCtx.currentTime;
                 
-                gain.gain.setValueAtTime(0, audioCtx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.05); // fadeIn
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2); // fadeOut
+                // 第一聲 (柔和的 E5)
+                const osc1 = audioCtx.createOscillator();
+                const gain1 = audioCtx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(659.25, t); 
+                osc1.connect(gain1);
+                gain1.connect(audioCtx.destination);
                 
-                osc.start(audioCtx.currentTime);
-                osc.stop(audioCtx.currentTime + 0.25);
+                gain1.gain.setValueAtTime(0, t);
+                gain1.gain.linearRampToValueAtTime(0.2, t + 0.02);
+                gain1.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+                
+                osc1.start(t);
+                osc1.stop(t + 0.3);
+
+                // 第二聲 (清脆的 C6)
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(1046.50, t + 0.15);
+                osc2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+                
+                gain2.gain.setValueAtTime(0, t + 0.15);
+                gain2.gain.linearRampToValueAtTime(0.3, t + 0.17);
+                gain2.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+                
+                osc2.start(t + 0.15);
+                osc2.stop(t + 0.5);
             };
 
-            // 每 0.6 秒逼一聲
+            // 每 1.5 秒敲擊一次雙音叮咚
             playSingleBeep();
-            beepingInterval = setInterval(playSingleBeep, 600);
+            beepingInterval = setInterval(playSingleBeep, 1500);
         } catch (e) {
             console.warn('[Alarm] 無法播放音效', e);
         }
