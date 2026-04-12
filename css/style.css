@@ -411,6 +411,9 @@ html, body {
     overflow-wrap: break-word;
     outline: none;
     min-height: 40px;
+    /* === 便利貼捲軸修復 START === */
+    max-height: calc(var(--note-max-h) - 44px);
+    /* === END === */
     overflow-y: auto;
 
     /* 隱藏捲軸但保留捲動能力 */
