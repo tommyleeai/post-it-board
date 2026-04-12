@@ -146,9 +146,10 @@ PostIt.Connect = (function () {
         if (!previewLineEl) {
             previewLineEl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             previewLineEl.setAttribute('stroke', CONN_COLOR);
-            previewLineEl.setAttribute('stroke-width', '2');
+            previewLineEl.setAttribute('stroke-width', '3.5');
             previewLineEl.setAttribute('stroke-dasharray', '8 4');
             previewLineEl.setAttribute('stroke-linecap', 'round');
+            previewLineEl.style.filter = 'drop-shadow(2px 3px 3px rgba(0,0,0,0.4))';
             svgEl.insertBefore(previewLineEl, svgEl.firstChild); // 放最底層
         }
         previewLineEl.setAttribute('stroke-opacity', '0.5');
@@ -254,10 +255,11 @@ PostIt.Connect = (function () {
         // 可見線段
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('stroke', CONN_COLOR);
-        line.setAttribute('stroke-width', '2');
-        line.setAttribute('stroke-dasharray', '6 3');
+        line.setAttribute('stroke-width', '3.5');
+        line.setAttribute('stroke-dasharray', '6 4');
         line.setAttribute('stroke-linecap', 'round');
         line.style.pointerEvents = 'none';
+        line.style.filter = 'drop-shadow(2px 3px 3px rgba(0,0,0,0.5))';
         line.classList.add('conn-line');
 
         // 兩端圖釘頭（小圓點）
