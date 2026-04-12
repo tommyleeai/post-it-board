@@ -695,7 +695,7 @@ PostIt.Board = (function () {
         // 設為可編輯
         contentEl.setAttribute('contenteditable', 'true');
         // 用 innerText 保留換行符
-        contentEl.innerText = note.content || '';
+        contentEl.innerText = note?.content || '';
         contentEl.focus();
 
         // 游標移到最後
@@ -713,7 +713,7 @@ PostIt.Board = (function () {
             const newContent = contentEl.innerText.trim();
             
             // 只有內容改變才更新並呼叫 AI
-            if (newContent !== (note.content || '')) {
+            if (newContent !== (note?.content || '')) {
                 PostIt.Note.updateContent(noteId, newContent);
                 
                 // AI 背景語意解析
