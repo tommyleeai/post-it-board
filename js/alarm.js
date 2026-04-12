@@ -103,7 +103,13 @@ PostIt.Alarm = (function () {
         
         // 視覺震動
         const noteEl = document.querySelector(`.sticky-note[data-note-id="${noteId}"]`);
-        if (noteEl) noteEl.classList.add('alarming');
+        if (noteEl) {
+            // 關鍵：暫時移除 inline style.transform（內含 rotate），
+            // 否則 inline style 優先級高於 @keyframes，導致動畫的 translate3d 永遠被壓死
+            noteEl.dataset.savedTransform = noteEl.style.transform || '';
+            noteEl.style.transform = '';
+            noteEl.classList.add('alarming');
+        }
         
         // 聲音
         startBeep();
@@ -115,8 +121,12 @@ PostIt.Alarm = (function () {
         ringingNotes.delete(noteId);
         
         const noteEl = document.querySelector(`.sticky-note[data-note-id="${noteId}"]`);
-        // 移除震動
-        if (noteEl) noteEl.classList.remove('alarming');
+        if (noteEl) {
+            // 移除震動並還原原本的旋轉角度
+            noteEl.classList.remove('alarming');
+            noteEl.style.transform = noteEl.dataset.savedTransform || '';
+            delete noteEl.dataset.savedTransform;
+        }
 
         if (ringingNotes.size === 0) {
             stopBeep();
