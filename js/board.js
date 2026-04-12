@@ -25,6 +25,9 @@ PostIt.Board = (function () {
         // 初始化印章系統
         if (typeof PostIt.Stamp !== 'undefined') PostIt.Stamp.init();
 
+        // 初始化圖釘連線系統
+        if (typeof PostIt.Connect !== 'undefined') PostIt.Connect.init();
+
         // 初始化登入模組
         PostIt.Auth.init(onAuthStateChanged);
 
@@ -51,6 +54,9 @@ PostIt.Board = (function () {
 
             // 訂閱筆記
             PostIt.Note.subscribe(renderNotes);
+
+            // 啟動圖釘連線系統
+            if (typeof PostIt.Connect !== 'undefined') PostIt.Connect.start();
 
             console.log('[Board] 使用者已登入:', user.displayName);
         } else {

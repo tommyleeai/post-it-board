@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css?v=7.0">
+    <link rel="stylesheet" href="css/style.css?v=8.0">
     <link rel="stylesheet" href="css/animations.css">
 </head>
 <body>
@@ -83,6 +83,9 @@
         <main id="whiteboard" class="whiteboard">
             <!-- 貼紙會動態產生在這裡 -->
 
+            <!-- 連線 SVG 覆蓋層 -->
+            <svg id="connections-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+
             <!-- 空白板提示 -->
             <div id="empty-hint" class="empty-hint">
                 <i class="fa-regular fa-note-sticky"></i>
@@ -94,6 +97,11 @@
         <div class="fab-group">
             <!-- 印章展開選單 -->
             <div id="stamp-menu" class="stamp-menu"></div>
+
+            <!-- 圖釘 FAB 按鈕 -->
+            <button id="fab-pin" class="fab-pin" title="圖釘連線">
+                <i class="fa-solid fa-thumbtack"></i>
+            </button>
 
             <!-- 印章 FAB 按鈕 -->
             <button id="fab-stamp" class="fab-stamp" title="印章">
@@ -108,6 +116,11 @@
 
         <!-- 自訂印章游標 -->
         <div id="stamp-cursor" class="stamp-cursor" style="display:none"></div>
+
+        <!-- 自訂圖釘游標 -->
+        <div id="pin-cursor" class="pin-cursor" style="display:none">
+            <i class="fa-solid fa-thumbtack"></i>
+        </div>
 
         <!-- ===== 貼紙設定面板 ===== -->
         <div id="note-settings" class="note-settings hidden">
@@ -303,5 +316,6 @@
     <script src="js/note.js"></script>
     <script src="js/board.js"></script>
     <script src="js/stamp.js"></script>
+    <script src="js/connect.js"></script>
 </body>
 </html>
