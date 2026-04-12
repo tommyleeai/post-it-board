@@ -157,8 +157,20 @@ PostIt.Board = (function () {
             }
         });
 
+        // 彩色流光效果開關
+        document.getElementById('btn-rainbow').addEventListener('click', () => {
+            const noteId = PostIt.Note.getActiveNoteId();
+            if (!noteId) return;
+            const note = PostIt.Note.getNote(noteId);
+            const newVal = !(note && note.rainbow);
+            PostIt.Note.updateStyle(noteId, { rainbow: newVal });
+            // 即時更新按鈕狀態
+            document.getElementById('btn-rainbow').classList.toggle('active', newVal);
+        });
+
         // 刪除貼紙
         document.getElementById('btn-delete-note').addEventListener('click', async () => {
+
             const noteId = PostIt.Note.getActiveNoteId();
             if (noteId) {
                 // 播放離開動畫
@@ -592,6 +604,9 @@ PostIt.Board = (function () {
 
         // 套用字型樣式
         applyNoteStyle(el, note);
+
+        // 彩色流光
+        el.classList.toggle('rainbow-note', !!note.rainbow);
 
         // 渲染鬧鐘徽章
         renderAlarmBadge(el, note);

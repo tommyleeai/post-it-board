@@ -134,8 +134,12 @@ PostIt.Stamp = (function () {
         el.textContent = stamp.label;
         noteEl.appendChild(el);
 
-        // 觸發蓋章動畫（下一幀才加 class，讓瀏覽器正常執行過渡）
+        // 觸發蓋章動畫
         requestAnimationFrame(() => el.classList.add('stamp-press'));
+
+        // 套用光暈效果（純視覺，不存 Firestore）
+        noteEl.style.setProperty('--stamp-glow-color', stamp.color + '88'); // 88 = ~53% opacity
+        noteEl.classList.add('stamp-glow');
 
         // 音效
         playStampSound();

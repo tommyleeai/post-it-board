@@ -1706,3 +1706,84 @@ body.stamp-mode {
     font-size: 10px;
 }
 /* === AI 鬧鐘提醒特效 END === */
+
+/* === 彩色流光 START === */
+@keyframes rainbow-bg {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.sticky-note.rainbow-note::before {
+    background-image: linear-gradient(
+        135deg,
+        #ffe0e0 0%,
+        #fff0c0 16%,
+        #e0ffe0 33%,
+        #c0f0ff 50%,
+        #e0e0ff 66%,
+        #ffe0f0 83%,
+        #ffe0e0 100%
+    ) !important;
+    background-size: 400% 400% !important;
+    animation: rainbow-bg 5s ease infinite !important;
+}
+
+/* 流光開關按鈕 */
+.btn-rainbow {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1.5px solid rgba(155, 89, 182, 0.4);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary, #888);
+    font-size: 13px;
+    font-family: 'Noto Sans TC', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-rainbow:hover {
+    background: rgba(155, 89, 182, 0.08);
+    border-color: rgba(155, 89, 182, 0.7);
+    color: #9b59b6;
+}
+
+.btn-rainbow.active {
+    background: linear-gradient(135deg, rgba(255,224,224,0.7), rgba(224,224,255,0.7));
+    border-color: #9b59b6;
+    color: #7d3c98;
+    font-weight: 600;
+}
+/* === 彩色流光 END === */
+
+/* === 即將到期警示 START === */
+@keyframes urgent-pulse {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(255, 100, 0, 0.55)); }
+    50%       { filter: drop-shadow(0 0 22px rgba(255, 60, 0, 1)); }
+}
+
+.sticky-note.urgent-note {
+    animation: urgent-pulse 1.2s ease-in-out infinite;
+}
+
+/* 若同時有流光 + 即將到期，urgent 優先 */
+.sticky-note.urgent-note.rainbow-note::before {
+    animation-play-state: paused !important;
+}
+/* === 即將到期警示 END === */
+
+/* === 印章光暈 START === */
+.sticky-note.stamp-glow {
+    filter: drop-shadow(0 0 10px var(--stamp-glow-color, rgba(100, 100, 100, 0.4)));
+    transition: filter 0.6s ease;
+}
+
+/* urgent 模式時，印章光暈讓位給 urgent animation */
+.sticky-note.urgent-note.stamp-glow {
+    filter: none;
+}
+/* === 印章光暈 END === */

@@ -190,6 +190,14 @@ PostIt.Alarm = (function () {
             if (Date.now() >= targetTimeMs && !ringingNotes.has(id)) {
                 triggerAlarm(id);
             }
+
+            // 即將到期警示：剩餘 60 分鐘內且未解除 → 加 urgent-note
+            const noteEl = document.querySelector(`.sticky-note[data-note-id="${id}"]`);
+            if (noteEl) {
+                const msLeft = targetTimeMs - Date.now();
+                const isUrgent = msLeft > 0 && msLeft <= 60 * 60 * 1000;
+                noteEl.classList.toggle('urgent-note', isUrgent);
+            }
         }
     }
 

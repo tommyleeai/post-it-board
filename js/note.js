@@ -169,6 +169,8 @@ PostIt.Note = (function () {
         if ('fontFamily' in styleObj) updateData.fontFamily = styleObj.fontFamily || null;
         if ('fontSize' in styleObj) updateData.fontSize = styleObj.fontSize || null;
         if ('fontColor' in styleObj) updateData.fontColor = styleObj.fontColor || null;
+        // 彩色流光開關
+        if ('rainbow' in styleObj) updateData.rainbow = !!styleObj.rainbow;
 
         try {
             await ref.doc(noteId).update(updateData);
