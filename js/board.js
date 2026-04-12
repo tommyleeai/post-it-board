@@ -985,6 +985,8 @@ PostIt.Board = (function () {
         function closeAccountModal() {
             modal.classList.remove('visible');
             overlay.classList.remove('visible');
+            // 還原背景預覽（如果用戶沒按儲存就關閉）
+            applyBoardBgImage(PostIt.Settings.getAccountSettings().boardBgImage);
         }
 
         function renderFontColorSwatches() {
@@ -1047,6 +1049,14 @@ PostIt.Board = (function () {
             });
         });
 
+        // 背景圖片的即時預覽（手動貼上網址）
+        const bgImageInputLocal = document.getElementById('account-bg-image-url');
+        if (bgImageInputLocal) {
+            bgImageInputLocal.addEventListener('input', (e) => {
+                applyBoardBgImage(e.target.value.trim());
+            });
+        }
+
         // 白板背景上傳
         const btnUploadBg = document.getElementById('btn-upload-bg-image');
         const bgFileInput = document.getElementById('bg-file-input');
@@ -1078,6 +1088,7 @@ PostIt.Board = (function () {
                     const downloadURL = await snapshot.ref.getDownloadURL();
 
                     document.getElementById('account-bg-image-url').value = downloadURL;
+                    applyBoardBgImage(downloadURL); // 即時套用預覽
                     showToast('背景上傳成功！✅', 'success');
                 } catch (error) {
                     console.error('上傳背景失敗:', error);
