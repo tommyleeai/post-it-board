@@ -410,9 +410,10 @@ html, body {
 /* 拖曳中狀態 */
 .sticky-note.dragging {
     cursor: grabbing;
-    transform: scale(1.04) rotate(0deg) !important;
+    transform: scale(1.05) rotate(0deg) !important;
     z-index: 9999 !important;
-    filter: drop-shadow(8px 12px 16px rgba(0, 0, 0, 0.35));
+    filter: drop-shadow(10px 18px 20px rgba(0, 0, 0, 0.4));
+    transition: none !important; /* 立刻飄起，不要過渡動畫延遲 */
 }
 /* === END === */
 
