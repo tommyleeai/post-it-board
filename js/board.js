@@ -1082,7 +1082,7 @@ PostIt.Board = (function () {
                     else if (file.type) ext = file.type.split('/').pop();
 
                     const timestamp = Date.now();
-                    const storagePath = `users/${uid}/settings/bg_${timestamp}.${ext}`;
+                    const storagePath = `users/${uid}/postit/bg_${timestamp}.${ext}`;
                     const storageRef = PostIt.Firebase.getStorage().ref(storagePath);
                     const snapshot = await storageRef.put(file);
                     const downloadURL = await snapshot.ref.getDownloadURL();
