@@ -4,6 +4,8 @@
 PostIt.Board = (function () {
     'use strict';
 
+    let pendingAutoFocusId = null; // 雙擊新增後，等卡片渲染完自動聚焦用
+
     let boardEl = null;
     let toastTimer = null;
 
@@ -186,6 +188,8 @@ PostIt.Board = (function () {
             if (noteId) {
                 // 立即更新位置到點擊位置
                 PostIt.Note.updatePosition(noteId, xPercent - 5, yPercent - 5, PostIt.Drag.getMaxZIndex() + 1);
+                // 標記這張新卡片，等渲染完後自動進入編輯模式
+                pendingAutoFocusId = noteId;
             }
         });
 
@@ -378,8 +382,14 @@ PostIt.Board = (function () {
                 // 播放進入動畫
                 requestAnimationFrame(() => {
                     noteEl.classList.add('entering');
-                    // 動晝播完後必須移除，否則其 animation forwards 屬性會永久壓死後續的鬧鐘動畫
+                    // 動畫播完後必須移除，否則其 animation forwards 屬性會永久壓死後續的鬧鐘動畫
                     setTimeout(() => noteEl.classList.remove('entering'), 500);
+
+                    // 若是使用者雙擊新增的這張卡片，自動進入編輯模式
+                    if (pendingAutoFocusId && note.id === pendingAutoFocusId) {
+                        pendingAutoFocusId = null;
+                        setTimeout(() => startEditing(noteEl, note.id), 100);
+                    }
                 });
             } else {
                 // 更新已存在的元素
