@@ -1503,18 +1503,18 @@ html, body {
 
 /* === AI 鬧鐘提醒特效 START === */
 @keyframes intense-shake {
-    0% { translate: 0px 0px; filter: drop-shadow(0 0 15px rgba(255, 50, 50, 0.7)); }
-    25% { translate: 8px 0px; filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.9)); }
-    50% { translate: 0px 0px; filter: drop-shadow(0 0 15px rgba(255, 50, 50, 0.7)); }
-    75% { translate: -8px 0px; filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.9)); }
-    100% { translate: 0px 0px; filter: drop-shadow(0 0 15px rgba(255, 50, 50, 0.7)); }
+    0% { margin-left: 0px; margin-top: 0px; filter: drop-shadow(0 0 15px rgba(255, 50, 50, 0.8)); }
+    25% { margin-left: 6px; margin-top: -3px; filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.95)); }
+    50% { margin-left: 0px; margin-top: 0px; filter: drop-shadow(0 0 15px rgba(255, 50, 50, 0.8)); }
+    75% { margin-left: -6px; margin-top: 3px; filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.95)); }
+    100% { margin-left: 0px; margin-top: 0px; filter: drop-shadow(0 0 15px rgba(255, 50, 50, 0.8)); }
 }
 
 .sticky-note.alarming {
-    animation: intense-shake 0.15s ease-in-out infinite;
+    animation: intense-shake 0.12s ease-in-out infinite;
     z-index: 9999 !important; /* 確保鬧鐘響起時強制浮在最上方 */
-    transition: none !important; /* 取消所有過場，避免與 keyframes 動畫互相抵銷 */
-    will-change: filter, translate;
+    transition: none !important; /* 徹底關閉該元素的平滑補間，確保急促的左右位移不受阻 */
+    will-change: margin, filter; /* 提示瀏覽器這個屬性正在高頻率變化 */
 }
 
 /* 時鐘小圖示 */
