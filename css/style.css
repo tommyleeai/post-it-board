@@ -1304,3 +1304,55 @@ html, body {
     }
 }
 /* === Responsive END === */
+
+/* === Toast Notifications START === */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(33, 43, 54, 0.95);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.toast.visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+.toast.error {
+    background: rgba(231, 76, 60, 0.95);
+}
+
+.toast-action-btn {
+    background: transparent;
+    border: none;
+    color: #ffd700;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    /* 防止點擊時出現 focus 輪廓破壞外觀 */
+    outline: none;
+    font-size: 13px;
+    position: relative;
+    z-index: 10;
+}
+
+.toast-action-btn:hover {
+    text-decoration: underline;
+    color: #fff176;
+}
+/* === Toast Notifications END === */

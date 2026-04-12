@@ -137,8 +137,19 @@ PostIt.Board = (function () {
 
             // 等灰階效果完成再歸檔
             await new Promise(r => setTimeout(r, 1800));
-            await PostIt.Note.archive(noteId);
-            showToast('已完成！貼紙已歸檔 ✅', 'success');
+            const archiveId = await PostIt.Note.archive(noteId);
+            
+            if (archiveId) {
+                showToast('已完成！貼紙已歸檔 ✅', 'success', {
+                    label: '復原',
+                    onClick: async () => {
+                        await PostIt.Note.unarchive(archiveId);
+                        showToast('已復原歸檔貼紙', 'info');
+                    }
+                });
+            } else {
+                showToast('已完成！貼紙已歸檔 ✅', 'success');
+            }
         });
 
         // 刪除貼紙
@@ -668,14 +679,32 @@ PostIt.Board = (function () {
     }
 
     // ======== Toast 通知 ========
-    function showToast(message, type = 'info') {
+    function showToast(message, type = 'info', action = null, duration = 4000) {
         // 移除既有 toast
         const existing = document.querySelector('.toast');
         if (existing) existing.remove();
 
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-        toast.textContent = message;
+        
+        const msgSpan = document.createElement('span');
+        msgSpan.textContent = message;
+        toast.appendChild(msgSpan);
+
+        // 如果有傳入動作（例如復原）
+        if (action) {
+            const btn = document.createElement('button');
+            btn.className = 'toast-action-btn';
+            btn.textContent = action.label;
+            btn.addEventListener('click', () => {
+                toast.classList.remove('visible');
+                clearTimeout(toastTimer);
+                setTimeout(() => toast.remove(), 400);
+                action.onClick();
+            });
+            toast.appendChild(btn);
+        }
+
         document.body.appendChild(toast);
 
         // 觸發動畫

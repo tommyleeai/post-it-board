@@ -195,16 +195,53 @@ PostIt.Note = (function () {
             archiveData.completedAt = firebase.firestore.FieldValue.serverTimestamp();
             archiveData.archivedFrom = noteId;
 
-            await archiveRef.add(archiveData);
+            const docRef = await archiveRef.add(archiveData);
 
             // 從原集合刪除
             const ref = getNotesRef();
             await ref.doc(noteId).delete();
 
-            console.log('[Note] 貼紙已歸檔:', noteId);
+            console.log('[Note] 貼紙已歸檔:', docRef.id);
+            return docRef.id;
         } catch (error) {
             console.error('[Note] 歸檔失敗:', error);
             PostIt.Board.showToast('歸檔失敗，請再試一次', 'error');
+            return null;
+        }
+    }
+
+    // -------- 復原歸檔貼紙 --------
+    async function unarchive(archiveId) {
+        const uid = PostIt.Auth.getUid();
+        if (!uid || !archiveId) return;
+
+        try {
+            const db = PostIt.Firebase.getDb();
+            const archiveRef = db.collection('users').doc(uid).collection('postit_archived').doc(archiveId);
+            
+            const doc = await archiveRef.get();
+            if (!doc.exists) return;
+            
+            const data = doc.data();
+            const originalId = data.archivedFrom;
+            
+            // 移轉回原本的 collection
+            delete data.completedAt;
+            delete data.archivedFrom;
+            
+            const ref = getNotesRef();
+            if (originalId) {
+                await ref.doc(originalId).set(data);
+            } else {
+                await ref.add(data);
+            }
+            
+            // 從歸檔集合刪除
+            await archiveRef.delete();
+            console.log('[Note] 貼紙已復原');
+        } catch (error) {
+            console.error('[Note] 復原失敗:', error);
+            PostIt.Board.showToast('復原失敗', 'error');
         }
     }
 
@@ -309,7 +346,7 @@ PostIt.Note = (function () {
 
     return {
         subscribe, cleanup, create, updateContent, updatePosition,
-        updateColor, updateStyle, archive, remove, uploadImage, detectType,
+        updateColor, updateStyle, archive, unarchive, remove, uploadImage, detectType,
         getCache, getCount, getNote, getActiveNoteId, setActiveNoteId
     };
 })();
