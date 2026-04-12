@@ -66,6 +66,11 @@ PostIt.Drag = (function () {
 
         dragTarget = note;
 
+        // 點下瞬間立刻飄起來（不等移動門檻）
+        maxZIndex++;
+        note.style.zIndex = maxZIndex;
+        note.classList.add('dragging');
+
         // 不在這裡 setPointerCapture — 等超過門檻再捕獲
     }
 
@@ -80,7 +85,6 @@ PostIt.Drag = (function () {
             if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
             hasMoved = true;
             isDragging = true;
-            dragTarget.classList.add('dragging');
 
             // 超過門檻才捕獲 pointer 和阻止預設行為
             if (pointerId !== null) {
@@ -93,9 +97,7 @@ PostIt.Drag = (function () {
                 if (content) content.blur();
             }
 
-            // 提升 z-index
-            maxZIndex++;
-            dragTarget.style.zIndex = maxZIndex;
+            // 提升 z-index（已在 pointerdown 做了，這裡不重複）
         }
 
         e.preventDefault();
