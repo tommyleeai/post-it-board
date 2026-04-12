@@ -1518,7 +1518,6 @@ html, body {
     animation: intense-shake 0.08s linear infinite;
     z-index: 9999 !important;
     transition: none !important;
-    outline: 3px solid red !important;
     will-change: transform, filter;
 }
 
