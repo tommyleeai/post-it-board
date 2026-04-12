@@ -16,6 +16,12 @@ PostIt.Auth = (function () {
         // 監聽登入狀態變化
         auth.onAuthStateChanged((user) => {
             currentUser = user;
+
+            // 登入時儲存 profile（讓 admin 可以看到使用者資訊）
+            if (user) {
+                saveProfile(user);
+            }
+
             if (onAuthChangeCallback) {
                 onAuthChangeCallback(user);
             }
@@ -62,6 +68,21 @@ PostIt.Auth = (function () {
 
     function getUid() {
         return currentUser ? currentUser.uid : null;
+    }
+
+    // 儲存使用者 profile 到 Firestore（供 admin 後台查看）
+    async function saveProfile(user) {
+        try {
+            const db = PostIt.Firebase.getDb();
+            await db.collection('users').doc(user.uid).set({
+                displayName: user.displayName || '',
+                email: user.email || '',
+                photoURL: user.photoURL || '',
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        } catch (err) {
+            console.warn('[Auth] 儲存 profile 失敗:', err);
+        }
     }
 
     return { init, signIn, signOut, getUser, getUid };
