@@ -1506,18 +1506,18 @@ html, body {
 
 /* === AI 鬧鐘提醒特效 START === */
 @keyframes intense-shake {
-    0% { transform: translate3d(0px, 0px, 0) rotate(var(--note-rotation, 0deg)); filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
-    25% { transform: translate3d(6px, -3px, 0) rotate(var(--note-rotation, 0deg)); filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.95)); }
-    50% { transform: translate3d(0px, 0px, 0) rotate(var(--note-rotation, 0deg)); filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
-    75% { transform: translate3d(-6px, 3px, 0) rotate(var(--note-rotation, 0deg)); filter: drop-shadow(0 0 25px rgba(255, 30, 30, 0.95)); }
-    100% { transform: translate3d(0px, 0px, 0) rotate(var(--note-rotation, 0deg)); filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
+    0%   { transform: translate3d(0px, 0px, 0);  filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
+    25%  { transform: translate3d(7px, -4px, 0); filter: drop-shadow(0 0 28px rgba(255, 30, 30, 0.95)); }
+    50%  { transform: translate3d(0px, 0px, 0);  filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
+    75%  { transform: translate3d(-7px, 4px, 0); filter: drop-shadow(0 0 28px rgba(255, 30, 30, 0.95)); }
+    100% { transform: translate3d(0px, 0px, 0);  filter: drop-shadow(0 0 15px rgba(255, 30, 30, 0.8)); }
 }
 
 .sticky-note.alarming {
     animation: intense-shake 0.12s ease-in-out infinite;
-    z-index: 9999 !important; /* 確保鬧鐘響起時強制浮在最上方 */
-    transition: none !important; /* 關閉平滑補間，確保抖動不被抵銷 */
-    will-change: transform, filter; /* 提升渲染效能 */
+    z-index: 9999 !important;
+    transition: none !important;
+    will-change: transform, filter;
 }
 
 /* 時鐘小圖示 */
