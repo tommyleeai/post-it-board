@@ -382,6 +382,23 @@ PostIt.Board = (function () {
             PostIt.Drag.setMaxZIndex(note.zIndex);
         }
 
+        // 隨機膠帶
+        const tape = document.createElement('div');
+        tape.className = 'note-tape';
+        const tapeWidth = 50 + Math.random() * 60;   // 50~110px
+        const tapeLeft = 20 + Math.random() * 50;     // 20%~70%
+        const tapeRotation = (Math.random() - 0.5) * 24; // -12°~+12°
+        const tapeOpacity = 0.35 + Math.random() * 0.2;  // 0.35~0.55
+        tape.style.width = tapeWidth + 'px';
+        tape.style.left = tapeLeft + '%';
+        tape.style.transform = `translateX(-50%) rotate(${tapeRotation}deg)`;
+        tape.style.opacity = tapeOpacity;
+        // 20% 機率髒污
+        if (Math.random() < 0.2) tape.classList.add('tape-dirty');
+        // 15% 機率翹起
+        if (Math.random() < 0.15) tape.classList.add('tape-peeling');
+        el.appendChild(tape);
+
         // 內容區
         const contentEl = document.createElement('div');
         contentEl.className = 'note-content';
