@@ -376,7 +376,11 @@ PostIt.Board = (function () {
                 noteEl = createNoteElement(note);
                 boardEl.appendChild(noteEl);
                 // 播放進入動畫
-                requestAnimationFrame(() => noteEl.classList.add('entering'));
+                requestAnimationFrame(() => {
+                    noteEl.classList.add('entering');
+                    // 動晝播完後必須移除，否則其 animation forwards 屬性會永久壓死後續的鬧鐘動畫
+                    setTimeout(() => noteEl.classList.remove('entering'), 500);
+                });
             } else {
                 // 更新已存在的元素
                 updateNoteElement(noteEl, note);
