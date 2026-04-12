@@ -1,0 +1,788 @@
+/* ============================================
+   Post It — 核心樣式
+   ============================================ */
+
+/* === Reset & Base START === */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* 貼紙顏色 */
+    --note-yellow: #FFF176;
+    --note-pink: #F48FB1;
+    --note-green: #A5D6A7;
+    --note-blue: #90CAF9;
+    --note-orange: #FFCC80;
+    --note-purple: #CE93D8;
+
+    /* UI 顏色 */
+    --toolbar-bg: #2c2c2c;
+    --toolbar-text: #e0e0e0;
+    --board-bg: #e8e4df;
+    --board-border: #b0aaa2;
+    --board-frame: #8a8a8a;
+    --accent: #4A90D9;
+    --danger: #e74c3c;
+
+    /* 字型 */
+    --font-handwriting: 'Caveat', cursive;
+    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+    /* 尺寸 */
+    --toolbar-height: 52px;
+    --fab-size: 56px;
+    --note-min-w: 160px;
+    --note-min-h: 140px;
+    --note-max-w: 340px;
+    --note-max-h: 400px;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font-ui);
+    background: #1a1a1a;
+    -webkit-font-smoothing: antialiased;
+}
+/* === Reset & Base END === */
+
+/* === Login Screen START === */
+.login-screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    z-index: 9999;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.login-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.login-card {
+    text-align: center;
+    padding: 48px 40px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+    max-width: 400px;
+    width: 90%;
+    animation: fadeInUp 0.8s ease;
+}
+
+.login-logo {
+    font-size: 56px;
+    color: var(--note-yellow);
+    margin-bottom: 16px;
+    filter: drop-shadow(0 4px 12px rgba(255, 241, 118, 0.3));
+}
+
+.login-title {
+    font-family: var(--font-handwriting);
+    font-size: 48px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.login-subtitle {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 15px;
+    margin-bottom: 32px;
+    line-height: 1.5;
+}
+
+.btn-google-login {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 32px;
+    border: none;
+    border-radius: 12px;
+    background: #fff;
+    color: #333;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.btn-google-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.btn-google-login:active {
+    transform: translateY(0);
+}
+
+.login-footer {
+    margin-top: 24px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.35);
+}
+/* === Login Screen END === */
+
+/* === App Shell START === */
+.app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    transition: opacity 0.5s ease;
+}
+
+.app.hidden {
+    opacity: 0;
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+}
+/* === App Shell END === */
+
+/* === Toolbar START === */
+.toolbar {
+    height: var(--toolbar-height);
+    background: var(--toolbar-bg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    flex-shrink: 0;
+}
+
+.toolbar-left {
+    display: flex;
+    align-items: center;
+}
+
+.toolbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-handwriting);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--note-yellow);
+}
+
+.toolbar-brand i {
+    font-size: 22px;
+}
+
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.note-count {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-name {
+    font-size: 13px;
+    color: var(--toolbar-text);
+    font-weight: 500;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-logout {
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+.btn-logout:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* 工具列功能按鈕 */
+.btn-toolbar {
+    padding: 6px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.55);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-toolbar:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-toolbar.hidden {
+    display: none;
+}
+/* === Toolbar END === */
+
+/* === Whiteboard START === */
+.whiteboard {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+
+    /* 擬真白板材質 */
+    background-color: var(--board-bg);
+    background-image:
+        /* 細微噪點紋理 */
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E"),
+        /* 細格線 */
+        linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+    background-size: 256px 256px, 40px 40px, 40px 40px;
+
+    /* 白板凹陷效果 */
+    box-shadow:
+        inset 0 2px 8px rgba(0, 0, 0, 0.12),
+        inset 0 0 0 3px var(--board-border);
+}
+
+/* 白板金屬框 */
+.whiteboard::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 4px solid var(--board-frame);
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 50;
+    box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.15),
+        0 0 0 1px rgba(0,0,0,0.2);
+}
+/* === Whiteboard END === */
+
+/* === Empty Hint START === */
+.empty-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+.empty-hint.hidden {
+    opacity: 0;
+}
+
+.empty-hint i {
+    font-size: 72px;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.empty-hint p {
+    font-size: 18px;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    line-height: 1.6;
+}
+/* === Empty Hint END === */
+
+/* === Sticky Note START === */
+.sticky-note {
+    position: absolute;
+    min-width: var(--note-min-w);
+    min-height: var(--note-min-h);
+    max-width: var(--note-max-w);
+    padding: 16px 16px 28px 16px;
+    border-radius: 2px;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    transition:
+        box-shadow 0.3s ease,
+        transform 0.3s ease;
+
+    /* 貼紙陰影 */
+    box-shadow:
+        3px 4px 10px rgba(0, 0, 0, 0.25),
+        1px 2px 4px rgba(0, 0, 0, 0.15),
+        0 0 2px rgba(0, 0, 0, 0.08);
+
+    /* 紙質紋理 */
+    background-image:
+        linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+/* 貼紙頂部膠帶效果 */
+.sticky-note::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.45);
+    border-radius: 1px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    z-index: 1;
+}
+
+/* 右下角捲起效果 */
+.sticky-note::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(
+        315deg,
+        rgba(0, 0, 0, 0.08) 0%,
+        rgba(0, 0, 0, 0.03) 35%,
+        rgba(255, 255, 255, 0.3) 45%,
+        transparent 60%
+    );
+    border-radius: 0 0 0 0;
+    cursor: pointer;
+    z-index: 2;
+    transition: width 0.2s ease, height 0.2s ease;
+}
+
+/* 捲角 hover 放大 */
+.sticky-note:not(.dragging)::after:hover {
+    width: 36px;
+    height: 36px;
+}
+
+/* 拖曳中狀態 */
+.sticky-note.dragging {
+    cursor: grabbing;
+    box-shadow:
+        8px 12px 28px rgba(0, 0, 0, 0.25),
+        0 4px 10px rgba(0, 0, 0, 0.15);
+    transform: scale(1.04) rotate(0deg) !important;
+    z-index: 9999 !important;
+    transition: box-shadow 0.2s ease;
+}
+
+/* 貼紙內容區 */
+.note-content {
+    font-family: var(--font-handwriting);
+    font-size: 20px;
+    line-height: 1.5;
+    color: rgba(0, 0, 0, 0.78);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    outline: none;
+    min-height: 40px;
+    overflow-y: auto;
+
+    /* 隱藏捲軸但保留捲動能力 */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* Webkit 隱藏捲軸 */
+.note-content::-webkit-scrollbar {
+    display: none;
+}
+
+.note-content:empty::before {
+    content: '點兩下開始寫...';
+    color: rgba(0, 0, 0, 0.25);
+    font-style: italic;
+}
+
+/* URL 型貼紙 */
+.note-content a {
+    color: #1565C0;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    word-break: break-all;
+    cursor: pointer;
+}
+
+.note-content a:hover {
+    color: #0D47A1;
+}
+
+/* 圖片型貼紙 */
+.note-content img {
+    max-width: 100%;
+    border-radius: 4px;
+    display: block;
+    margin: 4px 0;
+}
+
+/* 設定按鈕（捲角區域的觸發器） */
+.note-settings-trigger {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: rgba(0, 0, 0, 0.15);
+    font-size: 11px;
+    z-index: 3;
+    transition: color 0.2s ease;
+}
+
+.note-settings-trigger:hover {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+/* 時間戳 */
+.note-timestamp {
+    position: absolute;
+    bottom: 4px;
+    left: 12px;
+    font-size: 10px;
+    font-family: var(--font-ui);
+    color: rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+}
+/* === Sticky Note END === */
+
+/* === FAB Button START === */
+.fab-add {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    width: var(--fab-size);
+    height: var(--fab-size);
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #4A90D9 0%, #357ABD 100%);
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow:
+        0 6px 20px rgba(74, 144, 217, 0.4),
+        0 2px 6px rgba(0, 0, 0, 0.15);
+    z-index: 200;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fab-add:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow:
+        0 10px 30px rgba(74, 144, 217, 0.5),
+        0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.fab-add:active {
+    transform: translateY(0) scale(0.97);
+}
+
+.fab-add.disabled {
+    background: #999;
+    cursor: not-allowed;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+/* === FAB Button END === */
+
+/* === Note Settings Panel START === */
+.note-settings {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 300px;
+    background: #fff;
+    border-radius: 16px 0 0 0;
+    box-shadow: -4px -4px 24px rgba(0, 0, 0, 0.15);
+    z-index: 500;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.note-settings.visible {
+    transform: translateY(0);
+}
+
+.note-settings.hidden {
+    transform: translateY(100%);
+}
+
+.settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.settings-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.btn-icon {
+    padding: 6px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #999;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.settings-body {
+    padding: 20px;
+}
+
+.settings-section {
+    margin-bottom: 20px;
+}
+
+.settings-section:last-child {
+    margin-bottom: 0;
+}
+
+.settings-section label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* 顏色選擇器 */
+.color-picker {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.color-swatch {
+    width: 36px;
+    height: 36px;
+    border: 3px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.color-swatch:hover {
+    transform: scale(1.12);
+}
+
+.color-swatch.active {
+    border-color: #333;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #333;
+}
+
+/* 上傳按鈕 */
+.btn-upload {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    background: #fafafa;
+    color: #666;
+    font-size: 14px;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.btn-upload:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: #f0f6ff;
+}
+
+/* 刪除按鈕 */
+.btn-delete {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 10px;
+    background: #fff0f0;
+    color: var(--danger);
+    font-size: 14px;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    font-weight: 500;
+}
+
+.btn-delete:hover {
+    background: #ffe0e0;
+}
+
+/* 遮罩 */
+.settings-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 499;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+}
+
+.settings-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+/* === Note Settings Panel END === */
+
+/* === Loading Spinner START === */
+.spinner-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 9999;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+/* === Loading Spinner END === */
+
+/* === Toast Notification START === */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    padding: 12px 24px;
+    border-radius: 12px;
+    background: #333;
+    color: #fff;
+    font-size: 14px;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+.toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast.error {
+    background: var(--danger);
+}
+
+.toast.success {
+    background: #2e7d32;
+}
+/* === Toast Notification END === */
+
+/* === Responsive START === */
+@media (max-width: 600px) {
+    .toolbar-brand span {
+        display: none;
+    }
+    .user-name {
+        display: none;
+    }
+    .note-count {
+        font-size: 11px;
+    }
+    .sticky-note {
+        min-width: 130px;
+        min-height: 110px;
+        max-width: 240px;
+    }
+    .note-content {
+        font-size: 17px;
+    }
+    .fab-add {
+        bottom: 20px;
+        right: 20px;
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+        border-radius: 14px;
+    }
+    .note-settings {
+        width: 100%;
+        border-radius: 16px 16px 0 0;
+    }
+}
+/* === Responsive END === */

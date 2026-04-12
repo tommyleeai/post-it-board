@@ -1,0 +1,258 @@
+// ============================================
+// 貼紙 CRUD + 內容偵測 + 圖片上傳
+// ============================================
+PostIt.Note = (function () {
+    'use strict';
+
+    const MAX_NOTES = 50;
+    const COLORS = ['#FFF176', '#F48FB1', '#A5D6A7', '#90CAF9', '#FFCC80', '#CE93D8'];
+    const URL_REGEX = /^(https?:\/\/[^\s]+)$/i;
+
+    let notesCache = {}; // { noteId: noteData }
+    let activeNoteId = null; // 目前選中的貼紙 ID
+    let unsubscribe = null; // Firestore listener
+
+    // -------- 獲取使用者的 notes collection ref --------
+    function getNotesRef() {
+        const uid = PostIt.Auth.getUid();
+        if (!uid) return null;
+        const db = PostIt.Firebase.getDb();
+        return db.collection('users').doc(uid).collection('postit_notes');
+    }
+
+    // -------- 訂閱 Firestore 即時更新 --------
+    function subscribe(onUpdate) {
+        cleanup();
+        const ref = getNotesRef();
+        if (!ref) return;
+
+        unsubscribe = ref.orderBy('createdAt', 'asc').onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                const data = change.doc.data();
+                const id = change.doc.id;
+
+                if (change.type === 'added' || change.type === 'modified') {
+                    notesCache[id] = { id, ...data };
+                } else if (change.type === 'removed') {
+                    delete notesCache[id];
+                }
+            });
+            if (onUpdate) onUpdate(notesCache);
+        }, (error) => {
+            console.error('[Note] Firestore 訂閱錯誤:', error);
+        });
+    }
+
+    function cleanup() {
+        if (unsubscribe) {
+            unsubscribe();
+            unsubscribe = null;
+        }
+        notesCache = {};
+        activeNoteId = null;
+    }
+
+    // -------- 新增貼紙 --------
+    async function create(content = '', type = 'text', color = null) {
+        const count = Object.keys(notesCache).length;
+        if (count >= MAX_NOTES) {
+            PostIt.Board.showToast('已達 50 張貼紙上限！', 'error');
+            return null;
+        }
+
+        const ref = getNotesRef();
+        if (!ref) return null;
+
+        // 隨機顏色
+        if (!color) {
+            color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        }
+
+        // 隨機位置（白板中央附近）
+        const x = 20 + Math.random() * 40; // 20% ~ 60%
+        const y = 15 + Math.random() * 40; // 15% ~ 55%
+
+        // 隨機旋轉
+        const rotation = (Math.random() - 0.5) * 6; // -3° ~ +3°
+
+        const noteData = {
+            type: type,
+            content: content,
+            color: color,
+            x: x,
+            y: y,
+            width: null,  // 自動
+            height: null, // 自動
+            rotation: rotation,
+            zIndex: PostIt.Drag.getMaxZIndex() + 1,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        try {
+            const docRef = await ref.add(noteData);
+            PostIt.Drag.setMaxZIndex(noteData.zIndex);
+            return docRef.id;
+        } catch (error) {
+            console.error('[Note] 建立失敗:', error);
+            PostIt.Board.showToast('新增失敗，請再試一次', 'error');
+            return null;
+        }
+    }
+
+    // -------- 更新貼紙內容 --------
+    async function updateContent(noteId, content) {
+        const ref = getNotesRef();
+        if (!ref || !noteId) return;
+
+        // 自動偵測類型
+        const type = detectType(content);
+
+        try {
+            await ref.doc(noteId).update({
+                content: content,
+                type: type,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (error) {
+            console.error('[Note] 更新內容失敗:', error);
+        }
+    }
+
+    // -------- 更新位置 --------
+    async function updatePosition(noteId, x, y, zIndex) {
+        const ref = getNotesRef();
+        if (!ref || !noteId) return;
+
+        try {
+            await ref.doc(noteId).update({
+                x: x,
+                y: y,
+                zIndex: zIndex,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (error) {
+            console.error('[Note] 更新位置失敗:', error);
+        }
+    }
+
+    // -------- 更新顏色 --------
+    async function updateColor(noteId, color) {
+        const ref = getNotesRef();
+        if (!ref || !noteId) return;
+
+        try {
+            await ref.doc(noteId).update({
+                color: color,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (error) {
+            console.error('[Note] 更新顏色失敗:', error);
+        }
+    }
+
+    // -------- 刪除貼紙 --------
+    async function remove(noteId) {
+        const ref = getNotesRef();
+        if (!ref || !noteId) return;
+
+        // 如果有圖片，也要刪除 Storage
+        const note = notesCache[noteId];
+        if (note && note.type === 'image' && note.storagePath) {
+            try {
+                const storageRef = PostIt.Firebase.getStorage().ref(note.storagePath);
+                await storageRef.delete();
+            } catch (err) {
+                console.warn('[Note] 刪除 Storage 圖片失敗（可能已不存在）:', err);
+            }
+        }
+
+        try {
+            await ref.doc(noteId).delete();
+            PostIt.Board.showToast('貼紙已刪除');
+        } catch (error) {
+            console.error('[Note] 刪除失敗:', error);
+            PostIt.Board.showToast('刪除失敗', 'error');
+        }
+    }
+
+    // -------- 上傳圖片 --------
+    async function uploadImage(noteId, file) {
+        if (!file || !noteId) {
+            PostIt.Board.showToast('上傳參數錯誤', 'error');
+            return null;
+        }
+
+        const uid = PostIt.Auth.getUid();
+        if (!uid) {
+            PostIt.Board.showToast('尚未登入', 'error');
+            return null;
+        }
+
+        // 檢查檔案大小（最大 5MB）
+        if (file.size > 5 * 1024 * 1024) {
+            PostIt.Board.showToast('圖片太大了，最多 5MB', 'error');
+            return null;
+        }
+
+        // 從剪貼簿貼上時，file.name 可能是 "image.png"，確保副檔名正確
+        let ext = 'png';
+        if (file.name && file.name.includes('.')) {
+            ext = file.name.split('.').pop();
+        } else if (file.type) {
+            // 從 MIME type 取得副檔名 e.g. "image/png" → "png"
+            ext = file.type.split('/').pop() || 'png';
+        }
+
+        const timestamp = Date.now();
+        const storagePath = `users/${uid}/postit/${noteId}_${timestamp}.${ext}`;
+        const storageRef = PostIt.Firebase.getStorage().ref(storagePath);
+
+        try {
+            PostIt.Board.showToast('上傳中...⏳');
+            const snapshot = await storageRef.put(file);
+            const downloadURL = await snapshot.ref.getDownloadURL();
+
+            // 更新貼紙
+            const ref = getNotesRef();
+            await ref.doc(noteId).update({
+                type: 'image',
+                content: downloadURL,
+                storagePath: storagePath,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            PostIt.Board.showToast('圖片上傳成功！✅', 'success');
+            return downloadURL;
+        } catch (error) {
+            console.error('[Note] 上傳圖片失敗:', error);
+            // 顯示具體錯誤原因
+            const msg = error.code === 'storage/unauthorized'
+                ? '上傳被拒：請到 Firebase Console 設定 Storage 安全規則'
+                : `上傳失敗：${error.message || error.code || '未知錯誤'}`;
+            PostIt.Board.showToast(msg, 'error');
+            return null;
+        }
+    }
+
+    // -------- 內容類型偵測 --------
+    function detectType(content) {
+        if (!content || content.trim() === '') return 'text';
+        const trimmed = content.trim();
+        if (URL_REGEX.test(trimmed)) return 'url';
+        return 'text';
+    }
+
+    // -------- Getters --------
+    function getCache() { return notesCache; }
+    function getCount() { return Object.keys(notesCache).length; }
+    function getNote(id) { return notesCache[id] || null; }
+    function getActiveNoteId() { return activeNoteId; }
+    function setActiveNoteId(id) { activeNoteId = id; }
+
+    return {
+        subscribe, cleanup, create, updateContent, updatePosition,
+        updateColor, remove, uploadImage, detectType,
+        getCache, getCount, getNote, getActiveNoteId, setActiveNoteId
+    };
+})();
