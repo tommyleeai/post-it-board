@@ -1305,11 +1305,21 @@ PostIt.Board = (function () {
     function applyBoardBgImage(url) {
         if (!boardEl) return;
         if (url) {
-            // 加入 35% 的黑色半透明遮罩，壓暗過度鮮豔的圖片與降低紋理噪聲，藉此凸顯前景便利貼
-            boardEl.style.setProperty('background-image', `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url("${url}")`, 'important');
-            boardEl.style.setProperty('background-size', 'cover', 'important');
-            boardEl.style.setProperty('background-position', 'center', 'important');
-            boardEl.style.setProperty('background-repeat', 'no-repeat', 'important');
+            // 背景載入機制：避免畫面全白讓使用者誤以為遺失
+            const img = new Image();
+            img.onload = () => {
+                // 加入 35% 的黑色半透明遮罩，壓暗過度鮮豔的圖片與降低紋理噪聲，藉此凸顯前景便利貼
+                boardEl.style.setProperty('background-image', `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url("${url}")`, 'important');
+                boardEl.style.setProperty('background-size', 'cover', 'important');
+                boardEl.style.setProperty('background-position', 'center', 'important');
+                boardEl.style.setProperty('background-repeat', 'no-repeat', 'important');
+            };
+            img.onerror = () => {
+                console.warn('[Board] 背景圖片載入失敗:', url);
+                boardEl.style.removeProperty('background-image');
+            };
+            img.src = url;
+            
         } else {
             // 清除，恢復 style.css 中擬真的預設背景設定
             boardEl.style.removeProperty('background-image');

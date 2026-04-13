@@ -18,8 +18,10 @@ PostIt.Auth = (function () {
             currentUser = user;
 
             // 登入時儲存 profile（讓 admin 可以看到使用者資訊）
-            if (user) {
+            // 使用 sessionStorage 避免每次 F5 重整都觸發寫入，進而干擾 Settings 的伺服器讀取
+            if (user && !sessionStorage.getItem('profileSaved')) {
                 saveProfile(user);
+                sessionStorage.setItem('profileSaved', 'true');
             }
 
             if (onAuthChangeCallback) {
