@@ -30,7 +30,9 @@ PostIt.Stamp = (function () {
             btn.className = 'stamp-menu-item';
             btn.title = stamp.label;
             if (stamp.imgUrl) {
-                btn.innerHTML = `<span class="stamp-preview has-image"><img src="${stamp.imgUrl}" alt="${stamp.label}"></span>`;
+                // 強制破解瀏覽器圖片快取
+                const cbUrl = stamp.imgUrl + '?v=' + new Date().getTime();
+                btn.innerHTML = `<span class="stamp-preview has-image"><img src="${cbUrl}" alt="${stamp.label}"></span>`;
             } else {
                 btn.innerHTML = `<span class="stamp-preview" style="color:${stamp.color};border-color:${stamp.color}">${stamp.label}</span>`;
             }
@@ -85,7 +87,8 @@ PostIt.Stamp = (function () {
         // 更新自訂游標
         if (cursorEl) {
             if (stamp.imgUrl) {
-                cursorEl.innerHTML = `<div class="stamp-cursor-inner has-image"><img src="${stamp.imgUrl}" alt="${stamp.label}"></div>`;
+                const cbUrl = stamp.imgUrl + '?v=' + new Date().getTime();
+                cursorEl.innerHTML = `<div class="stamp-cursor-inner has-image"><img src="${cbUrl}" alt="${stamp.label}"></div>`;
             } else {
                 cursorEl.innerHTML = `<span class="stamp-cursor-inner" style="color:${stamp.color};border-color:${stamp.color};background:${stamp.bg}">${stamp.label}</span>`;
             }
@@ -138,8 +141,9 @@ PostIt.Stamp = (function () {
         el.className = 'stamp-on-note';
         
         if (stamp.imgUrl) {
+            const cbUrl = stamp.imgUrl + '?v=' + new Date().getTime();
             el.classList.add('has-image');
-            el.innerHTML = `<img src="${stamp.imgUrl}" alt="${stamp.label}">`;
+            el.innerHTML = `<img src="${cbUrl}" alt="${stamp.label}">`;
         } else {
             el.style.color = stamp.color;
             el.style.borderColor = stamp.color;
