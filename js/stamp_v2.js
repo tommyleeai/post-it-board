@@ -25,9 +25,10 @@ PostIt.Stamp = (function () {
         if (!fabStamp || !stampMenu) return;
 
         // 動態產生印章選單項目
-        STAMPS.forEach(stamp => {
+        STAMPS.forEach((stamp, index) => {
             const btn = document.createElement('button');
             btn.className = 'stamp-menu-item';
+            btn.style.setProperty('--item-index', index);
             btn.title = stamp.label;
             if (stamp.imgUrl) {
                 // 強制破解瀏覽器圖片快取
@@ -44,17 +45,18 @@ PostIt.Stamp = (function () {
             stampMenu.appendChild(btn);
         });
 
-        // 整個 fab-group Hover 時展開選單（避免 gap 間距誤觸 mouseleave）
-        const fabGroup = fabStamp.closest('.fab-group');
-        if (fabGroup) {
-            fabGroup.addEventListener('mouseenter', () => stampMenu.classList.add('open'));
-            fabGroup.addEventListener('mouseleave', () => stampMenu.classList.remove('open'));
+        // 當滑鼠移動到 stamp-wrapper（印章區塊）時才往左展開選單
+        const stampWrapper = fabStamp.closest('.stamp-wrapper');
+        if (stampWrapper) {
+            stampWrapper.addEventListener('mouseenter', () => stampMenu.classList.add('open'));
+            stampWrapper.addEventListener('mouseleave', () => stampMenu.classList.remove('open'));
         } else {
             fabStamp.addEventListener('mouseenter', () => stampMenu.classList.add('open'));
             fabStamp.addEventListener('mouseleave', (e) => {
                 if (!stampMenu.contains(e.relatedTarget)) stampMenu.classList.remove('open');
             });
         }
+
 
         // 點印章按鈕本身：蓋章模式中再點一次 → 取消
         fabStamp.addEventListener('click', (e) => {
