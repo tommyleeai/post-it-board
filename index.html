@@ -21,6 +21,18 @@
     <!-- Styles -->
     <link rel="stylesheet" href="css/style.css?v=8.7">
     <link rel="stylesheet" href="css/animations.css">
+    <script>
+        window.addEventListener('load', () => {
+            setTimeout(async () => {
+                if (window.PostIt && window.PostIt.Auth.getUid()) {
+                    const db = window.PostIt.Firebase.getDb();
+                    const doc = await db.collection('users').doc(window.PostIt.Auth.getUid()).get();
+                    console.log('DEBUG_FIRESTORE_PAYLOAD:', doc.data()?.settings);
+                    // document.title = doc.data()?.settings?.boardBgImage ? "HAS_BG" : "NO_BG";
+                }
+            }, 3000);
+        });
+    </script>
 </head>
 <body>
 
@@ -321,11 +333,11 @@
     <script src="js/firebase-config.js?v=2.1"></script>
     <script src="js/auth.js?v=2.1"></script>
     <script src="js/drag.js?v=2.1"></script>
-    <script src="js/settings.js?v=2.4"></script>
+    <script src="js/settings_v2.js?v=2.4"></script>
     <script src="js/ai.js?v=2.1"></script>
     <script src="js/alarm.js?v=3.3"></script>
     <script src="js/note.js?v=4.1"></script>
-    <script src="js/board.js?v=8.6"></script>
+    <script src="js/board_v2.js?v=8.6"></script>
     <script src="js/stamp.js?v=2.1"></script>
     <script src="js/connect.js?v=2.5"></script>
 </body>
