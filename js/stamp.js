@@ -6,7 +6,7 @@ PostIt.Stamp = (function () {
 
     // 印章種類定義
     const STAMPS = [
-        { id: 'done',      label: '已完成', color: '#22a06b', bg: 'rgba(34,160,107,0.10)', imgUrl: 'assets/stamp_done.jpg' },
+        { id: 'done',      label: '已完成', color: '#22a06b', bg: 'rgba(34,160,107,0.10)', imgUrl: 'assets/stamp_done.png' },
         { id: 'important', label: '重要',   color: '#e53e3e', bg: 'rgba(229,62,62,0.10)'   },
         { id: 'caution',   label: '注意',   color: '#dd6b20', bg: 'rgba(221,107,32,0.10)'  },
         { id: 'read',      label: '閱',     color: '#2b4acb', bg: 'rgba(43,74,203,0.10)'   },
