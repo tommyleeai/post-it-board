@@ -716,12 +716,13 @@ html, body {
     transform: translateY(0) scale(0.97);
 }
 
-/* 印章展開選單 */
+/* === 印章展開選單 START === */
 .stamp-menu {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
+    padding: 0 16px; /* 增加左右空間，避免 scale 時被 overflow 截斷 */
     overflow: hidden;
     max-height: 0;
     opacity: 0;
@@ -744,6 +745,15 @@ html, body {
     align-items: center;
     justify-content: center;
 }
+
+/* 給予上下多餘的安全空間，避免頭尾元件放大時被切斷 */
+.stamp-menu-item:first-child {
+    margin-top: 6px;
+}
+.stamp-menu-item:last-child {
+    margin-bottom: 6px;
+}
+/* === END === */
 
 .stamp-preview {
     display: flex;
