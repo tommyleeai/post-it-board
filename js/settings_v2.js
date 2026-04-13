@@ -42,7 +42,8 @@ PostIt.Settings = (function () {
 
         try {
             const db = PostIt.Firebase.getDb();
-            const doc = await db.collection('users').doc(uid).get();
+            // 強制從伺服器讀取，避免與 auth.js 的 saveProfile 產生本地快取的競爭危害
+            const doc = await db.collection('users').doc(uid).get({ source: 'server' });
             if (doc.exists && doc.data().settings) {
                 accountSettings = { ...DEFAULTS, ...doc.data().settings };
             } else {
