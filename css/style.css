@@ -161,7 +161,7 @@ html, body {
     justify-content: space-between;
     padding: 0 20px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-    z-index: 100;
+    z-index: 800000;
     flex-shrink: 0;
 }
 
@@ -772,7 +772,7 @@ html, body {
 .stamp-cursor {
     position: fixed;
     pointer-events: none;
-    z-index: 9999;
+    z-index: 9000000;
     transform: rotate(-20deg);
 }
 
@@ -844,7 +844,7 @@ body.stamp-mode {
     inset: 0;
     background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(4px);
-    z-index: 600;
+    z-index: 900000;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.35s ease;
@@ -867,7 +867,7 @@ body.stamp-mode {
     background: #fff;
     border-radius: 20px;
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
-    z-index: 601;
+    z-index: 900001;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1422,7 +1422,7 @@ body.stamp-mode {
     font-family: var(--font-ui);
     font-weight: 500;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-    z-index: 10000;
+    z-index: 9999999;
     opacity: 0;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
@@ -1625,7 +1625,7 @@ body.stamp-mode {
     border-radius: 8px;
     font-size: 14px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-    z-index: 10000;
+    z-index: 9999999;
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -1840,7 +1840,7 @@ body.stamp-mode {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 999999; /* 確保線出現在便利貼前方 */
+    z-index: 500000; /* 確保線出現在一般便利貼前方，但低於各類 Modal (900000+) */
     overflow: visible;
 }
 
@@ -1853,7 +1853,7 @@ body.pin-mode {
 .pin-cursor {
     position: fixed;
     pointer-events: none;
-    z-index: 9999;
+    z-index: 9000000;
     display: none;
 }
 .cursor-pin-img {
