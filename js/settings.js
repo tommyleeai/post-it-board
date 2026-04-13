@@ -62,11 +62,14 @@ PostIt.Settings = (function () {
 
         try {
             const db = PostIt.Firebase.getDb();
+            // 在本地先行完整合併設定
+            const mergedSettings = { ...(accountSettings || DEFAULTS), ...newSettings };
+            
             await db.collection('users').doc(uid).set({
-                settings: newSettings
+                settings: mergedSettings
             }, { merge: true });
 
-            accountSettings = { ...(accountSettings || DEFAULTS), ...newSettings };
+            accountSettings = mergedSettings;
             console.log('[Settings] 帳號設定已儲存:', accountSettings);
         } catch (error) {
             console.error('[Settings] 儲存設定失敗:', error);
