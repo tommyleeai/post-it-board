@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css?v=8.8">
+    <link rel="stylesheet" href="css/style.css?v=8.9">
     <link rel="stylesheet" href="css/animations.css">
     <script>
         window.addEventListener('load', () => {
@@ -107,18 +107,19 @@
 
         <!-- 右下角 FAB 群組 -->
         <div class="fab-group">
-            <!-- 印章展開選單 -->
-            <div id="stamp-menu" class="stamp-menu"></div>
 
             <!-- 圖釘 FAB 按鈕 -->
             <button id="fab-pin" class="fab-pin" title="圖釘連線">
                 <img src="assets/pin.png" alt="pin" class="fab-pin-img">
             </button>
 
-            <!-- 印章 FAB 按鈕 -->
-            <button id="fab-stamp" class="fab-stamp" title="印章">
-                <i class="fa-solid fa-stamp"></i>
-            </button>
+            <!-- 印章 FAB 按鈕與左開選單 -->
+            <div class="stamp-wrapper">
+                <div id="stamp-menu" class="stamp-menu"></div>
+                <button id="fab-stamp" class="fab-stamp" title="印章">
+                    <i class="fa-solid fa-stamp"></i>
+                </button>
+            </div>
 
             <!-- 新增貼紙按鈕 (FAB) -->
             <button id="fab-add" class="fab-add" title="新增貼紙">
