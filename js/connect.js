@@ -271,13 +271,33 @@ PostIt.Connect = (function () {
 
     // -------- 便利貼連線錨點座標（原中央，現改為真實圖釘的針點處）--------
     function getNoteCenter(noteEl, boardRect) {
-        const r = noteEl.getBoundingClientRect();
-        // 真實圖釘圖片 (寬約 30px, 高 40px) 放置於 top: -15px, left: 50%
-        // 針尖（入紙點）的位置大約在圖片左下角，即相對中央偏左約 10px，相對卡片頂部向下約 20px
-        return {
-            x: r.left - boardRect.left + r.width  / 2 - 10,
-            y: r.top  - boardRect.top  + 20
-        };
+        // 放棄 getBoundingClientRect，因為它會隨著卡片旋轉而膨脹，導致瞄準點飄移
+        // 改用 offset 取得精準的中心點與未旋轉座標
+        const cx = noteEl.offsetLeft + noteEl.offsetWidth / 2;
+        const cy = noteEl.offsetTop + noteEl.offsetHeight / 2;
+        
+        // 未旋轉時的真實針尖座標：圖釘放在正上方中點 (left: 50%, top: -15px)，圖片高 40px
+        // 針尖約在圖片左下：水平中心偏左 12px，垂直距筆記本上緣約 +20px
+        const px = cx - 12;
+        const py = noteEl.offsetTop + 20;
+
+        // 計算卡片的隨機旋轉角度 (例如 -3deg 到 3deg)
+        const transform = noteEl.style.transform;
+        let angle = 0;
+        if (transform && transform.includes('rotate')) {
+            const match = transform.match(/rotate\(([-0-9.]+)deg\)/);
+            if (match) angle = parseFloat(match[1]);
+        }
+        
+        // 矩陣旋轉，求出針尖旋轉後在白板上的精確座標
+        const rad = angle * Math.PI / 180;
+        const dx = px - cx;
+        const dy = py - cy;
+        
+        const rotatedX = cx + dx * Math.cos(rad) - dy * Math.sin(rad);
+        const rotatedY = cy + dx * Math.sin(rad) + dy * Math.cos(rad);
+
+        return { x: rotatedX, y: rotatedY };
     }
 
     // -------- 釘入動畫：圖釘從上方落下 --------
