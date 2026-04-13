@@ -6,7 +6,7 @@ PostIt.Stamp = (function () {
 
     // 印章種類定義
     const STAMPS = [
-        { id: 'done',      label: '已完成', color: '#22a06b', bg: 'rgba(34,160,107,0.10)'  },
+        { id: 'done',      label: '已完成', color: '#22a06b', bg: 'rgba(34,160,107,0.10)', imgUrl: 'assets/stamp_done.jpg' },
         { id: 'important', label: '重要',   color: '#e53e3e', bg: 'rgba(229,62,62,0.10)'   },
         { id: 'caution',   label: '注意',   color: '#dd6b20', bg: 'rgba(221,107,32,0.10)'  },
         { id: 'read',      label: '閱',     color: '#2b4acb', bg: 'rgba(43,74,203,0.10)'   },
@@ -29,7 +29,11 @@ PostIt.Stamp = (function () {
             const btn = document.createElement('button');
             btn.className = 'stamp-menu-item';
             btn.title = stamp.label;
-            btn.innerHTML = `<span class="stamp-preview" style="color:${stamp.color};border-color:${stamp.color}">${stamp.label}</span>`;
+            if (stamp.imgUrl) {
+                btn.innerHTML = `<span class="stamp-preview has-image"><img src="${stamp.imgUrl}" alt="${stamp.label}"></span>`;
+            } else {
+                btn.innerHTML = `<span class="stamp-preview" style="color:${stamp.color};border-color:${stamp.color}">${stamp.label}</span>`;
+            }
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 selectStamp(stamp);
@@ -80,7 +84,11 @@ PostIt.Stamp = (function () {
 
         // 更新自訂游標
         if (cursorEl) {
-            cursorEl.innerHTML = `<span class="stamp-cursor-inner" style="color:${stamp.color};border-color:${stamp.color};background:${stamp.bg}">${stamp.label}</span>`;
+            if (stamp.imgUrl) {
+                cursorEl.innerHTML = `<div class="stamp-cursor-inner has-image"><img src="${stamp.imgUrl}" alt="${stamp.label}"></div>`;
+            } else {
+                cursorEl.innerHTML = `<span class="stamp-cursor-inner" style="color:${stamp.color};border-color:${stamp.color};background:${stamp.bg}">${stamp.label}</span>`;
+            }
             cursorEl.style.display = 'flex';
         }
 
@@ -128,10 +136,16 @@ PostIt.Stamp = (function () {
         // 建立新印章元素（固定在正中間）
         const el = document.createElement('div');
         el.className = 'stamp-on-note';
-        el.style.color = stamp.color;
-        el.style.borderColor = stamp.color;
-        el.style.background = stamp.bg;
-        el.textContent = stamp.label;
+        
+        if (stamp.imgUrl) {
+            el.classList.add('has-image');
+            el.innerHTML = `<img src="${stamp.imgUrl}" alt="${stamp.label}">`;
+        } else {
+            el.style.color = stamp.color;
+            el.style.borderColor = stamp.color;
+            el.style.background = stamp.bg;
+            el.textContent = stamp.label;
+        }
         noteEl.appendChild(el);
 
         // 觸發蓋章動畫

@@ -779,6 +779,20 @@ html, body {
     user-select: none;
 }
 
+.stamp-preview.has-image {
+    border: none;
+    background: transparent;
+    padding: 0;
+    overflow: hidden;
+}
+
+.stamp-preview.has-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
 .stamp-menu-item:hover .stamp-preview {
     transform: scale(1.12);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
@@ -806,6 +820,20 @@ html, body {
     font-family: 'Noto Sans TC', serif;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     user-select: none;
+}
+
+.stamp-cursor-inner.has-image {
+    border: none;
+    background: transparent;
+    padding: 0;
+    overflow: hidden;
+}
+
+.stamp-cursor-inner.has-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
 /* 蓋章模式：隱藏真實游標 */
@@ -838,6 +866,19 @@ body.stamp-mode {
     pointer-events: none;
     z-index: 5;          /* 在文字下面 */
     user-select: none;
+}
+
+.stamp-on-note.has-image {
+    border: none;
+    background: transparent;
+    overflow: hidden;
+}
+
+.stamp-on-note.has-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
 /* 蓋章按壓動畫 */
