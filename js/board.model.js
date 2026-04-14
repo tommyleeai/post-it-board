@@ -164,7 +164,7 @@ PostIt.BoardModel = (function () {
             unsubscribe = null;
         }
         boardsCache = {};
-        activeBoardId = null;
+        // 注意：不清除 activeBoardId，避免覆蓋 ensureDefault() 已恢復的值
     }
 
     // -------- 建立新白板 --------
