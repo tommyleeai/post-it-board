@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css?v=8.11">
+    <link rel="stylesheet" href="css/style.css?v=8.16">
     <link rel="stylesheet" href="css/animations.css">
     <script>
         window.addEventListener('load', () => {
@@ -65,6 +65,7 @@
                 <div class="toolbar-brand">
                     <i class="fa-solid fa-note-sticky"></i>
                     <span>Post It</span>
+                    <span id="app-version" class="app-version" title="查看系統更新與版本紀錄">v1.3.1</span>
                 </div>
             </div>
             <div class="toolbar-right">
@@ -322,6 +323,22 @@
                 </div>
             </div>
         </div>
+        
+        <!-- ===== 更新日誌 Changelog Modal ===== -->
+        <div id="changelog-modal-overlay" class="account-modal-overlay"></div>
+        <div id="changelog-modal" class="account-modal changelog-modal-container">
+            <div class="account-modal-header">
+                <h2><i class="fa-solid fa-bullhorn"></i> 系統更新日誌</h2>
+                <button id="btn-close-changelog" class="btn-icon" title="關閉">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="account-modal-body changelog-modal-body">
+                <div id="changelog-content" class="changelog-content">
+                    <div class="loading-cell">載入中...</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Firebase SDK (compat) -->
@@ -338,8 +355,9 @@
     <script src="js/ai.js?v=2.1"></script>
     <script src="js/alarm.js?v=3.3"></script>
     <script src="js/note.js?v=4.1"></script>
-    <script src="js/board_v2.js?v=8.7"></script>
+    <script src="js/board_v2.js?v=8.8"></script>
     <script src="js/stamp_v2.js?v=2.3"></script>
     <script src="js/connect.js?v=2.5"></script>
+    <script src="js/changelog.js?v=1.2"></script>
 </body>
 </html>

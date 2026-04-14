@@ -61,6 +61,9 @@ PostIt.Board = (function () {
             // 啟提圖釘連線系統
             if (typeof PostIt.Connect !== 'undefined') PostIt.Connect.start();
 
+            // 啟動更新日誌模組 (檢查是否需要自動顯示)
+            if (typeof PostIt.Changelog !== 'undefined') PostIt.Changelog.init();
+
             console.log('[Board] 使用者已登入:', user.displayName);
         } else {
             // 已登出 → 顯示登入畫面

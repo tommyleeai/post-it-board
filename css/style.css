@@ -585,19 +585,19 @@ html, body {
     0% {
         transform: rotate(-15deg) scale(3);
         opacity: 0;
-    }
+}
     50% {
         transform: rotate(-15deg) scale(0.92);
         opacity: 0.95;
-    }
+}
     70% {
         transform: rotate(-15deg) scale(1.03);
         opacity: 0.9;
-    }
+}
     100% {
         transform: rotate(-15deg) scale(1);
         opacity: 0.85;
-    }
+}
 }
 
 /* 蓋章後的貼紙漸灰效果 */
@@ -1541,20 +1541,20 @@ body.stamp-mode {
 @media (max-width: 600px) {
     .toolbar-brand span {
         display: none;
-    }
+}
     .user-name {
         display: none;
-    }
+}
     .note-count {
         font-size: 11px;
-    }
+}
     .sticky-note {
         width: 220px;
         min-height: 190px;
-    }
+}
     .note-content {
         font-size: 17px;
-    }
+}
     .fab-add {
         bottom: 20px;
         right: 20px;
@@ -1562,11 +1562,11 @@ body.stamp-mode {
         height: 48px;
         font-size: 20px;
         border-radius: 14px;
-    }
+}
     .note-settings {
         width: 100%;
         border-radius: 16px 16px 0 0;
-    }
+}
     .account-modal {
         width: 100%;
         max-width: 100vw;
@@ -1575,10 +1575,10 @@ body.stamp-mode {
         bottom: 0;
         left: 0;
         transform: translateY(100%);
-    }
+}
     .account-modal.visible {
         transform: translateY(0);
-    }
+}
 }
 /* === Responsive END === */
 
@@ -2004,3 +2004,86 @@ body.pin-mode {
 }
 
 /* === 圖釘連線系統 END === */
+
+/* === 更新日誌與版本宣告 START === */
+.app-version {
+    align-self: flex-end;
+    margin-bottom: 3px;
+    font-size: 11px;
+    font-family: var(--font-ui);
+    color: rgba(255, 255, 255, 0.5);
+    margin-left: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.5px;
+}
+
+.app-version:hover {
+    color: #fff;
+}
+
+.changelog-modal-container {
+    max-width: 600px;
+    width: 90%;
+    /* 讓這個視窗比較大一點以容納大量文字 */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.changelog-modal-container::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+}
+
+.changelog-content {
+    color: rgba(0, 0, 0, 0.78);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 10px;
+}
+
+.changelog-content h2 {
+    color: #2c2c2c;
+    font-size: 20px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 8px;
+    margin-top: 24px;
+}
+
+.changelog-content h2:first-child {
+    margin-top: 0;
+}
+
+.changelog-content h3 {
+    color: #4A90D9;
+    font-size: 16px;
+    margin-bottom: 12px;
+    margin-top: 20px;
+}
+
+.changelog-content ul {
+    list-style-type: disc;
+    padding-left: 24px;
+    margin-bottom: 16px;
+}
+
+.changelog-content li {
+    margin-bottom: 8px;
+}
+
+.changelog-content strong {
+    color: #333;
+    font-weight: 600;
+}
+
+.changelog-content p {
+    margin-bottom: 12px;
+}
+
+.changelog-content hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 24px 0;
+}
+/* === 更新日誌與版本宣告 END === */
