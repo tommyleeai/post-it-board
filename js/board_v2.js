@@ -298,8 +298,7 @@ PostIt.Board = (function () {
                 const notes = document.querySelectorAll('.sticky-note');
                 
                 notes.forEach(noteEl => {
-                    const contentStr = noteEl.innerHTML.toLowerCase();
-                    const hasImage = contentStr.includes('<img') && contentStr.includes('uploaded-image');
+                    const hasImage = !!noteEl.querySelector('.note-content img');
                     const isSystem = noteEl.classList.contains('ai-system-note');
                     
                     if (filter === 'all' || isSystem) {

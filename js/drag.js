@@ -185,9 +185,6 @@ PostIt.Drag = (function () {
         return isDragging || justDragged;
     }
 
-    return { init, getMaxZIndex, setMaxZIndex, getIsDragging };
-})();
-
     function handleSwipeGesture() {
         if (window.innerWidth > 768 || !touchTarget) return;
         
@@ -197,11 +194,57 @@ PostIt.Drag = (function () {
         // 確保是純粹的水平滑動 (X軸位移大於Y軸，且X軸滑動距離超過100px)
         if (Math.abs(dx) > 100 && dy < 50) {
             if (dx < -100) {
-                // Swipe Left
-                if (typeof window.showToast === 'function') window.showToast('🔥 偵測到向左滑動：可以觸發歸檔或印章！', 'success');
+                // Swipe Left: 蓋上完成印章並歸檔
+                const noteId = touchTarget.dataset.noteId;
+                const noteEl = touchTarget;
+                if (!noteId || !PostIt.Note) return;
+
+                if (typeof window.showToast === 'function') window.showToast('🔥 偵測到向左滑動：觸發歸檔！', 'success');
+                
+                // 建立印章 DOM 與動畫
+                const overlay = document.createElement('div');
+                overlay.className = 'note-stamp-overlay';
+                const stamp = document.createElement('div');
+                stamp.className = 'note-stamp';
+                stamp.textContent = '已完成';
+                overlay.appendChild(stamp);
+                noteEl.appendChild(overlay);
+
+                requestAnimationFrame(() => stamp.classList.add('stamping'));
+
+                // 配合原本的 CSS 動畫節奏（board_v2.js）
+                setTimeout(() => noteEl.classList.add('stamped-archiving'), 600);
+                setTimeout(async () => {
+                    const archiveId = await PostIt.Note.archive(noteId);
+                    if (archiveId && typeof window.showToast === 'function') {
+                        window.showToast('已完成！貼紙已歸檔 ✅', 'success', {
+                            label: '復原',
+                            onClick: async () => {
+                                await PostIt.Note.unarchive(archiveId);
+                                window.showToast('已復原歸檔貼紙', 'info');
+                            }
+                        });
+                    }
+                }, 2400);
+
             } else if (dx > 100) {
-                // Swipe Right
-                if (typeof window.showToast === 'function') window.showToast('✨ 偵測到向右滑動：可以觸發標籤切換！', 'info');
+                // Swipe Right: 切換 Tab
+                if (typeof window.showToast === 'function') window.showToast('✨ 偵測到向右滑動：切換標籤！', 'info');
+                
+                // 自動循環切換 .mobile-tab-btn
+                const tabs = Array.from(document.querySelectorAll('.mobile-tab-btn'));
+                if (tabs.length > 0) {
+                    const activeIdx = tabs.findIndex(t => t.classList.contains('active'));
+                    if (activeIdx !== -1) {
+                        const nextIdx = (activeIdx + 1) % tabs.length;
+                        tabs[nextIdx].click();
+                    } else {
+                        tabs[0].click();
+                    }
+                }
             }
         }
     }
+
+    return { init, getMaxZIndex, setMaxZIndex, getIsDragging };
+})();
