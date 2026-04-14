@@ -1583,6 +1583,18 @@ PostIt.Board = (function () {
                 el.dataset.groupId = note.groupId;
             } else {
                 delete el.dataset.groupId;
+                // Clean up stale fan drag handlers from previously-grouped notes
+                if (el._groupDragHandler) {
+                    el.removeEventListener('pointerdown', el._groupDragHandler);
+                    delete el._groupDragHandler;
+                }
+                // Reset z-index if stuck at expanded level (900000+)
+                var currentZ = parseInt(el.style.zIndex || 0);
+                if (currentZ > 900000) {
+                    el.style.zIndex = PostIt.Drag.getMaxZIndex();
+                }
+                // Clean up expanded/collapsing classes
+                el.classList.remove('group-expanded', 'group-collapsing');
             }
         });
 

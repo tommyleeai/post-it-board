@@ -19,6 +19,7 @@ PostIt.Group = (function () {
     let longPressNoteEl = null;
 
     let overlayEl = null;
+    let expandAttachTimeout = null;  // handler attach timeout ID
 
     const MERGE_THRESHOLD = 0.65;
     const MERGE_DWELL = 300;
@@ -313,7 +314,7 @@ PostIt.Group = (function () {
             }, i * 50);
         });
 
-        setTimeout(function () {
+        expandAttachTimeout = setTimeout(function () {
             members.forEach(function (member) {
                 var el = document.querySelector('[data-note-id="' + member.id + '"]');
                 if (el) {
@@ -321,6 +322,7 @@ PostIt.Group = (function () {
                     el.addEventListener('pointerdown', el._groupDragHandler);
                 }
             });
+            expandAttachTimeout = null;
         }, members.length * 50 + 400);
     }
 
@@ -328,6 +330,12 @@ PostIt.Group = (function () {
         if (!expandedGroupId) return;
         var groupId = expandedGroupId;
         var members = PostIt.Note.getGroupNotes(groupId);
+
+        // Cancel pending handler attachment
+        if (expandAttachTimeout) {
+            clearTimeout(expandAttachTimeout);
+            expandAttachTimeout = null;
+        }
 
         if (typeof PostIt.Sound !== 'undefined') PostIt.Sound.play('group_collapse', members.length);
         overlayEl.classList.remove('active');
