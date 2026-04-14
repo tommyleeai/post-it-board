@@ -292,6 +292,21 @@ PostIt.Board = (function () {
         // ===== 單卡樣式設定 =====
         bindCardStyleEvents();
 
+        // ===== 手機版側邊欄 =====
+        const mobileToggle = document.getElementById('mobile-sidebar-toggle');
+        const mobileOverlay = document.getElementById('mobile-sidebar-overlay');
+        const boardSidebar = document.getElementById('board-sidebar');
+        
+        if (mobileToggle && mobileOverlay && boardSidebar) {
+            mobileToggle.addEventListener('click', () => {
+                boardSidebar.classList.add('mobile-open');
+                mobileOverlay.classList.add('active');
+            });
+            mobileOverlay.addEventListener('click', () => {
+                boardSidebar.classList.remove('mobile-open');
+                mobileOverlay.classList.remove('active');
+            });
+        }
         
         // ===== 行動端 Tab 切換過濾 =====
         const mobileTabs = document.querySelectorAll('.mobile-tab-btn');
@@ -1026,6 +1041,12 @@ PostIt.Board = (function () {
                 if (board.id !== PostIt.BoardModel.getActive()) {
                     PostIt.BoardModel.setActive(board.id);
                 }
+                
+                // 收合手機版側邊欄
+                const boardSidebar = document.getElementById('board-sidebar');
+                const mobileOverlay = document.getElementById('mobile-sidebar-overlay');
+                if (boardSidebar) boardSidebar.classList.remove('mobile-open');
+                if (mobileOverlay) mobileOverlay.classList.remove('active');
             });
 
             // 編輯按鈕

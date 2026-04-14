@@ -2463,6 +2463,47 @@ body.pin-mode {
         overscroll-behavior-y: none;
     }
 
+    /* 手機版側邊欄改為滑出抽屜 */
+    .board-sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        width: 250px !important;
+        height: 100dvh;
+        z-index: 3000;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+        transition: left 0.3s cubic-bezier(0.2, 0.9, 0.2, 1);
+    }
+    
+    .board-sidebar.mobile-open {
+        left: 0;
+    }
+    
+    /* 隱藏原生桌面收合按鈕 */
+    .sidebar-toggle {
+        display: none !important;
+    }
+    
+    /* 防呆遮罩 */
+    .mobile-sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100dvh;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(2px);
+        z-index: 2999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .mobile-sidebar-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
     #toolbar { display: none !important; }
 
     /* 頂部 Navigation Bar */
@@ -2477,9 +2518,21 @@ body.pin-mode {
         backdrop-filter: blur(10px);
         z-index: 1000;
         align-items: center;
-        justify-content: space-around;
+        justify-content: flex-start;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        padding: 0 20px;
+        padding: 0 10px;
+        gap: 10px;
+    }
+    .mobile-icon-btn {
+        background: transparent;
+        border: none;
+        color: #8da4c1;
+        font-size: 20px;
+        padding: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     .mobile-tab-btn {
         background: transparent;
@@ -2502,7 +2555,7 @@ body.pin-mode {
         position: fixed !important;
         top: 60px;
         left: 0;
-        width: 100vw;
+        width: 100vw !important; /* 強制覆蓋 */
         height: calc(100dvh - 60px);
         display: flex !important;
         flex-direction: column-reverse; /* 最新新增的在最底部，但視窗反轉讓它掛在頂端 */

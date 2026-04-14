@@ -60,6 +60,7 @@
     <!-- ===== 主白板畫面 ===== -->
     <div id="app" class="app hidden">
         <!-- ===== 白板側邊欄 ===== -->
+        <div id="mobile-sidebar-overlay" class="mobile-sidebar-overlay"></div>
         <nav id="board-sidebar" class="board-sidebar">
             <div class="sidebar-toggle" id="sidebar-toggle" title="展開/收合">
                 <i class="fa-solid fa-layer-group"></i>
@@ -109,6 +110,10 @@
 
         <!-- 手機專屬 Navigation Bar -->
         <div class="mobile-tab-bar" id="mobile-tab-bar">
+            <!-- 手機版白板開關 -->
+            <button id="mobile-sidebar-toggle" class="mobile-icon-btn" title="切換白板">
+                <i class="fa-solid fa-layer-group"></i>
+            </button>
             <button class="mobile-tab-btn active" data-tab="all">全部</button>
             <button class="mobile-tab-btn" data-tab="text">文字</button>
             <button class="mobile-tab-btn" data-tab="image">圖片</button>
