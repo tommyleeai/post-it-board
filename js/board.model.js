@@ -29,10 +29,14 @@ PostIt.BoardModel = (function () {
         return db.collection('users').doc(uid).collection('boards');
     }
 
-    // -------- 確保預設白板存在（首次登入或遷移後） --------
+    // -------- 確保預設白板存在 + 自動遷移舊資料 --------
     async function ensureDefault() {
         const ref = getBoardsRef();
         if (!ref) return;
+
+        const uid = PostIt.Auth.getUid();
+        const db = PostIt.Firebase.getDb();
+        const userRef = db.collection('users').doc(uid);
 
         const doc = await ref.doc(DEFAULT_BOARD_ID).get();
         if (!doc.exists) {
@@ -41,7 +45,73 @@ PostIt.BoardModel = (function () {
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             console.log('[BoardModel] 已建立預設白板');
+
+            // ====== 自動遷移舊資料 ======
+            await migrateOldData(userRef, ref.doc(DEFAULT_BOARD_ID));
         }
+    }
+
+    // -------- 從舊路徑遷移資料到 boards/default --------
+    async function migrateOldData(userRef, defaultBoardRef) {
+        const db = PostIt.Firebase.getDb();
+
+        try {
+            // 1. 遷移 postit_notes → boards/default/notes
+            const oldNotes = await userRef.collection('postit_notes').get();
+            if (!oldNotes.empty) {
+                console.log(`[BoardModel] 偵測到 ${oldNotes.size} 筆舊便利貼，開始遷移...`);
+                
+                // Firestore batch 每次最多 500 筆，分批處理
+                const chunks = chunkArray(oldNotes.docs, 400);
+                for (const chunk of chunks) {
+                    const batch = db.batch();
+                    chunk.forEach(doc => {
+                        const newRef = defaultBoardRef.collection('notes').doc(doc.id);
+                        batch.set(newRef, doc.data());
+                    });
+                    await batch.commit();
+                }
+                console.log(`[BoardModel] ✅ 已遷移 ${oldNotes.size} 筆便利貼`);
+            }
+
+            // 2. 遷移 postit_archived → boards/default/archived
+            const oldArchived = await userRef.collection('postit_archived').get();
+            if (!oldArchived.empty) {
+                const chunks = chunkArray(oldArchived.docs, 400);
+                for (const chunk of chunks) {
+                    const batch = db.batch();
+                    chunk.forEach(doc => {
+                        const newRef = defaultBoardRef.collection('archived').doc(doc.id);
+                        batch.set(newRef, doc.data());
+                    });
+                    await batch.commit();
+                }
+                console.log(`[BoardModel] ✅ 已遷移 ${oldArchived.size} 筆歸檔紀錄`);
+            }
+
+            // 3. 遷移 postit_meta/connections → boards/default/meta/connections
+            const oldConn = await userRef.collection('postit_meta').doc('connections').get();
+            if (oldConn.exists) {
+                await defaultBoardRef.collection('meta').doc('connections').set(oldConn.data());
+                console.log('[BoardModel] ✅ 已遷移圖釘連線資料');
+            }
+
+            if (!oldNotes.empty || !oldArchived.empty || oldConn.exists) {
+                PostIt.Board.showToast('資料遷移完成！歡迎使用多白板 🎉', 'success');
+            }
+        } catch (error) {
+            console.error('[BoardModel] 遷移失敗:', error);
+            PostIt.Board.showToast('資料遷移時發生錯誤，請重新整理頁面', 'error');
+        }
+    }
+
+    // -------- 工具：陣列分批 --------
+    function chunkArray(arr, size) {
+        const result = [];
+        for (let i = 0; i < arr.length; i += size) {
+            result.push(arr.slice(i, i + size));
+        }
+        return result;
     }
 
     // -------- 訂閱白板清單即時更新 --------

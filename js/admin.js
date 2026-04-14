@@ -93,66 +93,72 @@
         el.classList.remove('hidden');
     }
 
-    // ======== 載入所有資料 ========
+    // ======== 載入所有資料（支援多白板） ========
     async function loadAllData() {
         allUsersData = [];
 
         try {
-            // 取得所有 users 下的文件
             const usersSnap = await db.collection('users').get();
             const userIds = [];
-
-            usersSnap.forEach(doc => {
-                userIds.push(doc.id);
-            });
-
-            // 同時查詢 Auth 使用者資料（從 Firestore 存的 metadata，或 Auth 本身）
-            // 因為前端無法直接列出 Auth users，我們需要從 Firestore 或 Auth Token
-            // 這裡的做法：讀取每位使用者的 postit_notes 並從 Auth 取得資訊
-            
-            // 取得 auth 使用者列表
-            // 注意：前端 SDK 無法列出所有 Auth 使用者
-            // 替代方案：從每個 user 的 postit_notes 推導
+            usersSnap.forEach(doc => userIds.push(doc.id));
 
             for (const uid of userIds) {
-                const notesSnap = await db.collection('users').doc(uid).collection('postit_notes').get();
-                const notes = [];
+                const userRef = db.collection('users').doc(uid);
+                let notes = [];
                 let imageCount = 0;
                 let urlCount = 0;
                 let lastActive = null;
+                let boardCount = 0;
+                let boardNames = [];
 
-                notesSnap.forEach(noteDoc => {
-                    const data = noteDoc.data();
-                    notes.push({ id: noteDoc.id, ...data });
-                    if (data.type === 'image') imageCount++;
-                    if (data.type === 'url') urlCount++;
+                // 嘗試從新路徑 boards/*/notes 讀取
+                const boardsSnap = await userRef.collection('boards').get();
 
-                    // 最近活動時間
-                    const updatedAt = data.updatedAt ? (data.updatedAt.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt)) : null;
-                    if (updatedAt && (!lastActive || updatedAt > lastActive)) {
-                        lastActive = updatedAt;
+                if (!boardsSnap.empty) {
+                    boardCount = boardsSnap.size;
+                    for (const boardDoc of boardsSnap.docs) {
+                        const boardData = boardDoc.data();
+                        boardNames.push({ id: boardDoc.id, name: boardData.name || '白板', icon: boardData.icon || '📋' });
+
+                        const boardNotesSnap = await userRef.collection('boards').doc(boardDoc.id).collection('notes').get();
+                        boardNotesSnap.forEach(noteDoc => {
+                            const data = noteDoc.data();
+                            notes.push({ id: noteDoc.id, boardId: boardDoc.id, boardName: boardData.name || '白板', ...data });
+                            if (data.type === 'image') imageCount++;
+                            if (data.type === 'url') urlCount++;
+                            const updatedAt = data.updatedAt ? (data.updatedAt.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt)) : null;
+                            if (updatedAt && (!lastActive || updatedAt > lastActive)) lastActive = updatedAt;
+                        });
                     }
-                });
+                } else {
+                    // 降級相容：從舊路徑讀取
+                    const oldNotesSnap = await userRef.collection('postit_notes').get();
+                    oldNotesSnap.forEach(noteDoc => {
+                        const data = noteDoc.data();
+                        notes.push({ id: noteDoc.id, boardId: 'legacy', boardName: '舊版', ...data });
+                        if (data.type === 'image') imageCount++;
+                        if (data.type === 'url') urlCount++;
+                        const updatedAt = data.updatedAt ? (data.updatedAt.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt)) : null;
+                        if (updatedAt && (!lastActive || updatedAt > lastActive)) lastActive = updatedAt;
+                    });
+                }
 
                 allUsersData.push({
                     uid,
-                    name: uid, // 稍後嘗試從 Auth 取得
+                    name: uid,
                     email: '',
                     photo: '',
                     notes,
                     noteCount: notes.length,
                     imageCount,
                     urlCount,
+                    boardCount,
+                    boardNames,
                     lastActive
                 });
             }
 
-            // 嘗試取得使用者顯示資料（名稱、Email、頭像）
-            // 從 users/{uid}/profile 或其他來源
-            // 如果沒有特別存的話，只能看 UID
-            // 我們新增一個機制：每次登入時存 profile
             await enrichUserProfiles();
-
             renderStats();
             renderUsersTable();
             renderActivityFeed();
@@ -225,7 +231,7 @@
         const tbody = document.getElementById('users-tbody');
 
         if (filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="loading-cell">沒有找到使用者</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="loading-cell">沒有找到使用者</td></tr>';
             return;
         }
 
@@ -240,6 +246,7 @@
                 <td style="color:var(--admin-text-dim)">${escapeHtml(user.email || user.uid.substring(0, 12) + '...')}</td>
                 <td><span class="badge badge-notes">${user.noteCount}</span></td>
                 <td><span class="badge badge-images">${user.imageCount}</span></td>
+                <td><span class="badge" style="background:rgba(155,89,182,0.15);color:#9b59b6">${user.boardCount || 0}</span></td>
                 <td style="color:var(--admin-text-dim);font-size:13px">${user.lastActive ? formatTime(user.lastActive) : '—'}</td>
                 <td>
                     <button class="btn-view" onclick="AdminApp.openUserModal('${user.uid}')">
@@ -333,7 +340,7 @@
 
             return `
                 <div class="mini-note" style="background:${note.color || '#FFF176'}">
-                    <button class="mini-note-delete" onclick="AdminApp.deleteNote('${user.uid}', '${note.id}')" title="刪除">
+                    <button class="mini-note-delete" onclick="AdminApp.deleteNote('${user.uid}', '${note.id}', '${note.boardId || ''}')" title="刪除">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                     <span class="note-type-badge">${typeBadge}</span>
@@ -354,15 +361,17 @@
         document.getElementById('user-modal').classList.add('hidden');
     }
 
-    // ======== 刪除操作 ========
-    async function deleteNote(uid, noteId) {
+    // ======== 刪除操作（支援多白板路徑） ========
+    async function deleteNote(uid, noteId, boardId) {
         if (!confirm('確定要刪除這張貼紙嗎？')) return;
 
         try {
-            await db.collection('users').doc(uid).collection('postit_notes').doc(noteId).delete();
-            // 重新載入
+            if (boardId && boardId !== 'legacy') {
+                await db.collection('users').doc(uid).collection('boards').doc(boardId).collection('notes').doc(noteId).delete();
+            } else {
+                await db.collection('users').doc(uid).collection('postit_notes').doc(noteId).delete();
+            }
             await loadAllData();
-            // 重新打開 modal
             openUserModal(uid);
         } catch (err) {
             alert('刪除失敗：' + err.message);
@@ -377,7 +386,12 @@
         try {
             const batch = db.batch();
             for (const note of user.notes) {
-                const ref = db.collection('users').doc(uid).collection('postit_notes').doc(note.id);
+                let ref;
+                if (note.boardId && note.boardId !== 'legacy') {
+                    ref = db.collection('users').doc(uid).collection('boards').doc(note.boardId).collection('notes').doc(note.id);
+                } else {
+                    ref = db.collection('users').doc(uid).collection('postit_notes').doc(note.id);
+                }
                 batch.delete(ref);
             }
             await batch.commit();
