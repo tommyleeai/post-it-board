@@ -76,7 +76,7 @@ PostIt.Note = (function () {
     }
 
     // -------- 新增貼紙 --------
-    async function create(content = '', type = 'text', color = null, role = 'user') {
+    async function create(content = '', type = 'text', color = null, role = 'user', overridePos = null) {
         const count = Object.keys(notesCache).length;
         if (count >= MAX_NOTES) {
             PostIt.Board.showToast('已達 50 張貼紙上限！', 'error');
@@ -102,8 +102,15 @@ PostIt.Note = (function () {
         }
 
         // 隨機位置（白板中央附近）
-        const x = 20 + Math.random() * 40; // 20% ~ 60%
-        const y = 15 + Math.random() * 40; // 15% ~ 55%
+        let x = 20 + Math.random() * 40; // 20% ~ 60%
+        let y = 15 + Math.random() * 40; // 15% ~ 55%
+        let customZIndex = PostIt.Drag.getMaxZIndex() + 1;
+
+        if (overridePos) {
+            if (overridePos.x !== undefined) x = overridePos.x;
+            if (overridePos.y !== undefined) y = overridePos.y;
+            if (overridePos.zIndex !== undefined) customZIndex = overridePos.zIndex;
+        }
 
         // 隨機旋轉
         const rotation = (Math.random() - 0.5) * 6; // -3° ~ +3°
@@ -118,7 +125,7 @@ PostIt.Note = (function () {
             width: null,  // 自動
             height: null, // 自動
             rotation: rotation,
-            zIndex: PostIt.Drag.getMaxZIndex() + 1,
+            zIndex: customZIndex,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };

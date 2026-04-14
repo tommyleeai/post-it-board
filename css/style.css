@@ -708,6 +708,8 @@ html, body {
 
 /* === 印章系統 START === */
 .fab-stamp {
+    position: relative;
+    z-index: 2; /* 確保主按鈕蓋過絕對定位滑出的 stamp-menu */
     width: var(--fab-size);
     height: var(--fab-size);
     border: none;
@@ -738,17 +740,21 @@ html, body {
 
 /* === 印章展開選單與包裝器 START === */
 .stamp-wrapper {
-    display: flex;
-    flex-direction: row;        /* 水平排列 */
-    align-items: center;
+    position: relative;
+    width: var(--fab-size);
+    height: var(--fab-size);
 }
 
 .stamp-menu {
+    position: absolute;
+    right: 100%; /* 選單停放在主按鈕的左側邊緣外 */
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     flex-direction: row-reverse;/* 印章往左側依序生長 */
     align-items: center;
     gap: 8px;
-    padding: 16px 0; /* 給予上下空間避免 scale 被裁切 */
+    padding: 16px 8px; /* 給予上下與右側適當空間避免被裁切 */
     opacity: 1;
     pointer-events: none; /* 讓隱藏時的空隙不會阻擋點擊 */
 }

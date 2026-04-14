@@ -4,7 +4,7 @@
 PostIt.Changelog = (function () {
     'use strict';
 
-    const CURRENT_VERSION = '1.3.3';
+    const CURRENT_VERSION = '1.3.4';
     const STORAGE_KEY = 'postit_last_seen_version';
 
     function init() {
@@ -65,8 +65,27 @@ PostIt.Changelog = (function () {
 
             // 在白板上寫下一張由 AI/System 發布的實體便利貼
             if (typeof PostIt.Note !== 'undefined') {
-                const noteId = await PostIt.Note.create(content, 'text', null, 'ai');
+                const board = document.getElementById('whiteboard');
+                const boardW = board ? board.clientWidth : window.innerWidth;
+                const boardH = board ? board.clientHeight : window.innerHeight;
+                
+                // 系統公告卡片預估寬度與高度（包含 padding）
+                const expectedW = 352; 
+                const expectedH = 340; 
+                
+                const xPx = Math.max(0, boardW - expectedW - 30);
+                const yPx = Math.max(0, boardH - expectedH - 30);
+                const xPercent = (xPx / boardW) * 100;
+                const yPercent = (yPx / boardH) * 100;
+
+                const highestZ = typeof PostIt.Drag !== 'undefined' ? PostIt.Drag.getMaxZIndex() : 10;
+                const overridePos = { x: xPercent, y: yPercent, zIndex: highestZ + 10 };
+
+                const noteId = await PostIt.Note.create(content, 'text', null, 'ai', overridePos);
                 if (noteId) {
+                    if (typeof PostIt.Drag !== 'undefined') PostIt.Drag.setMaxZIndex(overridePos.zIndex);
+                    // 同步寫入多設備 Layout
+                    await PostIt.Note.updatePosition(noteId, xPercent, yPercent, overridePos.zIndex);
                     // 成功貼上後，標記為已看過
                     localStorage.setItem(STORAGE_KEY, CURRENT_VERSION);
                 }
