@@ -341,9 +341,10 @@ PostIt.Connect = (function () {
     function saveConnections() {
         const uid = PostIt.Auth.getUid();
         if (!uid) return;
-        PostIt.Firebase.getDb()
-            .collection('users').doc(uid)
-            .collection('postit_meta').doc('connections')
+        const metaRef = (typeof PostIt.BoardModel !== 'undefined')
+            ? PostIt.BoardModel.getActiveMetaRef()
+            : PostIt.Firebase.getDb().collection('users').doc(uid).collection('postit_meta');
+        metaRef.doc('connections')
             .set({ pairs })
             .catch(e => console.error('[Connect] save failed', e));
     }
@@ -351,9 +352,10 @@ PostIt.Connect = (function () {
     function loadConnections() {
         const uid = PostIt.Auth.getUid();
         if (!uid) return;
-        PostIt.Firebase.getDb()
-            .collection('users').doc(uid)
-            .collection('postit_meta').doc('connections')
+        const metaRef = (typeof PostIt.BoardModel !== 'undefined')
+            ? PostIt.BoardModel.getActiveMetaRef()
+            : PostIt.Firebase.getDb().collection('users').doc(uid).collection('postit_meta');
+        metaRef.doc('connections')
             .onSnapshot(doc => {
                 pairs = doc.exists ? (doc.data().pairs || []) : [];
             });

@@ -35,8 +35,12 @@ PostIt.Note = (function () {
     let activeNoteId = null; // 目前選中的貼紙 ID
     let unsubscribe = null; // Firestore listener
 
-    // -------- 獲取使用者的 notes collection ref --------
+    // -------- 獲取當前白板的 notes collection ref --------
     function getNotesRef() {
+        if (typeof PostIt.BoardModel !== 'undefined') {
+            return PostIt.BoardModel.getActiveNotesRef();
+        }
+        // 降級相容：若 BoardModel 尚未載入，使用舊路徑
         const uid = PostIt.Auth.getUid();
         if (!uid) return null;
         const db = PostIt.Firebase.getDb();
@@ -229,7 +233,9 @@ PostIt.Note = (function () {
 
         try {
             const db = PostIt.Firebase.getDb();
-            const archiveRef = db.collection('users').doc(uid).collection('postit_archived');
+            const archiveRef = (typeof PostIt.BoardModel !== 'undefined')
+                ? PostIt.BoardModel.getActiveArchivedRef()
+                : db.collection('users').doc(uid).collection('postit_archived');
 
             // 複製到歸檔集合
             const archiveData = { ...note };
@@ -259,7 +265,10 @@ PostIt.Note = (function () {
 
         try {
             const db = PostIt.Firebase.getDb();
-            const archiveRef = db.collection('users').doc(uid).collection('postit_archived').doc(archiveId);
+            const archiveCollection = (typeof PostIt.BoardModel !== 'undefined')
+                ? PostIt.BoardModel.getActiveArchivedRef()
+                : db.collection('users').doc(uid).collection('postit_archived');
+            const archiveRef = archiveCollection.doc(archiveId);
             
             const doc = await archiveRef.get();
             if (!doc.exists) return;
@@ -294,7 +303,10 @@ PostIt.Note = (function () {
 
         try {
             const db = PostIt.Firebase.getDb();
-            const archiveRef = db.collection('users').doc(uid).collection('postit_archived').doc(archiveId);
+            const archiveCollection = (typeof PostIt.BoardModel !== 'undefined')
+                ? PostIt.BoardModel.getActiveArchivedRef()
+                : db.collection('users').doc(uid).collection('postit_archived');
+            const archiveRef = archiveCollection.doc(archiveId);
             
             await archiveRef.delete();
             console.log('[Note] 歸檔紀錄已永久刪除');
@@ -311,10 +323,10 @@ PostIt.Note = (function () {
 
         try {
             const db = PostIt.Firebase.getDb();
-            const archiveQuery = db.collection('users')
-                .doc(uid)
-                .collection('postit_archived')
-                .orderBy('completedAt', 'desc');
+            const archiveCollection = (typeof PostIt.BoardModel !== 'undefined')
+                ? PostIt.BoardModel.getActiveArchivedRef()
+                : db.collection('users').doc(uid).collection('postit_archived');
+            const archiveQuery = archiveCollection.orderBy('completedAt', 'desc');
             
             const snapshot = await archiveQuery.get();
             const results = [];
