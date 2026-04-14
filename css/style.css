@@ -311,11 +311,13 @@ html, body {
     cursor: pointer;
     font-size: 11px;
     opacity: 0;
+    pointer-events: none; /* 收合時不可點擊 */
     transition: opacity 0.2s, color 0.2s, background 0.2s;
 }
 
 .board-sidebar.expanded .sidebar-board-item:hover .sidebar-board-edit {
     opacity: 1;
+    pointer-events: auto; /* 展開時恢復可點擊 */
 }
 
 .sidebar-board-edit:hover {

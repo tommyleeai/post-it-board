@@ -58,6 +58,13 @@ PostIt.BoardModel = (function () {
                 await migrateOldData(userRef, defaultBoardRef);
             }
         }
+
+        // 提前從 localStorage 恢復 activeBoardId，避免 Note.subscribe() 的時序競爭
+        // （onSnapshot 回呼會延遲，但 Note.subscribe 會立即讀取 activeBoardId）
+        if (!activeBoardId) {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            activeBoardId = saved || DEFAULT_BOARD_ID;
+        }
     }
 
     // -------- 從舊路徑遷移資料到 boards/default --------
