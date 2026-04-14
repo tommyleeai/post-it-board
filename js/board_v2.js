@@ -284,6 +284,52 @@ PostIt.Board = (function () {
 
         // ===== 單卡樣式設定 =====
         bindCardStyleEvents();
+
+        
+        // ===== 行動端 Tab 切換過濾 =====
+        const mobileTabs = document.querySelectorAll('.mobile-tab-btn');
+        mobileTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 更新 active 狀態
+                mobileTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                const filter = tab.dataset.tab; // 'all', 'text', 'image'
+                const notes = document.querySelectorAll('.sticky-note');
+                
+                notes.forEach(noteEl => {
+                    const contentStr = noteEl.innerHTML.toLowerCase();
+                    const hasImage = contentStr.includes('<img') && contentStr.includes('uploaded-image');
+                    const isSystem = noteEl.classList.contains('ai-system-note');
+                    
+                    if (filter === 'all' || isSystem) {
+                        noteEl.style.display = 'block';
+                    } else if (filter === 'image') {
+                        noteEl.style.display = hasImage ? 'block' : 'none';
+                    } else if (filter === 'text') {
+                        noteEl.style.display = !hasImage ? 'block' : 'none';
+                    }
+                });
+            });
+        });
+
+        // ===== 行動端 FAB 觸控防護 =====
+        const stampWrapper = document.querySelector('.stamp-wrapper');
+        const fabStamp = document.getElementById('fab-stamp');
+        if (fabStamp && stampWrapper) {
+            fabStamp.addEventListener('click', (e) => {
+                if (window.innerWidth <= 768) {
+                    e.stopPropagation(); // 阻止冒泡以免立刻觸發 document 的 click 事件而關閉
+                    stampWrapper.classList.toggle('mobile-open');
+                }
+            });
+            // 點擊畫面其他地方自動收起印章選單
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 768 && !stampWrapper.contains(e.target)) {
+                    stampWrapper.classList.remove('mobile-open');
+                }
+            });
+        }
     }
 
     // ======== 自動排列 ========
@@ -459,10 +505,17 @@ PostIt.Board = (function () {
         }
         el.dataset.noteId = note.id;
 
-        // 位置（百分比轉像素）
+        // 位置（百分比轉像素）— 跨裝置獨立座標
+        const mode = (window.PostIt && PostIt.getDeviceMode) ? PostIt.getDeviceMode() : 'desktop';
+        const layoutData = (note.layouts && note.layouts[mode]) ? note.layouts[mode] : note; // 降級相容舊版
+        
         const boardRect = boardEl.getBoundingClientRect();
-        const x = (note.x / 100) * boardRect.width;
-        const y = (note.y / 100) * boardRect.height;
+        const xVal = typeof layoutData.x === 'number' ? layoutData.x : (note.x || 0);
+        const yVal = typeof layoutData.y === 'number' ? layoutData.y : (note.y || 0);
+        const zVal = typeof layoutData.zIndex === 'number' ? layoutData.zIndex : (note.zIndex || 1);
+
+        const x = (xVal / 100) * boardRect.width;
+        const y = (yVal / 100) * boardRect.height;
         el.style.left = x + 'px';
         el.style.top = y + 'px';
 
@@ -475,11 +528,9 @@ PostIt.Board = (function () {
         el.style.backgroundColor = 'transparent';
         el.style.setProperty('--note-bg-color', note.color || '#FFF176');
 
-        // z-index
-        if (note.zIndex) {
-            el.style.zIndex = note.zIndex;
-            PostIt.Drag.setMaxZIndex(note.zIndex);
-        }
+        // z-index - 從專屬 layout 讀取
+        el.style.zIndex = zVal;
+        if (window.PostIt && PostIt.Drag) PostIt.Drag.setMaxZIndex(zVal);
 
         // 隨機膠帶
         const tape = document.createElement('div');
@@ -605,17 +656,22 @@ PostIt.Board = (function () {
         el.style.backgroundColor = 'transparent';
         el.style.setProperty('--note-bg-color', note.color || '#FFF176');
 
-        // 位置（只在非拖曳時更新）
+        // 位置（只在非拖曳時更新）— 跨裝置獨立座標
         if (!el.classList.contains('dragging')) {
-            const boardRect = boardEl.getBoundingClientRect();
-            el.style.left = ((note.x / 100) * boardRect.width) + 'px';
-            el.style.top = ((note.y / 100) * boardRect.height) + 'px';
-        }
+            const mode = (window.PostIt && PostIt.getDeviceMode) ? PostIt.getDeviceMode() : 'desktop';
+            const layoutData = (note.layouts && note.layouts[mode]) ? note.layouts[mode] : note; // 降級相容舊版
+            
+            const xVal = typeof layoutData.x === 'number' ? layoutData.x : (note.x || 0);
+            const yVal = typeof layoutData.y === 'number' ? layoutData.y : (note.y || 0);
+            const zVal = typeof layoutData.zIndex === 'number' ? layoutData.zIndex : (note.zIndex || 1);
 
-        // z-index
-        if (note.zIndex && !el.classList.contains('dragging')) {
-            el.style.zIndex = note.zIndex;
-            PostIt.Drag.setMaxZIndex(note.zIndex);
+            const boardRect = boardEl.getBoundingClientRect();
+            el.style.left = ((xVal / 100) * boardRect.width) + 'px';
+            el.style.top = ((yVal / 100) * boardRect.height) + 'px';
+
+            // z-index
+            el.style.zIndex = zVal;
+            if (window.PostIt && PostIt.Drag) PostIt.Drag.setMaxZIndex(zVal);
         }
 
         // 內容（只在非編輯時更新）

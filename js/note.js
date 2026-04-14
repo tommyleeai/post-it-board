@@ -1,6 +1,29 @@
+
+// ============================================
+// 終端機狀態判定引擎 (Device Mode Engine)
+// ============================================
+// 避免因跨裝置查看導致坐標覆寫破壞排版
+window.PostIt = window.PostIt || {};
+PostIt.getDeviceMode = function() {
+    // 嚴格判定流派：直接比對機身 Agent (User-Agent)
+    const ua = navigator.userAgent.toLowerCase();
+    
+    // 判定是否為平板 (iPad 或 包含 tablet 字眼，或只包含 android 但不包含 mobile)
+    const isTablet = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk)/i.test(ua);
+    if (isTablet) return 'tablet';
+    
+    // 判定是否為手機
+    const isMobile = /mobile|iphone|ipod|android|blackberry|opera mini|iemobile/i.test(ua);
+    if (isMobile) return 'mobile';
+    
+    // 預設為電腦
+    return 'desktop';
+};
+
 // ============================================
 // 貼紙 CRUD + 內容偵測 + 圖片上傳
 // ============================================
+
 PostIt.Note = (function () {
     'use strict';
 
@@ -134,16 +157,20 @@ PostIt.Note = (function () {
     async function updatePosition(noteId, x, y, zIndex) {
         const ref = getNotesRef();
         if (!ref || !noteId) return;
+        
+        const mode = PostIt.getDeviceMode();
 
         try {
-            await ref.doc(noteId).update({
-                x: x,
-                y: y,
-                zIndex: zIndex,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            // 動態寫入對應裝置的 Layout 子節點
+            const updateData = {};
+            updateData['layouts.' + mode + '.x'] = x;
+            updateData['layouts.' + mode + '.y'] = y;
+            updateData['layouts.' + mode + '.zIndex'] = zIndex;
+            updateData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+            
+            await ref.doc(noteId).update(updateData);
         } catch (error) {
-            console.error('[Note] 更新位置失敗:', error);
+            console.error('[Note] 更新 ' + mode + ' 位置失敗:', error);
         }
     }
 

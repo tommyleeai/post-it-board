@@ -17,6 +17,11 @@ PostIt.Drag = (function () {
     // 拖曳開始的最小距離（避免誤觸）
     const DRAG_THRESHOLD = 5;
 
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+    let touchTarget = null;
     function init() {
         const board = document.getElementById('whiteboard');
         if (!board) return;
@@ -24,12 +29,27 @@ PostIt.Drag = (function () {
         board.addEventListener('pointerdown', onPointerDown, { passive: false });
         document.addEventListener('pointermove', onPointerMove, { passive: false });
         document.addEventListener('pointerup', onPointerUp);
+
+        board.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+            touchTarget = e.target.closest('.sticky-note');
+        }, {passive: true});
+
+        board.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            handleSwipeGesture();
+        }, {passive: true});
     }
 
     let pointerId = null;
     let clickedOnContent = false;
 
     function onPointerDown(e) {
+        // [行動端防護] 手機瀑布流模式下不允許自由拖曳，以保證預設的上下滑動體驗
+        if (window.innerWidth <= 768) return;
+
         // 只處理貼紙本體（排除設定按鈕和編輯中的內容）
         const note = e.target.closest('.sticky-note');
         if (!note) return;
@@ -167,3 +187,21 @@ PostIt.Drag = (function () {
 
     return { init, getMaxZIndex, setMaxZIndex, getIsDragging };
 })();
+
+    function handleSwipeGesture() {
+        if (window.innerWidth > 768 || !touchTarget) return;
+        
+        const dx = touchEndX - touchStartX;
+        const dy = Math.abs(touchEndY - touchStartY);
+        
+        // 確保是純粹的水平滑動 (X軸位移大於Y軸，且X軸滑動距離超過100px)
+        if (Math.abs(dx) > 100 && dy < 50) {
+            if (dx < -100) {
+                // Swipe Left
+                if (typeof window.showToast === 'function') window.showToast('🔥 偵測到向左滑動：可以觸發歸檔或印章！', 'success');
+            } else if (dx > 100) {
+                // Swipe Right
+                if (typeof window.showToast === 'function') window.showToast('✨ 偵測到向右滑動：可以觸發標籤切換！', 'info');
+            }
+        }
+    }
