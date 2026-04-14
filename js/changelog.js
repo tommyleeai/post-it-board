@@ -4,15 +4,75 @@
 PostIt.Changelog = (function () {
     'use strict';
 
-    const CURRENT_VERSION = '1.3.1';
+    const CURRENT_VERSION = '1.3.2';
     const STORAGE_KEY = 'postit_last_seen_version';
 
     function init() {
-        // 檢查是否需要自動跳出更新日誌 (放在登入後才檢查比較安全)
+        // 檢查是否需要自動產生更新便利貼 (放在登入後才檢查比較安全)
         const lastSeen = localStorage.getItem(STORAGE_KEY);
         if (lastSeen !== CURRENT_VERSION) {
-            // 是新版本，自動彈出
-            showModal(true);
+            spawnUpdateNote();
+        }
+    }
+
+    async function spawnUpdateNote() {
+        try {
+            // 加入時間戳記避免 markdown 檔案被瀏覽器死牢快取 (但本地 file:/// 協議不支援帶參數的檔名)
+            let fetchUrl = 'docs/CHANGELOG.md';
+            if (window.location.protocol.startsWith('http')) {
+                fetchUrl += '?v=' + Date.now();
+            }
+            const response = await fetch(fetchUrl);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const markdown = await response.text();
+
+            const lines = markdown.split('\n');
+            let content = `System Update\n✨ 【系統公告】\n版本已更新至 v${CURRENT_VERSION}\n\n`;
+            let inCurrentVersion = false;
+            let bullets = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (line.startsWith(`## [${CURRENT_VERSION}]`)) {
+                    inCurrentVersion = true;
+                    continue;
+                }
+                // Stop if we hit the next version section
+                if (inCurrentVersion && line.startsWith('## [')) {
+                    break;
+                }
+                if (inCurrentVersion && (line.startsWith('* ') || line.startsWith('- '))) {
+                    // 移除 Markdown 符號
+                    let bullet = line.substring(2).replace(/\*\*/g, '').replace(/`/g, '');
+                    // 擷取前幾個字避免太長
+                    if (bullet.indexOf('：') !== -1) {
+                        bullet = bullet.split('：')[0]; // 如果有冒號，只拿冒號前面的項目名稱
+                    } else if (bullet.length > 25) {
+                        bullet = bullet.substring(0, 25) + '...';
+                    }
+                    bullets.push('• ' + bullet);
+                }
+            }
+
+            // 最多只顯示 4 條更新摘要
+            if (bullets.length > 4) {
+                bullets = bullets.slice(0, 4);
+                bullets.push('...');
+            }
+
+            content += bullets.join('\n');
+            content += '\n\n(點擊左上角版號查看完整說明)';
+
+            // 在白板上寫下一張由 AI/System 發布的實體便利貼
+            if (typeof PostIt.Note !== 'undefined') {
+                const noteId = await PostIt.Note.create(content, 'text', null, 'ai');
+                if (noteId) {
+                    // 成功貼上後，標記為已看過
+                    localStorage.setItem(STORAGE_KEY, CURRENT_VERSION);
+                }
+            }
+        } catch (error) {
+            console.error('[Changelog] 無法產生公告便利貼:', error);
         }
     }
 
@@ -62,7 +122,6 @@ PostIt.Changelog = (function () {
             contentEl.innerHTML = parseMarkdownToHTML(markdown);
 
             if (isAuto) {
-                // 如果是自動彈出，代表看過了，儲存到 local storage
                 localStorage.setItem(STORAGE_KEY, CURRENT_VERSION);
             }
         } catch (error) {

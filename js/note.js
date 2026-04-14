@@ -53,7 +53,7 @@ PostIt.Note = (function () {
     }
 
     // -------- 新增貼紙 --------
-    async function create(content = '', type = 'text', color = null) {
+    async function create(content = '', type = 'text', color = null, role = 'user') {
         const count = Object.keys(notesCache).length;
         if (count >= MAX_NOTES) {
             PostIt.Board.showToast('已達 50 張貼紙上限！', 'error');
@@ -73,6 +73,11 @@ PostIt.Note = (function () {
             }
         }
 
+        // 當角色是 AI 時，可以給予一個統一特殊底色避免太花俏，或是維持原本色彩也行。
+        if (role === 'ai') {
+            color = null; // AI 便利貼的顏色由 CSS class 單獨處理，不需要 inline color 覆寫
+        }
+
         // 隨機位置（白板中央附近）
         const x = 20 + Math.random() * 40; // 20% ~ 60%
         const y = 15 + Math.random() * 40; // 15% ~ 55%
@@ -82,6 +87,7 @@ PostIt.Note = (function () {
 
         const noteData = {
             type: type,
+            role: role,
             content: content,
             color: color,
             x: x,

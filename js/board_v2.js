@@ -454,6 +454,9 @@ PostIt.Board = (function () {
     function createNoteElement(note) {
         const el = document.createElement('div');
         el.className = 'sticky-note';
+        if (note.role === 'ai') {
+            el.classList.add('ai-system-note');
+        }
         el.dataset.noteId = note.id;
 
         // 位置（百分比轉像素）
@@ -690,6 +693,15 @@ PostIt.Board = (function () {
 
         const text = note.content.trim();
 
+        if (note.role === 'ai') {
+            const lines = text.split('\n');
+            if (lines.length > 0) {
+                const title = lines[0];
+                const rest = lines.slice(1).join('\n');
+                return `<div class="ai-note-header">${escapeHtml(title)}</div><div class="note-content-body">${escapeHtml(rest).replace(/\n/g, '<br>')}</div><i class="fa-solid fa-robot ai-robot-icon"></i>`;
+            }
+        }
+
         // 智慧判斷：如果整段內容純粹就是一個圖片網址，直接渲染為圖片
         const isImageUrl = /^https?:\/\/.*?\.(jpg|jpeg|png|gif|webp|svg|bmp)(?:\?.*)?$/i.test(text) || /^data:image\/[a-zA-Z0-9+]+;base64,/.test(text);
         if (isImageUrl) {
@@ -725,6 +737,8 @@ PostIt.Board = (function () {
         const note = PostIt.Note.getNote(noteId);
         // 圖片型不支持文字編輯（僅當 note 已載入時才判斷）
         if (note && note.type === 'image') return;
+        // AI/系統公告便利貼不支持直接文字竄改
+        if (note && note.role === 'ai') return;
 
         // 如果已經在編輯狀態中，不要重新設定以免覆蓋使用者正在輸入的內容並導致游標重製跳動
         if (contentEl.getAttribute('contenteditable') === 'true') return;

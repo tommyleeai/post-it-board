@@ -2087,3 +2087,78 @@ body.pin-mode {
     margin: 24px 0;
 }
 /* === 更新日誌與版本宣告 END === */
+
+
+
+
+
+/* =========================================
+   AI公告便利貼特效 (Tech/Cyberpunk 風格)
+   ========================================= */
+.ai-system-note {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    /* 取代一般的陰影，換成霓虹發光 */
+    filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.7)) !important;
+    color: #e0f7fa !important;
+}
+
+/* 核心實體紙張 (取代底色與紋理) */
+.ai-system-note::before {
+    background-color: #1a2639 !important; /* 真正改變背板顏色的地方 */
+    background-image: linear-gradient(135deg, rgba(0,240,255,0.05) 0%, transparent 50%) !important;
+    /* 讓內圈有一點點低調的光暈效果 */
+    box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.2) !important;
+}
+
+/* 將折角背面也改成科技風的金屬灰藍色，不要純白 */
+.ai-system-note::after {
+    background: linear-gradient(
+        315deg, 
+        transparent 45%, 
+        rgba(30, 45, 70, 0.8) 47%, 
+        rgba(70, 100, 140, 0.95) 100%
+    ) !important;
+    border-top-left-radius: 8px !important;
+}
+
+/* 上方的皺褶膠帶，AI版可以改色或者隱藏 */
+.ai-system-note .sticky-tape {
+    background-color: rgba(0, 240, 255, 0.25) !important;
+    box-shadow: 0 1px 3px rgba(0,240,255,0.4) !important;
+}
+
+/* 確保文字不會吃到手寫字體 */
+.ai-system-note .note-content {
+    font-family: var(--font-ui) !important;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* 第一行標記當作標題 */
+.ai-system-note .ai-note-header {
+    font-weight: 900;
+    margin-bottom: 12px;
+    font-size: 18px;
+    color: #00f0ff;
+    border-bottom: 2px solid rgba(0, 240, 255, 0.3);
+    padding-bottom: 8px;
+    text-shadow: 0 0 5px rgba(0, 240, 255, 0.5);
+}
+
+.ai-system-note a {
+    color: #ffd700 !important;
+}
+
+.ai-robot-icon {
+    position: absolute;
+    bottom: 15px;
+    right: 35px; /* 移開一點避免擋到捲角 */
+    color: #00f0ff;
+    font-size: 32px;
+    opacity: 0.8;
+    filter: drop-shadow(0 0 8px #00f0ff);
+    pointer-events: none;
+}
