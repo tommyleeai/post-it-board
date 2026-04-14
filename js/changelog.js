@@ -4,14 +4,16 @@
 PostIt.Changelog = (function () {
     'use strict';
 
-    const CURRENT_VERSION = '1.3.4';
+    const CURRENT_VERSION = '1.3.5';
     const STORAGE_KEY = 'postit_last_seen_version';
 
     function init() {
         // 檢查是否需要自動產生更新便利貼 (放在登入後才檢查比較安全)
         const lastSeen = localStorage.getItem(STORAGE_KEY);
         if (lastSeen !== CURRENT_VERSION) {
-            spawnUpdateNote();
+            // 延遲 2 秒執行，一來營造系統稍後派發的儀式感，
+            // 二來確保 Firestore 第一批資料已載入完畢，能取得場上真實的最高 zIndex
+            setTimeout(spawnUpdateNote, 2000);
         }
     }
 
@@ -79,7 +81,7 @@ PostIt.Changelog = (function () {
                 const yPercent = (yPx / boardH) * 100;
 
                 const highestZ = typeof PostIt.Drag !== 'undefined' ? PostIt.Drag.getMaxZIndex() : 10;
-                const overridePos = { x: xPercent, y: yPercent, zIndex: highestZ + 10 };
+                const overridePos = { x: xPercent, y: yPercent, zIndex: highestZ + 100 };
 
                 const noteId = await PostIt.Note.create(content, 'text', null, 'ai', overridePos);
                 if (noteId) {
