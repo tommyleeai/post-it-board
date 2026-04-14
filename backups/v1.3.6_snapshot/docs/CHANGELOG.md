@@ -4,11 +4,6 @@
 
 本專案將盡可能遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 的精神進行版號管理。
 
-
-## [1.3.6] - 2026-04-14
-
-### 🔧 優化與修正 (Improved & Fixed)
-*   Test dry run
 ## [1.3.6] - 2026-04-14
 
 ### 🐛 修復 (Hotfix)
