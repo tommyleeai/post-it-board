@@ -28,9 +28,6 @@ PostIt.Board = (function () {
         // 初始化圖釘連線系統
         if (typeof PostIt.Connect !== 'undefined') PostIt.Connect.init();
 
-        // 初始化群組系統
-        if (typeof PostIt.Group !== 'undefined') PostIt.Group.init();
-
         // 初始化登入模組
         PostIt.Auth.init(onAuthStateChanged);
 
@@ -511,9 +508,6 @@ PostIt.Board = (function () {
             PostIt.Alarm.sync(notes);
         }
 
-        // 渲染群組視覺效果
-        renderGroupVisuals(notes);
-
         // 更新空白板提示
         const emptyHint = document.getElementById('empty-hint');
         if (Object.keys(notes).length === 0) {
@@ -531,7 +525,6 @@ PostIt.Board = (function () {
             el.classList.add('ai-system-note');
         }
         el.dataset.noteId = note.id;
-        if (note.groupId) el.dataset.groupId = note.groupId;
 
         // 位置（百分比轉像素）— 跨裝置獨立座標
         const mode = (window.PostIt && PostIt.getDeviceMode) ? PostIt.getDeviceMode() : 'desktop';
@@ -1557,84 +1550,7 @@ PostIt.Board = (function () {
         }
     }
 
-    // ======== 群組視覺效果渲染 ========
-    function renderGroupVisuals(notes) {
-        // 收集所有群組
-        const groups = {};
-        Object.values(notes).forEach(note => {
-            if (note.groupId) {
-                if (!groups[note.groupId]) groups[note.groupId] = [];
-                groups[note.groupId].push(note);
-            }
-        });
-
-        // 先清理所有群組 class（避免殘留）
-        document.querySelectorAll('.sticky-note').forEach(el => {
-            el.classList.remove('group-stacked', 'group-hidden');
-            el.removeAttribute('data-group-count');
-            // 移除幽靈牌
-            el.querySelectorAll('.group-ghost').forEach(g => g.remove());
-            // 移除計數徽章
-            el.querySelectorAll('.group-count-badge').forEach(b => b.remove());
-            // 同步 data-group-id
-            const noteId = el.dataset.noteId;
-            const note = notes[noteId];
-            if (note && note.groupId) {
-                el.dataset.groupId = note.groupId;
-            } else {
-                delete el.dataset.groupId;
-            }
-        });
-
-        // 如果群組正在展開中，不做收合渲染
-        if (typeof PostIt.Group !== 'undefined' && PostIt.Group.isExpanded()) return;
-
-        // 對每個群組進行視覺處理
-        Object.entries(groups).forEach(([groupId, members]) => {
-            if (members.length < 2) return; // 單張不算群組
-
-            // 按 groupOrder 排序（大的在上面）
-            members.sort((a, b) => (a.groupOrder || 0) - (b.groupOrder || 0));
-
-            const topNote = members[members.length - 1]; // 最上層的便利貼
-            const topEl = document.querySelector(`[data-note-id="${topNote.id}"]`);
-            if (!topEl) return;
-
-            // 頂層便利貼加上群組堆疊樣式
-            topEl.classList.add('group-stacked');
-            const countStr = members.length <= 3 ? String(members.length) : 'many';
-            topEl.dataset.groupCount = countStr;
-
-            // 計數徽章
-            const badge = document.createElement('div');
-            badge.className = 'group-count-badge';
-            badge.textContent = '×' + members.length;
-            topEl.appendChild(badge);
-
-            // 建立幽靈牌（底下的便利貼露出邊緣）
-            members.slice(0, -1).forEach((member, i) => {
-                const memberEl = document.querySelector(`[data-note-id="${member.id}"]`);
-                if (!memberEl) return;
-
-                // 非頂層便利貼：隱藏內容但保留外框（作為幽靈牌）
-                memberEl.classList.add('group-hidden');
-
-                // 將非頂層便利貼移到頂層便利貼的位置附近（加微偏移量）
-                const offsetX = member.groupOffsetX || ((i + 1) * 3);
-                const offsetY = member.groupOffsetY || ((i + 1) * 3);
-                memberEl.style.left = (parseFloat(topEl.style.left) + offsetX) + 'px';
-                memberEl.style.top = (parseFloat(topEl.style.top) + offsetY) + 'px';
-                memberEl.style.zIndex = parseInt(topEl.style.zIndex || 1) - (members.length - 1 - i);
-
-                // 微旋轉差異（讓堆疊看起來更自然）
-                const baseRotation = parseFloat(topEl.style.getPropertyValue('--note-rotation')) || 0;
-                const rotDiff = (i % 2 === 0 ? 1 : -1) * (1.5 + i * 0.5);
-                memberEl.style.transform = `rotate(${baseRotation + rotDiff}deg)`;
-            });
-        });
-    }
-
-    return { init, showToast, handleResize, openBoardModal, closeBoardModal, renderGroupVisuals, get _editingBoardId() { return editingBoardId; } };
+    return { init, showToast, handleResize, openBoardModal, closeBoardModal, get _editingBoardId() { return editingBoardId; } };
 })();
 
 // ======== 多白板 UI 事件 (在模組外部綁定，等 DOM Ready) ========

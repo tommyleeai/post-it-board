@@ -91,11 +91,6 @@ PostIt.Drag = (function () {
         note.style.zIndex = maxZIndex;
         note.classList.add('dragging');
 
-        // 群組長按偵測
-        if (typeof PostIt.Group !== 'undefined') {
-            PostIt.Group.startLongPress(note, e.clientX, e.clientY);
-        }
-
         // 不在這裡 setPointerCapture — 等超過門檻再捕獲
     }
 
@@ -127,11 +122,6 @@ PostIt.Drag = (function () {
 
         e.preventDefault();
 
-        // 群組長按移動取消判定
-        if (typeof PostIt.Group !== 'undefined') {
-            PostIt.Group.checkLongPressMove(e.clientX, e.clientY);
-        }
-
         const board = document.getElementById('whiteboard');
         const boardRect = board.getBoundingClientRect();
 
@@ -147,61 +137,24 @@ PostIt.Drag = (function () {
 
         dragTarget.style.left = newX + 'px';
         dragTarget.style.top = newY + 'px';
-
-        // 群組重疊偵測 + 吸附跟隨
-        if (typeof PostIt.Group !== 'undefined') {
-            // 檢查是否有可合併的便利貼
-            PostIt.Group.checkOverlap(dragTarget);
-            // 如果有已吸附的便利貼，跟隨拖曳
-            if (PostIt.Group.hasAttached()) {
-                PostIt.Group.moveAttached(dragTarget);
-            }
-            // 如果拖曳的是群組頂層，整組跟隨
-            const noteId = dragTarget.dataset.noteId;
-            const noteData = PostIt.Note.getNote(noteId);
-            if (noteData && noteData.groupId && !PostIt.Group.hasAttached()) {
-                PostIt.Group.moveGroupMembers(noteData.groupId, dragTarget);
-            }
-        }
     }
 
-    async function onPointerUp(e) {
+    function onPointerUp(e) {
         if (!dragTarget) return;
 
         const note = dragTarget;
         const wasDragging = hasMoved;
-
-        // 取消長按計時器
-        if (typeof PostIt.Group !== 'undefined') {
-            PostIt.Group.cancelLongPress();
-        }
 
         note.classList.remove('dragging');
         isDragging = false;
         dragTarget = null;
         hasMoved = false;
 
-        // 群組合併完成
-        if (typeof PostIt.Group !== 'undefined' && PostIt.Group.hasAttached()) {
-            justDragged = true;
-            setTimeout(() => { justDragged = false; }, 100);
-            await PostIt.Group.finalizeMerge(note);
-            PostIt.Group.clearMergeState();
-            return;
-        }
-
         // 如果有移動，儲存位置
         if (wasDragging) {
             justDragged = true;
-            setTimeout(() => { justDragged = false; }, 100);
+            setTimeout(() => { justDragged = false; }, 100); // 防抖，避免放開瞬間觸發原生的點擊事件
             saveNotePosition(note);
-
-            // 如果是群組的拖曳，儲存整組位置
-            const noteId = note.dataset.noteId;
-            const noteData = PostIt.Note.getNote(noteId);
-            if (noteData && noteData.groupId && typeof PostIt.Group !== 'undefined') {
-                PostIt.Group.saveGroupPositions(noteData.groupId, note);
-            }
         }
     }
 
@@ -293,5 +246,5 @@ PostIt.Drag = (function () {
         }
     }
 
-    return { init, getMaxZIndex, setMaxZIndex, getIsDragging, getDragTarget: () => dragTarget };
+    return { init, getMaxZIndex, setMaxZIndex, getIsDragging };
 })();

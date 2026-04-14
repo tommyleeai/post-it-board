@@ -169,15 +169,9 @@ PostIt.Connect = (function () {
 
         // 動態賦予/移除實體圖釘
         document.querySelectorAll('.sticky-note').forEach(noteEl => {
-            const noteId = noteEl.dataset.noteId;
-            const hasPin = pinnedIds.has(noteId);
-
-            // 群組中的便利貼隱藏圖釘
-            const note = PostIt.Note.getNote(noteId);
-            const inGroup = note && note.groupId;
-
+            const hasPin = pinnedIds.has(noteEl.dataset.noteId);
             let pinEl = noteEl.querySelector('.persistent-pin');
-            if (hasPin && !inGroup) {
+            if (hasPin) {
                 if (!pinEl) {
                     pinEl = document.createElement('div');
                     pinEl.className = 'persistent-pin';
@@ -205,15 +199,6 @@ PostIt.Connect = (function () {
                 g.style.opacity = '0';
                 return;
             }
-
-            // 群組中的便利貼之間的連線暫時隱藏（資料保留，解散後恢復）
-            const fromNote = PostIt.Note.getNote(pair.from);
-            const toNote = PostIt.Note.getNote(pair.to);
-            if ((fromNote && fromNote.groupId) || (toNote && toNote.groupId)) {
-                g.style.opacity = '0';
-                return;
-            }
-
             g.style.opacity = '1';
 
             const from = getNoteCenter(fromEl, boardRect);
