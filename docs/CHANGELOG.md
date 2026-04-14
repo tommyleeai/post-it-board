@@ -4,32 +4,10 @@
 
 本專案將盡可能遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 的精神進行版號管理。
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## [NaN..NaN] - 2026-04-14
+## [2.0.15] - 2026-04-14
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   新增隱藏指令 PostIt.Alarm.debug() 供開方者查看運行中鬧鐘清單
-## [release] - 2026-04-14
-
-### 🔧 優化與修正 (Improved & Fixed)
+*   新增隱藏指令 PostIt.Alarm.debug() 供開發者查看運行中鬧鐘清單
 *   移除 AI JSON 測試吐司，恢復使用者乾淨的高保真白板體驗（AI 嚴謹度大升級完成）
 ## [2.0.14] - 2026-04-14
 

@@ -37,19 +37,37 @@ let message = process.argv[3];
 
 if (!newVer || newVer === 'patch') {
     const parts = currentVer.split('.').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) {
+        log(`⚠️ 警告：目前版本 "${currentVer}" 不符合 X.Y.Z 格式，無法自動遞增。請手動指定目標版本號，例如: node scripts/deploy.js 2.1.0 "更新說明"`);
+        process.exit(1);
+    }
     parts[2]++;
     newVer = parts.join('.');
 } else if (newVer === 'minor') {
     const parts = currentVer.split('.').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) {
+        log(`⚠️ 警告：目前版本 "${currentVer}" 不符合 X.Y.Z 格式，無法自動遞增。請手動指定目標版本號。`);
+        process.exit(1);
+    }
     parts[1]++;
     parts[2] = 0;
     newVer = parts.join('.');
 } else if (newVer === 'major') {
     const parts = currentVer.split('.').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) {
+        log(`⚠️ 警告：目前版本 "${currentVer}" 不符合 X.Y.Z 格式，無法自動遞增。請手動指定目標版本號。`);
+        process.exit(1);
+    }
     parts[0]++;
     parts[1] = 0;
     parts[2] = 0;
     newVer = parts.join('.');
+}
+
+// 最終驗證：確保 newVer 是合法的 semver 格式
+const finalParts = newVer.split('.').map(Number);
+if (finalParts.length !== 3 || finalParts.some(isNaN)) {
+    error(`目標版本 "${newVer}" 不符合 X.Y.Z 格式（例如 2.0.15）。請修正後重試。`);
 }
 
 if (!message) {

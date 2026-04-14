@@ -1,6 +1,6 @@
 {
   "name": "post-it",
-  "version": "NaN..NaN",
+  "version": "2.0.15",
   "description": "Post It — 你的數位白板",
   "scripts": {
     "dev": "npx http-server ./ -p 5051 -c-1 --cors -o",
