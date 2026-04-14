@@ -55,6 +55,13 @@ PostIt.Board = (function () {
             // 套用白板背景
             applyBoardBgImage(PostIt.Settings.getAccountSettings().boardBgImage);
 
+            // 初始化多白板系統
+            if (typeof PostIt.BoardModel !== 'undefined') {
+                await PostIt.BoardModel.ensureDefault();
+                PostIt.BoardModel.onSwitch(onBoardSwitch);
+                PostIt.BoardModel.subscribe(renderSidebar);
+            }
+
             // 訂閱筆記
             PostIt.Note.subscribe(renderNotes);
 
@@ -991,6 +998,127 @@ PostIt.Board = (function () {
         init();
     }
 
+    // ======== 多白板：側邊欄渲染 ========
+    function renderSidebar(boards, activeBoardId) {
+        const listEl = document.getElementById('sidebar-board-list');
+        if (!listEl) return;
+        listEl.innerHTML = '';
+
+        // 依 order 排序
+        const sorted = Object.values(boards).sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        sorted.forEach(board => {
+            const item = document.createElement('div');
+            item.className = 'sidebar-board-item' + (board.id === activeBoardId ? ' active' : '');
+            item.dataset.boardId = board.id;
+            item.style.setProperty('--board-color', board.color || '#4A90D9');
+            item.title = board.name || '白板';
+
+            item.innerHTML = `
+                <span class="sidebar-board-icon">${board.icon || '📋'}</span>
+                <span class="sidebar-board-name">${board.name || '白板'}</span>
+                <button class="sidebar-board-edit" title="編輯"><i class="fa-solid fa-ellipsis"></i></button>
+            `;
+
+            // 點擊切換白板
+            item.addEventListener('click', (e) => {
+                if (e.target.closest('.sidebar-board-edit')) return;
+                if (board.id !== PostIt.BoardModel.getActive()) {
+                    PostIt.BoardModel.setActive(board.id);
+                }
+            });
+
+            // 編輯按鈕
+            const editBtn = item.querySelector('.sidebar-board-edit');
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openBoardModal(board.id);
+            });
+
+            listEl.appendChild(item);
+        });
+    }
+
+    // ======== 多白板：白板切換 ========
+    function onBoardSwitch(boardId) {
+        // 1. 清空現有白板
+        PostIt.Note.cleanup();
+        clearBoard();
+
+        // 2. 清空圖釘連線 SVG
+        const svgEl = document.getElementById('connections-svg');
+        if (svgEl) {
+            svgEl.querySelectorAll('[data-conn-id]').forEach(g => g.remove());
+        }
+
+        // 3. 重新訂閱新白板的資料
+        PostIt.Note.subscribe(renderNotes);
+
+        // 4. 重新載入圖釘連線
+        if (typeof PostIt.Connect !== 'undefined') PostIt.Connect.start();
+
+        // 5. 更新側邊欄 UI
+        const boards = PostIt.BoardModel.getAll();
+        renderSidebar(boards, boardId);
+
+        // 6. 顯示 Toast
+        const board = PostIt.BoardModel.getBoard(boardId);
+        if (board) {
+            showToast(`已切換至「${board.icon} ${board.name}」`, 'info');
+        }
+    }
+
+    // ======== 多白板：白板管理 Modal ========
+    let editingBoardId = null;
+
+    function openBoardModal(boardId = null) {
+        editingBoardId = boardId;
+        const modal = document.getElementById('board-modal');
+        const overlay = document.getElementById('board-modal-overlay');
+        const title = document.getElementById('board-modal-title');
+        const nameInput = document.getElementById('board-name-input');
+        const deleteBtn = document.getElementById('btn-delete-board');
+
+        if (boardId) {
+            // 編輯模式
+            const board = PostIt.BoardModel.getBoard(boardId);
+            title.innerHTML = '<i class="fa-solid fa-pen"></i> 編輯白板';
+            nameInput.value = board ? board.name : '';
+            deleteBtn.style.display = (boardId === PostIt.BoardModel.DEFAULT_BOARD_ID) ? 'none' : 'inline-flex';
+
+            // 預選圖示
+            document.querySelectorAll('#board-icon-picker .board-icon-option').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.icon === (board?.icon || '📌'));
+            });
+            // 預選顏色
+            document.querySelectorAll('#board-color-picker .board-color-option').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.color === (board?.color || '#4A90D9'));
+            });
+        } else {
+            // 新增模式
+            title.innerHTML = '<i class="fa-solid fa-chalkboard"></i> 新增白板';
+            nameInput.value = '';
+            deleteBtn.style.display = 'none';
+            // 重置選擇
+            document.querySelectorAll('#board-icon-picker .board-icon-option').forEach((btn, i) => {
+                btn.classList.toggle('active', i === 0);
+            });
+            document.querySelectorAll('#board-color-picker .board-color-option').forEach((btn, i) => {
+                btn.classList.toggle('active', i === 0);
+            });
+        }
+
+        modal.classList.add('visible');
+        overlay.classList.add('visible');
+        nameInput.focus();
+    }
+
+    function closeBoardModal() {
+        editingBoardId = null;
+        document.getElementById('board-modal').classList.remove('visible');
+        document.getElementById('board-modal-overlay').classList.remove('visible');
+    }
+
     // ======== 套用字型樣式到貼紙 ========
     function applyNoteStyle(el, note) {
         const style = PostIt.Settings.getEffective(note);
@@ -1401,5 +1529,103 @@ PostIt.Board = (function () {
         }
     }
 
-    return { init, showToast, handleResize };
+    return { init, showToast, handleResize, openBoardModal, closeBoardModal, get _editingBoardId() { return editingBoardId; } };
 })();
+
+// ======== 多白板 UI 事件 (在模組外部綁定，等 DOM Ready) ========
+document.addEventListener('DOMContentLoaded', () => {
+    // 側邊欄展開/收合
+    const sidebar = document.getElementById('board-sidebar');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('expanded');
+        });
+    }
+
+    // 新增白板按鈕
+    const sidebarAddBtn = document.getElementById('sidebar-add-btn');
+    if (sidebarAddBtn) {
+        sidebarAddBtn.addEventListener('click', () => {
+            // 展開 Modal（openBoardModal 在 Board IIFE 內部，需要透過公開方法）
+            if (typeof PostIt.Board.openBoardModal === 'function') {
+                PostIt.Board.openBoardModal(null);
+            }
+        });
+    }
+
+    // 白板 Modal 事件
+    const btnCloseBoardModal = document.getElementById('btn-close-board-modal');
+    const boardModalOverlay = document.getElementById('board-modal-overlay');
+    const btnSaveBoard = document.getElementById('btn-save-board');
+    const btnDeleteBoard = document.getElementById('btn-delete-board');
+
+    if (btnCloseBoardModal) {
+        btnCloseBoardModal.addEventListener('click', () => {
+            if (typeof PostIt.Board.closeBoardModal === 'function') PostIt.Board.closeBoardModal();
+        });
+    }
+    if (boardModalOverlay) {
+        boardModalOverlay.addEventListener('click', () => {
+            if (typeof PostIt.Board.closeBoardModal === 'function') PostIt.Board.closeBoardModal();
+        });
+    }
+
+    // 圖示選擇器
+    document.querySelectorAll('#board-icon-picker .board-icon-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('#board-icon-picker .board-icon-option').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+
+    // 顏色選擇器
+    document.querySelectorAll('#board-color-picker .board-color-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('#board-color-picker .board-color-option').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+
+    // 儲存白板
+    if (btnSaveBoard) {
+        btnSaveBoard.addEventListener('click', async () => {
+            const name = document.getElementById('board-name-input').value.trim();
+            if (!name) {
+                PostIt.Board.showToast('請輸入白板名稱', 'error');
+                return;
+            }
+
+            const activeIcon = document.querySelector('#board-icon-picker .board-icon-option.active');
+            const activeColor = document.querySelector('#board-color-picker .board-color-option.active');
+            const icon = activeIcon ? activeIcon.dataset.icon : '📌';
+            const color = activeColor ? activeColor.dataset.color : '#4A90D9';
+
+            if (PostIt.Board._editingBoardId) {
+                // 更新
+                await PostIt.BoardModel.update(PostIt.Board._editingBoardId, { name, icon, color });
+                PostIt.Board.showToast('白板已更新 ✅', 'success');
+            } else {
+                // 新增
+                const newId = await PostIt.BoardModel.create(name, icon, color);
+                if (newId) {
+                    PostIt.Board.showToast(`白板「${icon} ${name}」已建立 ✅`, 'success');
+                    PostIt.BoardModel.setActive(newId);
+                }
+            }
+            PostIt.Board.closeBoardModal();
+        });
+    }
+
+    // 刪除白板
+    if (btnDeleteBoard) {
+        btnDeleteBoard.addEventListener('click', async () => {
+            if (!PostIt.Board._editingBoardId) return;
+            const board = PostIt.BoardModel.getBoard(PostIt.Board._editingBoardId);
+            if (!confirm(`確定要刪除「${board?.name || '白板'}」嗎？所有貼紙都會被永久刪除！`)) return;
+
+            await PostIt.BoardModel.remove(PostIt.Board._editingBoardId);
+            PostIt.Board.closeBoardModal();
+        });
+    }
+});

@@ -59,6 +59,21 @@
 
     <!-- ===== 主白板畫面 ===== -->
     <div id="app" class="app hidden">
+        <!-- ===== 白板側邊欄 ===== -->
+        <nav id="board-sidebar" class="board-sidebar">
+            <div class="sidebar-toggle" id="sidebar-toggle" title="展開/收合">
+                <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <div class="sidebar-board-list" id="sidebar-board-list">
+                <!-- 動態由 JS 產生白板項目 -->
+            </div>
+            <button class="sidebar-add-btn" id="sidebar-add-btn" title="新增白板">
+                <i class="fa-solid fa-plus"></i>
+                <span class="sidebar-label">新增白板</span>
+            </button>
+        </nav>
+        <!-- 主內容區（工具列 + 白板） -->
+        <div class="app-main">
         <!-- 頂部工具列 -->
         <header id="toolbar" class="toolbar">
             <div class="toolbar-left">
@@ -331,6 +346,8 @@
             </div>
         </div>
         
+        </div> <!-- /.app-main -->
+
         <!-- ===== 更新日誌 Changelog Modal ===== -->
         <div id="changelog-modal-overlay" class="account-modal-overlay"></div>
         <div id="changelog-modal" class="account-modal changelog-modal-container">
@@ -346,6 +363,61 @@
                 </div>
             </div>
         </div>
+
+        <!-- ===== 白板管理 Modal ===== -->
+        <div id="board-modal-overlay" class="account-modal-overlay"></div>
+        <div id="board-modal" class="account-modal board-modal-container">
+            <div class="account-modal-header">
+                <h2 id="board-modal-title"><i class="fa-solid fa-chalkboard"></i> 新增白板</h2>
+                <button id="btn-close-board-modal" class="btn-icon" title="關閉">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="account-modal-body">
+                <div class="account-section">
+                    <label>白板名稱</label>
+                    <input type="text" id="board-name-input" class="settings-input" placeholder="例如：工作、學校、生活" maxlength="20">
+                </div>
+                <div class="account-section">
+                    <label>圖示 (Emoji)</label>
+                    <div class="board-icon-picker" id="board-icon-picker">
+                        <button class="board-icon-option active" data-icon="📌">📌</button>
+                        <button class="board-icon-option" data-icon="💼">💼</button>
+                        <button class="board-icon-option" data-icon="🎓">🎓</button>
+                        <button class="board-icon-option" data-icon="🏠">🏠</button>
+                        <button class="board-icon-option" data-icon="🛒">🛒</button>
+                        <button class="board-icon-option" data-icon="💡">💡</button>
+                        <button class="board-icon-option" data-icon="🎯">🎯</button>
+                        <button class="board-icon-option" data-icon="📋">📋</button>
+                        <button class="board-icon-option" data-icon="❤️">❤️</button>
+                        <button class="board-icon-option" data-icon="⭐">⭐</button>
+                        <button class="board-icon-option" data-icon="🔥">🔥</button>
+                        <button class="board-icon-option" data-icon="🎨">🎨</button>
+                    </div>
+                </div>
+                <div class="account-section">
+                    <label>主題色</label>
+                    <div class="board-color-picker" id="board-color-picker">
+                        <button class="board-color-option active" data-color="#4A90D9" style="background:#4A90D9"></button>
+                        <button class="board-color-option" data-color="#e74c3c" style="background:#e74c3c"></button>
+                        <button class="board-color-option" data-color="#2ecc71" style="background:#2ecc71"></button>
+                        <button class="board-color-option" data-color="#f39c12" style="background:#f39c12"></button>
+                        <button class="board-color-option" data-color="#9b59b6" style="background:#9b59b6"></button>
+                        <button class="board-color-option" data-color="#1abc9c" style="background:#1abc9c"></button>
+                        <button class="board-color-option" data-color="#e91e63" style="background:#e91e63"></button>
+                        <button class="board-color-option" data-color="#607d8b" style="background:#607d8b"></button>
+                    </div>
+                </div>
+                <div class="account-modal-actions">
+                    <button id="btn-save-board" class="btn-save-settings">
+                        <i class="fa-solid fa-check"></i> 確認
+                    </button>
+                    <button id="btn-delete-board" class="btn-reset-settings" style="display:none;color:var(--danger);border-color:var(--danger)">
+                        <i class="fa-solid fa-trash-can"></i> 刪除白板
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Firebase SDK (compat) -->
@@ -356,6 +428,7 @@
 
     <!-- App Scripts -->
     <script src="js/firebase-config.js?v=2.1"></script>
+    <script src="js/board.model.js?v=1.0"></script>
     <script src="js/auth.js?v=2.2"></script>
     <script src="js/drag.js?v=8.36"></script>
     <script src="js/settings_v2.js?v=2.5"></script>

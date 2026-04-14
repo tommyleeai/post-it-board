@@ -11,6 +11,11 @@ PostIt.Changelog = (function () {
         // 檢查是否需要自動產生更新便利貼 (放在登入後才檢查比較安全)
         const lastSeen = localStorage.getItem(STORAGE_KEY);
         if (lastSeen !== CURRENT_VERSION) {
+            // 僅在預設白板上顯示系統公告
+            if (typeof PostIt.BoardModel !== 'undefined' &&
+                PostIt.BoardModel.getActive() !== PostIt.BoardModel.DEFAULT_BOARD_ID) {
+                return;
+            }
             // 延遲 2 秒執行，一來營造系統稍後派發的儀式感，
             // 二來確保 Firestore 第一批資料已載入完畢，能取得場上真實的最高 zIndex
             setTimeout(spawnUpdateNote, 2000);
