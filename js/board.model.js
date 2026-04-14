@@ -37,17 +37,26 @@ PostIt.BoardModel = (function () {
         const uid = PostIt.Auth.getUid();
         const db = PostIt.Firebase.getDb();
         const userRef = db.collection('users').doc(uid);
+        const defaultBoardRef = ref.doc(DEFAULT_BOARD_ID);
 
-        const doc = await ref.doc(DEFAULT_BOARD_ID).get();
+        const doc = await defaultBoardRef.get();
         if (!doc.exists) {
-            await ref.doc(DEFAULT_BOARD_ID).set({
+            await defaultBoardRef.set({
                 ...DEFAULT_BOARD,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             console.log('[BoardModel] 已建立預設白板');
+        }
 
-            // ====== 自動遷移舊資料 ======
-            await migrateOldData(userRef, ref.doc(DEFAULT_BOARD_ID));
+        // ====== 自動遷移舊資料（每次都檢查） ======
+        // 條件：boards/default/notes 為空 且 postit_notes 有資料
+        const newNotesSnap = await defaultBoardRef.collection('notes').limit(1).get();
+        if (newNotesSnap.empty) {
+            const oldNotesSnap = await userRef.collection('postit_notes').limit(1).get();
+            if (!oldNotesSnap.empty) {
+                console.log('[BoardModel] 偵測到未遷移的舊資料，開始遷移...');
+                await migrateOldData(userRef, defaultBoardRef);
+            }
         }
     }
 
