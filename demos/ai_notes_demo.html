@@ -76,11 +76,20 @@
         /* =========================================
            風格 A：科技光暈風 (Tech / Cyberpunk)
            ========================================= */
+        /* === 系統公告呼吸燈 START === */
+        @keyframes ai-breathing-glow {
+            0%, 100% { box-shadow: 0 0 12px rgba(0, 240, 255, 0.4), inset 0 0 15px rgba(0, 240, 255, 0.2); }
+            50%      { box-shadow: 0 0 30px rgba(0, 240, 255, 1), inset 0 0 20px rgba(0, 240, 255, 0.4); }
+        }
+        /* === END === */
+
         .style-a {
             background-color: #1a2639 !important; /* 深空藍 */
             color: #e0f7fa !important;
             border: 2px solid #00f0ff;
-            box-shadow: 0 0 25px rgba(0, 240, 255, 0.6), inset 0 0 15px rgba(0, 240, 255, 0.2);
+            /* === 系統公告呼吸燈 START === */
+            animation: ai-breathing-glow 3s ease-in-out infinite !important;
+            /* === END === */
             border-radius: 8px; /* 科技感通常較方正 */
         }
         .style-a::before {

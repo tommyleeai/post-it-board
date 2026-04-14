@@ -742,7 +742,6 @@ html, body {
 .stamp-wrapper {
     position: relative;
     width: var(--fab-size);
-    height: var(--fab-size);
 }
 
 .stamp-menu {
@@ -2101,13 +2100,21 @@ body.pin-mode {
 /* =========================================
    AI公告便利貼特效 (Tech/Cyberpunk 風格)
    ========================================= */
+/* === 系統公告呼吸燈 START === */
+@keyframes ai-breathing-glow {
+    0%, 100% { filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.4)); }
+    50%      { filter: drop-shadow(0 0 30px rgba(0, 240, 255, 1)); }
+}
+/* === END === */
+
 .ai-system-note {
     background-color: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    /* 取代一般的陰影，換成霓虹發光 */
-    filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.7)) !important;
     color: #e0f7fa !important;
+    /* === 系統公告呼吸燈 START === */
+    animation: ai-breathing-glow 3s ease-in-out infinite !important;
+    /* === END === */
 }
 
 /* 核心實體紙張 (取代底色與紋理) */

@@ -4,7 +4,7 @@
 PostIt.Changelog = (function () {
     'use strict';
 
-    const CURRENT_VERSION = '1.3.5';
+    const CURRENT_VERSION = '1.3.6';
     const STORAGE_KEY = 'postit_last_seen_version';
 
     function init() {
