@@ -767,6 +767,7 @@ PostIt.Board = (function () {
             // 重複提醒標示
             if (note.repeatRule && note.repeatRule !== 'none') {
                 const repeatLabels = {
+                    minutely: '⏱每分鐘',
                     daily: '🔁每天',
                     weekdays: '📅平日',
                     weekly: '📆每週',

@@ -139,6 +139,9 @@ PostIt.Alarm = (function () {
     function calculateNextAlertTime(currentAlertTime, repeatRule) {
         var d = new Date(parseLocalTime(currentAlertTime));
         switch (repeatRule) {
+            case 'minutely':
+                d.setMinutes(d.getMinutes() + 1);
+                break;
             case 'daily':
                 d.setDate(d.getDate() + 1);
                 break;
