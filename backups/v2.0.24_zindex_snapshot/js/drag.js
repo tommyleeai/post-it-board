@@ -11,7 +11,7 @@ PostIt.Drag = (function () {
     let startX = 0;
     let startY = 0;
     let hasMoved = false;
-    let maxZIndex = 100; // 改為從 100 開始 (配合 --z-note-base)
+    let maxZIndex = 10;
     let justDragged = false;
 
     // 拖曳開始的最小距離（避免誤觸）
@@ -103,9 +103,6 @@ PostIt.Drag = (function () {
             maxZIndex++;
             note.style.zIndex = maxZIndex;
         }
-        
-        checkZIndexBounds(); // 確保不會超過 499999上限
-        
         note.classList.add('dragging');
 
         // 群組長按偵測
@@ -243,26 +240,6 @@ PostIt.Drag = (function () {
 
     function setMaxZIndex(val) {
         if (val > maxZIndex) maxZIndex = val;
-        checkZIndexBounds();
-    }
-
-    function checkZIndexBounds() {
-        // 如果逼近上限 (500000 為 UI 層)，強制對所有便利貼的 z-index 進行壓縮重置
-        if (maxZIndex > 490000) {
-            console.log('Z-Index approaching max limit, normalizing...');
-            normalizeZIndex();
-        }
-    }
-
-    function normalizeZIndex() {
-        const notes = Array.from(document.querySelectorAll('.sticky-note:not(.dragging)'));
-        // 依照目前的 z-index 由小到大排序
-        notes.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0));
-        
-        maxZIndex = 100; // 重置為基礎
-        notes.forEach(note => {
-            note.style.zIndex = maxZIndex++;
-        });
     }
 
     function getIsDragging() {

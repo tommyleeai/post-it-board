@@ -9,34 +9,6 @@
     box-sizing: border-box;
 }
 
-
-/* === 統一的 Z-Index 階層表 === */
-:root {
-    --z-background: -1;          /* 網格背景/底層 UI */
-    --z-base: 0;                 /* 最底層 */
-
-    /* 1. 白板圖釘與便利貼層 100 ~ 499,999 */
-    --z-connections: 50;         /* 畫線連線 */
-    --z-note-base: 100;          /* 便利貼底層起點 */
-    --z-note-max: 499999;        /* 便利貼最高層級（再高就會被重置） */
-
-    /* 2. 主 UI 層 500,000 ~ 799,999 */
-    --z-ui-base: 500000;         /* Toolbar, 側邊欄等白板基礎 UI */
-
-    /* 3. 浮動操作層 800,000 ~ 899,999 */
-    --z-fab: 800000;             /* 右下角 FAB 浮動按鈕群 */
-
-    /* 4. 全域遮罩與焦點視窗層 900,000 ~ 9,000,000 */
-    /* 這裡使用動態分配的主力交給 LayerManager */
-    --z-overlay-base: 900000;    /* 暗幕的起始層級 */
-    --z-modal-base: 900010;      /* 對話框起始層級 (由層級管理器動態上升) */
-
-    /* 5. 系統最頂層 (不接受視窗覆蓋) */
-    --z-toast: 9900000;          /* 系統通知 Toast (永遠在最上面) */
-    --z-spinner: 9991000;        /* Loading 轉圈遮罩 */
-    --z-cursor: 9999999;         /* 自訂游標 (印章/圖釘) */
-}
-
 :root {
     /* 貼紙顏色 */
     --note-yellow: #FFF176;
@@ -85,7 +57,7 @@ html, body {
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    z-index: var(--z-modal-base);
+    z-index: 9999;
     transition: opacity 0.5s ease, visibility 0.5s ease;
 }
 
@@ -202,7 +174,7 @@ html, body {
     gap: 4px;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
-    z-index: var(--z-ui-base);
+    z-index: 100;
     position: relative;
 }
 
@@ -462,7 +434,7 @@ html, body {
     justify-content: space-between;
     padding: 0 20px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-    z-index: var(--z-ui-base);
+    z-index: 800000;
     flex-shrink: 0;
 }
 
@@ -947,7 +919,7 @@ html, body {
     flex-direction: column;
     align-items: flex-end; /* 按鈕群靠右對齊，讓內部物件有向左展開的空間 */
     /* gap: 12px; 改由下方 margin 動畫控制 */
-    z-index: var(--z-fab); /* 提升至最高級層級，確保永遠不會被便利貼遮擋 */
+    z-index: 899999; /* 提升至最高級層級，確保永遠不會被便利貼遮擋 */
 }
 
 /* === FAB Hover 向上展開動畫 START === */
@@ -1145,7 +1117,7 @@ html, body {
 .stamp-cursor {
     position: fixed;
     pointer-events: none;
-    z-index: var(--z-cursor);
+    z-index: 9000000;
     transform: rotate(-20deg);
 }
 
@@ -1245,7 +1217,7 @@ body.stamp-mode {
     inset: 0;
     background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(4px);
-    z-index: var(--z-overlay-base);
+    z-index: 900000;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.35s ease;
@@ -1268,7 +1240,7 @@ body.stamp-mode {
     background: #fff;
     border-radius: 20px;
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
-    z-index: var(--z-modal-base);
+    z-index: 900001;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1635,7 +1607,7 @@ body.stamp-mode {
     background: #fff;
     border-radius: 16px 0 0 0;
     box-shadow: -4px -4px 24px rgba(0, 0, 0, 0.15);
-    z-index: var(--z-modal-base); /* 由 LayerManager 動態提昇 */
+    z-index: 9999999; /* 必須遠高於便利貼動態 z-index（群組展開後可達 900000+） */
     transform: translateY(100%);
     transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -1776,7 +1748,7 @@ body.stamp-mode {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.3);
-    z-index: var(--z-overlay-base); /* 由 LayerManager 動態提昇 */
+    z-index: 9999998; /* 配合 .note-settings 的 9999999 */
     opacity: 0;
     transition: opacity 0.35s ease;
     pointer-events: none;
@@ -1796,7 +1768,7 @@ body.stamp-mode {
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.4);
-    z-index: var(--z-spinner);
+    z-index: 9999;
 }
 
 .spinner {
@@ -1823,7 +1795,7 @@ body.stamp-mode {
     font-family: var(--font-ui);
     font-weight: 500;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-    z-index: var(--z-toast);
+    z-index: 9999999;
     opacity: 0;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
@@ -2680,7 +2652,7 @@ body.pin-mode {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0);
-    z-index: var(--z-overlay-base);
+    z-index: 900000;
     pointer-events: none;
     transition: background 0.3s ease;
 }
@@ -2879,22 +2851,3 @@ body.pin-mode {
 }
 
 /* === 群組系統 END === */
-
-
-/* === 統一背景模糊遮罩 === */
-.unified-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    z-index: var(--z-overlay-base);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.35s ease;
-}
-
-.unified-overlay.visible {
-    opacity: 1;
-    pointer-events: auto;
-}

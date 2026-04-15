@@ -920,24 +920,18 @@ PostIt.Board = (function () {
         fontColorInput.value = rgbaToHex(note.fontColor || effective.fontColor);
 
         // 顯示面板
-        const nsModal = document.getElementById('note-settings');
-        const nsOverlay = document.getElementById('settings-overlay');
-        nsModal.classList.remove('hidden');
-        nsModal.classList.add('visible');
-        nsOverlay.classList.remove('hidden');
-        nsOverlay.classList.add('visible');
-        if (window.PostIt.LayerManager) window.PostIt.LayerManager.bringToFront(nsModal, nsOverlay);
+        document.getElementById('note-settings').classList.remove('hidden');
+        document.getElementById('note-settings').classList.add('visible');
+        document.getElementById('settings-overlay').classList.remove('hidden');
+        document.getElementById('settings-overlay').classList.add('visible');
     }
 
     function closeSettings() {
         PostIt.Note.setActiveNoteId(null);
-        const nsModal = document.getElementById('note-settings');
-        const nsOverlay = document.getElementById('settings-overlay');
-        nsModal.classList.remove('visible');
-        nsModal.classList.add('hidden');
-        if (window.PostIt.LayerManager) window.PostIt.LayerManager.remove(nsModal);
-        nsOverlay.classList.remove('visible');
-        nsOverlay.classList.add('hidden');
+        document.getElementById('note-settings').classList.remove('visible');
+        document.getElementById('note-settings').classList.add('hidden');
+        document.getElementById('settings-overlay').classList.remove('visible');
+        document.getElementById('settings-overlay').classList.add('hidden');
     }
 
     // ======== 清空白板 DOM ========
@@ -1165,17 +1159,12 @@ PostIt.Board = (function () {
 
         modal.classList.add('visible');
         overlay.classList.add('visible');
-        if (window.PostIt.LayerManager) window.PostIt.LayerManager.bringToFront(modal, overlay);
         nameInput.focus();
     }
 
     function closeBoardModal() {
         editingBoardId = null;
-        const modal = document.getElementById('board-modal');
-        if (modal) {
-            modal.classList.remove('visible');
-            if (window.PostIt.LayerManager) window.PostIt.LayerManager.remove(modal);
-        }
+        document.getElementById('board-modal').classList.remove('visible');
         document.getElementById('board-modal-overlay').classList.remove('visible');
     }
 
@@ -1240,12 +1229,10 @@ PostIt.Board = (function () {
             // 顯示 Modal
             modal.classList.add('visible');
             overlay.classList.add('visible');
-            if (window.PostIt.LayerManager) window.PostIt.LayerManager.bringToFront(modal, overlay);
         }
 
         function closeAccountModal() {
             modal.classList.remove('visible');
-            if (window.PostIt.LayerManager) window.PostIt.LayerManager.remove(modal);
             overlay.classList.remove('visible');
             // 還原背景預覽（如果用戶沒按儲存就關閉）
             applyBoardBgImage(PostIt.Settings.getAccountSettings().boardBgImage);
@@ -1477,13 +1464,11 @@ PostIt.Board = (function () {
         const openArchive = async () => {
             overlay.classList.remove('hidden');
             archiveModal.classList.add('visible');
-            if (window.PostIt.LayerManager) window.PostIt.LayerManager.bringToFront(archiveModal, overlay);
             await renderArchiveGrid();
         };
 
         const closeArchive = () => {
             archiveModal.classList.remove('visible');
-            if (window.PostIt.LayerManager) window.PostIt.LayerManager.remove(archiveModal);
             overlay.classList.add('hidden');
         };
 

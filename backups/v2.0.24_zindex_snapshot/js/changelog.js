@@ -4,7 +4,7 @@
 PostIt.Changelog = (function () {
     'use strict';
 
-    const CURRENT_VERSION = '2.0.25';
+    const CURRENT_VERSION = '2.0.24';
     const STORAGE_KEY = 'postit_last_seen_version';
 
     function init() {
@@ -210,7 +210,6 @@ PostIt.Changelog = (function () {
         // 顯示視窗
         modal.classList.add('visible');
         overlay.classList.add('visible');
-        if (window.PostIt.LayerManager) window.PostIt.LayerManager.bringToFront(modal, overlay);
         contentEl.innerHTML = '<div class="loading-cell">載入中...</div>';
 
         try {
@@ -234,10 +233,7 @@ PostIt.Changelog = (function () {
     function closeModal() {
         const modal = document.getElementById('changelog-modal');
         const overlay = document.getElementById('changelog-modal-overlay');
-        if (modal) {
-            modal.classList.remove('visible');
-            if (window.PostIt.LayerManager) window.PostIt.LayerManager.remove(modal);
-        }
+        if (modal) modal.classList.remove('visible');
         if (overlay) overlay.classList.remove('visible');
     }
 
