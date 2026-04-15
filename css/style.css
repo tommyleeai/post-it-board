@@ -1607,7 +1607,7 @@ body.stamp-mode {
     background: #fff;
     border-radius: 16px 0 0 0;
     box-shadow: -4px -4px 24px rgba(0, 0, 0, 0.15);
-    z-index: 900001; /* 提升至最高級層級 */
+    z-index: 9999999; /* 必須遠高於便利貼動態 z-index（群組展開後可達 900000+） */
     transform: translateY(100%);
     transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -1748,7 +1748,7 @@ body.stamp-mode {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.3);
-    z-index: 900000; /* 配合最高級彈窗 */
+    z-index: 9999998; /* 配合 .note-settings 的 9999999 */
     opacity: 0;
     transition: opacity 0.35s ease;
     pointer-events: none;
