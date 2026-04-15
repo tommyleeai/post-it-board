@@ -763,7 +763,19 @@ PostIt.Board = (function () {
                 dt = new Date(note.alertTime);
             }
             // 格式化為 HH:mm 顯示
-            badgeEl.innerHTML = `<i class="fa-regular fa-clock"></i> ${dt.getHours()}:${dt.getMinutes().toString().padStart(2, '0')}`;
+            let badgeText = `<i class="fa-regular fa-clock"></i> ${dt.getHours()}:${dt.getMinutes().toString().padStart(2, '0')}`;
+            // 重複提醒標示
+            if (note.repeatRule && note.repeatRule !== 'none') {
+                const repeatLabels = {
+                    daily: '🔁每天',
+                    weekdays: '📅平日',
+                    weekly: '📆每週',
+                    monthly: '🗓每月',
+                    yearly: '🎂每年'
+                };
+                badgeText += ` <span style="font-size:9px;opacity:0.85;">${repeatLabels[note.repeatRule] || note.repeatRule}</span>`;
+            }
+            badgeEl.innerHTML = badgeText;
             if (note.aiReason) badgeEl.title = note.aiReason;
             badgeEl.style.cursor = 'default';
             badgeEl.style.color = 'rgba(231, 76, 60, 0.95)';

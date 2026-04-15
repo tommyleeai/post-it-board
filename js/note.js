@@ -444,6 +444,7 @@ PostIt.Note = (function () {
         if (!aiResult) {
             ref.doc(noteId).update({
                 alertTime: firebase.firestore.FieldValue.delete(),
+                eventTime: firebase.firestore.FieldValue.delete(),
                 reminderStatus: firebase.firestore.FieldValue.delete(),
                 aiReason: firebase.firestore.FieldValue.delete(),
                 repeatRule: firebase.firestore.FieldValue.delete(),
@@ -456,6 +457,7 @@ PostIt.Note = (function () {
 
         ref.doc(noteId).update({
             alertTime: aiResult.alertTime || null,
+            eventTime: aiResult.eventTime || null,
             reminderStatus: aiResult.alertTime ? 'pending' : null,
             aiReason: aiResult.reason || null,
             repeatRule: aiResult.repeatRule || 'none',
@@ -674,7 +676,7 @@ PostIt.Note = (function () {
     return {
         subscribe, cleanup, create, updateContent, updatePosition,
         updateColor, updateStyle, archive, unarchive, deleteArchive, getArchivedNotes, remove, uploadImage, detectType,
-        updateReminderLogic, updateReminderStatus,
+        updateReminderLogic, updateReminderStatus, getNotesRef,
         mergeToGroup, removeFromGroup, disbandGroup, getGroupNotes, MAX_GROUP_SIZE,
         getCache, getCount, getNote, getActiveNoteId, setActiveNoteId
     };
