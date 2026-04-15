@@ -1596,10 +1596,11 @@ PostIt.Board = (function () {
                     el.removeEventListener('pointerdown', el._groupDragHandler);
                     delete el._groupDragHandler;
                 }
-                // Reset z-index if stuck at expanded level (900000+)
+                // Reset z-index if stuck at expanded level (far above maxZIndex)
                 var currentZ = parseInt(el.style.zIndex || 0);
-                if (currentZ > 900000) {
-                    el.style.zIndex = PostIt.Drag.getMaxZIndex();
+                var maxZ = PostIt.Drag.getMaxZIndex();
+                if (currentZ > maxZ + 50) {
+                    el.style.zIndex = maxZ;
                 }
                 // Clean up expanded/collapsing classes
                 el.classList.remove('group-expanded', 'group-collapsing');

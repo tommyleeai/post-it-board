@@ -2758,9 +2758,8 @@ body.pin-mode {
                 top 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* 群組展開狀態的便利貼 */
+/* 群組展開狀態的便利貼 — z-index 由 JS 動態計算（group.js expandGroup） */
 .sticky-note.group-expanded {
-    z-index: 900001 !important;
     cursor: grab;
     transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
                 top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),

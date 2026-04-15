@@ -270,6 +270,12 @@ PostIt.Group = (function () {
         expandedGroupId = groupId;
         expandedOriginalPos = {};
 
+        // 動態計算 z-index 基準值：確保 overlay 和展開的卡片永遠在所有便利貼之上
+        var currentMaxZ = PostIt.Drag.getMaxZIndex();
+        var overlayZ = Math.max(900000, currentMaxZ + 100);
+        var expandedBaseZ = overlayZ + 1;
+
+        overlayEl.style.zIndex = overlayZ;
         overlayEl.classList.add('active');
 
         var board = document.getElementById('whiteboard');
@@ -310,7 +316,7 @@ PostIt.Group = (function () {
                 el.style.top = centerY + 'px';
                 var rotation = (i - (n - 1) / 2) * 2;
                 el.style.transform = 'rotate(' + rotation + 'deg)';
-                el.style.zIndex = 900001 + i;
+                el.style.zIndex = expandedBaseZ + i;
             }, i * 50);
         });
 
