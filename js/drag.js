@@ -87,8 +87,22 @@ PostIt.Drag = (function () {
         dragTarget = note;
 
         // 點下瞬間立刻飄起來（不等移動門檻）
-        maxZIndex++;
-        note.style.zIndex = maxZIndex;
+        // 如果是群組便利貼，整組一起提升 z-index，避免不同群組間互相穿插
+        const noteId = note.dataset.noteId;
+        const noteData = PostIt.Note.getNote(noteId);
+        if (noteData && noteData.groupId) {
+            const members = PostIt.Note.getGroupNotes(noteData.groupId);
+            // 按 groupOrder 排序，確保層級正確（底層的 z-index 最小）
+            members.sort((a, b) => (a.groupOrder || 0) - (b.groupOrder || 0));
+            members.forEach((member, i) => {
+                maxZIndex++;
+                const memberEl = document.querySelector('[data-note-id="' + member.id + '"]');
+                if (memberEl) memberEl.style.zIndex = maxZIndex;
+            });
+        } else {
+            maxZIndex++;
+            note.style.zIndex = maxZIndex;
+        }
         note.classList.add('dragging');
 
         // 群組長按偵測

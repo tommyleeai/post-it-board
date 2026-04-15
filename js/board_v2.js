@@ -1610,6 +1610,7 @@ PostIt.Board = (function () {
         if (typeof PostIt.Group !== 'undefined' && PostIt.Group.isExpanded()) return;
 
         // 對每個群組進行視覺處理
+        // 確保同一群組的成員 z-index 連續遞增，頂層永遠最高
         Object.entries(groups).forEach(([groupId, members]) => {
             if (members.length < 2) return; // 單張不算群組
 
@@ -1619,6 +1620,12 @@ PostIt.Board = (function () {
             const topNote = members[members.length - 1]; // 最上層的便利貼
             const topEl = document.querySelector(`[data-note-id="${topNote.id}"]`);
             if (!topEl) return;
+
+            // 取得頂層便利貼的 z-index 作為基準
+            const topZ = parseInt(topEl.style.zIndex || 1);
+            // 確保頂層 z-index 至少要比底層成員數高出足夠空間
+            // baseZ 是整組最底層的 z-index
+            const baseZ = topZ - (members.length - 1);
 
             // 頂層便利貼加上群組堆疊樣式
             topEl.classList.add('group-stacked');
@@ -1632,9 +1639,16 @@ PostIt.Board = (function () {
             topEl.appendChild(badge);
 
             // 建立幽靈牌（底下的便利貼露出邊緣）
-            members.slice(0, -1).forEach((member, i) => {
+            // 每個成員按 groupOrder 從小到大分配連續 z-index
+            members.forEach((member, i) => {
                 const memberEl = document.querySelector(`[data-note-id="${member.id}"]`);
                 if (!memberEl) return;
+
+                // 統一設定 z-index：底層 → 頂層遞增
+                memberEl.style.zIndex = baseZ + i;
+
+                // 頂層便利貼不需要隱藏
+                if (i === members.length - 1) return;
 
                 // 非頂層便利貼：隱藏內容但保留外框（作為幽靈牌）
                 memberEl.classList.add('group-hidden');
@@ -1644,7 +1658,6 @@ PostIt.Board = (function () {
                 const offsetY = member.groupOffsetY || ((i + 1) * 3);
                 memberEl.style.left = (parseFloat(topEl.style.left) + offsetX) + 'px';
                 memberEl.style.top = (parseFloat(topEl.style.top) + offsetY) + 'px';
-                memberEl.style.zIndex = parseInt(topEl.style.zIndex || 1) - (members.length - 1 - i);
 
                 // 微旋轉差異（讓堆疊看起來更自然）
                 const baseRotation = parseFloat(topEl.style.getPropertyValue('--note-rotation')) || 0;
