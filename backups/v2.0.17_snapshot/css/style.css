@@ -1,0 +1,2854 @@
+/* ============================================
+   Post It — 核心樣式
+   ============================================ */
+
+/* === Reset & Base START === */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* 貼紙顏色 */
+    --note-yellow: #FFF176;
+    --note-pink: #F48FB1;
+    --note-green: #A5D6A7;
+    --note-blue: #90CAF9;
+    --note-orange: #FFCC80;
+    --note-purple: #CE93D8;
+
+    /* UI 顏色 */
+    --toolbar-bg: #2c2c2c;
+    --toolbar-text: #e0e0e0;
+    --board-bg: #e8e4df;
+    --board-border: #b0aaa2;
+    --board-frame: #8a8a8a;
+    --accent: #4A90D9;
+    --danger: #e74c3c;
+
+    /* 字型 */
+    --font-handwriting: 'Caveat', cursive;
+    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+    /* 尺寸 */
+    --toolbar-height: 52px;
+    --fab-size: 56px;
+    --note-min-w: 320px;
+    --note-min-h: 280px;
+    --note-max-w: 500px;
+    --note-max-h: 520px;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font-ui);
+    background: #1a1a1a;
+    -webkit-font-smoothing: antialiased;
+}
+/* === Reset & Base END === */
+
+/* === Login Screen START === */
+.login-screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    z-index: 9999;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.login-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.login-card {
+    text-align: center;
+    padding: 48px 40px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+    max-width: 400px;
+    width: 90%;
+    animation: fadeInUp 0.8s ease;
+}
+
+.login-logo {
+    font-size: 56px;
+    color: var(--note-yellow);
+    margin-bottom: 16px;
+    filter: drop-shadow(0 4px 12px rgba(255, 241, 118, 0.3));
+}
+
+.login-title {
+    font-family: var(--font-handwriting);
+    font-size: 48px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.login-subtitle {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 15px;
+    margin-bottom: 32px;
+    line-height: 1.5;
+}
+
+.btn-google-login {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 32px;
+    border: none;
+    border-radius: 12px;
+    background: #fff;
+    color: #333;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.btn-google-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.btn-google-login:active {
+    transform: translateY(0);
+}
+
+.login-footer {
+    margin-top: 24px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.35);
+}
+/* === Login Screen END === */
+
+/* === App Shell START === */
+.app {
+    display: flex;
+    flex-direction: row; /* 側邊欄 + 主內容橫排 */
+    height: 100vh;
+    transition: opacity 0.5s ease;
+}
+
+.app.hidden {
+    opacity: 0;
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+}
+
+/* 主內容區（工具列 + 白板） */
+.app-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+/* === App Shell END === */
+
+/* === Board Sidebar START === */
+.board-sidebar {
+    width: 52px;
+    min-width: 52px;
+    height: 100vh;
+    background: #1e1e2e;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    gap: 4px;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    z-index: 100;
+    position: relative;
+}
+
+.board-sidebar.expanded {
+    width: 200px;
+    min-width: 200px;
+}
+
+/* 展開/收合按鈕 */
+.sidebar-toggle {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+}
+
+.sidebar-toggle:hover {
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.9);
+}
+
+/* 白板清單 */
+.sidebar-board-list {
+    flex: 1;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 6px;
+}
+
+.sidebar-board-list::-webkit-scrollbar {
+    width: 3px;
+}
+
+.sidebar-board-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-board-list::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.15);
+    border-radius: 4px;
+}
+
+/* 單一白板項目 */
+.sidebar-board-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.sidebar-board-item:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.sidebar-board-item.active {
+    background: rgba(255,255,255,0.12);
+}
+
+/* 左側主題色標記 */
+.sidebar-board-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 60%;
+    border-radius: 0 4px 4px 0;
+    background: var(--board-color, #4A90D9);
+}
+
+.sidebar-board-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    width: 28px;
+    text-align: center;
+    line-height: 1;
+}
+
+.sidebar-board-name {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0;
+    transition: opacity 0.2s ease 0.1s;
+    font-family: var(--font-ui);
+}
+
+.board-sidebar.expanded .sidebar-board-name,
+.board-sidebar.mobile-open .sidebar-board-name {
+    opacity: 1;
+}
+
+.sidebar-board-item.active .sidebar-board-name {
+    color: #fff;
+    font-weight: 600;
+}
+
+/* 白板項目右鍵/編輯按鈕 */
+.sidebar-board-edit {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.3);
+    cursor: pointer;
+    font-size: 11px;
+    opacity: 0;
+    pointer-events: none; /* 收合時不可點擊 */
+    transition: opacity 0.2s, color 0.2s, background 0.2s;
+}
+
+.board-sidebar.expanded .sidebar-board-item:hover .sidebar-board-edit,
+.board-sidebar.mobile-open .sidebar-board-edit {
+    opacity: 1;
+    pointer-events: auto; /* 展開時恢復可點擊 */
+}
+
+.sidebar-board-edit:hover {
+    color: rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.1);
+}
+
+/* 新增白板按鈕 */
+.sidebar-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: calc(100% - 12px);
+    margin: 4px 6px 8px;
+    padding: 10px 0;
+    border-radius: 8px;
+    border: 2px dashed rgba(255,255,255,0.15);
+    background: transparent;
+    color: rgba(255,255,255,0.4);
+    cursor: pointer;
+    font-size: 14px;
+    font-family: var(--font-ui);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.sidebar-add-btn:hover {
+    border-color: rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.7);
+    background: rgba(255,255,255,0.05);
+}
+
+.sidebar-add-btn .sidebar-label {
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s ease 0.1s;
+}
+
+.board-sidebar.expanded .sidebar-add-btn .sidebar-label,
+.board-sidebar.mobile-open .sidebar-add-btn .sidebar-label {
+    opacity: 1;
+}
+
+/* === Board Sidebar END === */
+
+/* === Board Modal START === */
+.board-modal-container {
+    max-width: 420px;
+}
+
+.board-icon-picker,
+.board-color-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.board-icon-option {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    border-radius: 10px;
+    border: 2px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.board-icon-option:hover {
+    border-color: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.1);
+}
+
+.board-icon-option.active {
+    border-color: var(--accent);
+    background: rgba(74, 144, 217, 0.15);
+    box-shadow: 0 0 12px rgba(74, 144, 217, 0.3);
+}
+
+.board-color-option {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+}
+
+.board-color-option:hover {
+    transform: scale(1.15);
+}
+
+.board-color-option.active {
+    outline-color: rgba(255,255,255,0.6);
+    transform: scale(1.1);
+}
+/* === Board Modal END === */
+
+/* === Toolbar START === */
+.toolbar {
+    height: var(--toolbar-height);
+    background: var(--toolbar-bg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    z-index: 800000;
+    flex-shrink: 0;
+}
+
+.toolbar-left {
+    display: flex;
+    align-items: center;
+}
+
+.toolbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-handwriting);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--note-yellow);
+}
+
+.toolbar-brand i {
+    font-size: 22px;
+}
+
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.note-count {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-name {
+    font-size: 13px;
+    color: var(--toolbar-text);
+    font-weight: 500;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-logout {
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+.btn-logout:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* 工具列功能按鈕 */
+.btn-toolbar {
+    padding: 6px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.55);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-toolbar:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-toolbar.hidden {
+    display: none;
+}
+/* === Toolbar END === */
+
+/* === Whiteboard START === */
+.whiteboard {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+
+    /* 擬真白板材質 */
+    background-color: var(--board-bg);
+    background-image:
+        /* 細微噪點紋理 */
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E"),
+        /* 細格線 */
+        linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+    background-size: 256px 256px, 40px 40px, 40px 40px;
+
+    /* 白板凹陷效果 */
+    box-shadow:
+        inset 0 2px 8px rgba(0, 0, 0, 0.12),
+        inset 0 0 0 3px var(--board-border);
+}
+
+/* 白板金屬框 */
+.whiteboard::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 4px solid var(--board-frame);
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 50;
+    box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.15),
+        0 0 0 1px rgba(0,0,0,0.2);
+}
+/* === Whiteboard END === */
+
+/* === Empty Hint START === */
+.empty-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+.empty-hint.hidden {
+    opacity: 0;
+}
+
+.empty-hint i {
+    font-size: 72px;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.empty-hint p {
+    font-size: 18px;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    line-height: 1.6;
+}
+/* === Empty Hint END === */
+
+/* === Sticky Note START === */
+.sticky-note {
+    position: absolute;
+    width: var(--note-min-w);
+    min-height: var(--note-min-h);
+    max-height: var(--note-max-h);
+    padding: 16px 16px 28px 16px;
+    border-radius: 2px;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    transition:
+        box-shadow 0.3s ease,
+        transform 0.3s ease;
+
+    /* 移除原生陰影與背景設定，改由 ::before 處理擬真裁切切角 */
+    box-shadow: none;
+    border-radius: 0;
+    background: transparent !important;
+    /* 陰影改放在父層，一次投射出整張裁切紙張＋狗耳朵捲角的完美外緣陰影 */
+    filter: drop-shadow(3px 5px 8px rgba(0, 0, 0, 0.25));
+    /* 優化效能 */
+    will-change: filter, transform;
+}
+
+/* === 便利貼捲角翻頁效果 START === */
+/* 置放底色與形狀的層 */
+.sticky-note::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--note-bg-color, var(--note-yellow));
+    background-image: 
+        /* 紙背紋理 */
+        linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    /* 強制精準裁切右下角一個 40px 正方形區塊，不管母體長寬比，切線永遠完美 45 度 */
+    clip-path: polygon(0% 0%, 100% 0%, 100% calc(100% - 40px), calc(100% - 40px) 100%, 0% 100%);
+    border-radius: 2px;
+}
+
+/* 建立捲上來的紙背（擬真狗耳朵翻摺） */
+.sticky-note::after {
+    content: '';
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    width: 42px;
+    height: 42px;
+    /* 將透明起始點退縮至 45%，確保白角往前推進覆蓋紫色的底紙邊緣，消除因誤差產生的紫色斜線 */
+    background: linear-gradient(
+        315deg, 
+        transparent 45%, 
+        rgba(235, 235, 235, 0.8) 47%, 
+        rgba(255, 255, 255, 0.95) 100%
+    );
+    /* 唯一需要倒角的地方是指向左上方的紙張尖角 */
+    border-top-left-radius: 8px;
+    z-index: 10;
+    /* 陰影投射在黃紙上，向左上打 */
+    filter: drop-shadow(-2px -2px 3px rgba(0, 0, 0, 0.15));
+    /* 改用 all 讓圓角也能流暢過場 */
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: bottom right;
+    pointer-events: none;
+}
+
+/* 捲角 hover 放大呈現互動感，同時陰影擴散 */
+.sticky-note:not(.dragging):hover::after {
+    /* 不使用 scale 或 rotate，避免邊界錯位導致紫線再次露出 */
+    /* 透過加深尖角彎曲度與推長陰影，創造視覺上向內彎並騰起離開紙面的錯覺 */
+    border-top-left-radius: 22px;
+    filter: drop-shadow(-5px -5px 8px rgba(0, 0, 0, 0.35));
+}
+
+/* 拖曳中狀態 */
+.sticky-note.dragging {
+    cursor: grabbing;
+    transform: scale(1.05) rotate(0deg) !important;
+    z-index: 9999 !important;
+    filter: drop-shadow(10px 18px 20px rgba(0, 0, 0, 0.4));
+    transition: none !important; /* 立刻飄起，不要過渡動畫延遲 */
+}
+/* === END === */
+
+/* 貼紙內容區 */
+.note-content {
+    font-family: var(--font-handwriting);
+    font-size: 20px;
+    line-height: 1.5;
+    color: rgba(0, 0, 0, 0.78);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    outline: none;
+    min-height: 40px;
+    /* === 便利貼捲軸修復 START === */
+    max-height: calc(var(--note-max-h) - 44px);
+    /* === END === */
+    overflow-y: auto;
+
+    /* 隱藏捲軸但保留捲動能力 */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* Webkit 隱藏捲軸 */
+.note-content::-webkit-scrollbar {
+    display: none;
+}
+
+.note-content:empty::before {
+    content: '點兩下開始寫...';
+    color: rgba(0, 0, 0, 0.25);
+    font-style: italic;
+}
+
+/* URL 型貼紙 */
+.note-content a {
+    color: #1565C0;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    word-break: break-all;
+    cursor: pointer;
+}
+
+.note-content a:hover {
+    color: #0D47A1;
+}
+
+/* 圖片型貼紙 */
+.note-content img {
+    max-width: 100%;
+    border-radius: 4px;
+    display: block;
+    margin: 4px 0;
+}
+
+/* 設定按鈕（捲角區域的觸發器） */
+.note-settings-trigger {
+    position: absolute;
+    /* 原為 0，現在配合 42px 的翻起角，移動到中央地帶 */
+    bottom: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    /* 稍微加深透明度，因為現在是放在灰白漸層的紙面上 */
+    color: rgba(0, 0, 0, 0.25);
+    font-size: 11px;
+    /* 將層級拉高超過捲角 pseudo element 的 10 */
+    z-index: 20;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.note-settings-trigger:hover {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+/* 時間戳 */
+.note-timestamp {
+    position: absolute;
+    bottom: 4px;
+    left: 12px;
+    font-size: 10px;
+    font-family: var(--font-ui);
+    color: rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+}
+
+/* === 垃圾桶快速刪除 START === */
+.note-delete-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(231, 76, 60, 0.12);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--danger);
+    font-size: 14px;
+    z-index: 4;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.7);
+    transition: opacity 0.25s ease, transform 0.25s ease, background 0.2s ease;
+}
+
+.note-delete-btn.note-delete-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+}
+
+.note-delete-btn:hover {
+    background: rgba(231, 76, 60, 0.25);
+    transform: scale(1.12);
+}
+
+.note-delete-btn:active {
+    transform: scale(0.95);
+}
+/* === 垃圾桶快速刪除 END === */
+
+/* === 印章完成 START === */
+.note-stamp-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.note-stamp {
+    color: #c41e1e;
+    font-size: 38px;
+    font-weight: 900;
+    font-family: 'Noto Sans TC', sans-serif;
+    letter-spacing: 4px;
+    border: 4px solid #c41e1e;
+    border-radius: 4px;
+    padding: 4px 16px;
+    transform: rotate(-15deg);
+    opacity: 0;
+    pointer-events: none;
+    /* 印泥不均勻質感 */
+    text-shadow:
+        1px 1px 0 rgba(196, 30, 30, 0.6),
+        -1px -1px 0 rgba(196, 30, 30, 0.3);
+    /* 模擬印泥斑駁 */
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.85'/%3E%3Crect width='100%25' height='100%25' fill='white' opacity='0.6'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.85'/%3E%3Crect width='100%25' height='100%25' fill='white' opacity='0.6'/%3E%3C/svg%3E");
+}
+
+.note-stamp.stamping {
+    animation: stampSlam 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+@keyframes stampSlam {
+    0% {
+        transform: rotate(-15deg) scale(3);
+        opacity: 0;
+}
+    50% {
+        transform: rotate(-15deg) scale(0.92);
+        opacity: 0.95;
+}
+    70% {
+        transform: rotate(-15deg) scale(1.03);
+        opacity: 0.9;
+}
+    100% {
+        transform: rotate(-15deg) scale(1);
+        opacity: 0.85;
+}
+}
+
+/* 蓋章後的貼紙漸灰效果 */
+.sticky-note.stamped-archiving {
+    transition: filter 1s ease 0.6s, opacity 1.5s ease 1s;
+    filter: grayscale(0.6) brightness(0.95);
+    opacity: 0.5;
+}
+
+/* 蓋章按鈕 */
+.btn-stamp {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 2px solid #c41e1e;
+    border-radius: 10px;
+    background: #fff5f5;
+    color: #c41e1e;
+    font-size: 14px;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    font-weight: 600;
+}
+
+.btn-stamp:hover {
+    background: #ffe8e8;
+    box-shadow: 0 2px 8px rgba(196, 30, 30, 0.15);
+}
+
+.btn-stamp:active {
+    transform: scale(0.97);
+}
+/* === 印章完成 END === */
+
+/* === Sticky Note END === */
+
+/* === FAB Button START === */
+.fab-group {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* 按鈕群靠右對齊，讓內部物件有向左展開的空間 */
+    /* gap: 12px; 改由下方 margin 動畫控制 */
+    z-index: 899999; /* 提升至最高級層級，確保永遠不會被便利貼遮擋 */
+}
+
+/* === FAB Hover 向上展開動畫 START === */
+.fab-pin, .stamp-wrapper {
+    height: 0;
+    opacity: 0;
+    margin-bottom: 0;
+    transform: translateY(30px) scale(0.5); /* 點 A 隱藏 */
+    pointer-events: none;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fab-group:hover .fab-pin,
+.fab-group:hover .stamp-wrapper {
+    height: var(--fab-size);
+    opacity: 1;
+    margin-bottom: 12px; /* 模擬原有的 gap */
+    transform: translateY(0) scale(1); /* 點 B 顯示位置 */
+    pointer-events: auto;
+}
+/* === END === */
+
+.fab-add {
+    width: var(--fab-size);
+    height: var(--fab-size);
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #4A90D9 0%, #357ABD 100%);
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow:
+        0 6px 20px rgba(74, 144, 217, 0.4),
+        0 2px 6px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fab-add:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow:
+        0 10px 30px rgba(74, 144, 217, 0.5),
+        0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.fab-add:active {
+    transform: translateY(0) scale(0.97);
+}
+
+.fab-add.disabled {
+    background: #999;
+    cursor: not-allowed;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* === FAB Button END === */
+
+/* === 印章系統 START === */
+.fab-stamp {
+    position: relative;
+    z-index: 2; /* 確保主按鈕蓋過絕對定位滑出的 stamp-menu */
+    width: var(--fab-size);
+    height: var(--fab-size);
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #9b59b6 0%, #7d3c98 100%);
+    color: #fff;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow:
+        0 6px 20px rgba(155, 89, 182, 0.4),
+        0 2px 6px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fab-stamp:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow:
+        0 10px 30px rgba(155, 89, 182, 0.5),
+        0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.fab-stamp:active {
+    transform: translateY(0) scale(0.97);
+}
+
+/* === 印章展開選單與包裝器 START === */
+.stamp-wrapper {
+    position: relative;
+    width: var(--fab-size);
+}
+
+.stamp-menu {
+    position: absolute;
+    right: 100%; /* 選單停放在主按鈕的左側邊緣外 */
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: row-reverse;/* 印章往左側依序生長 */
+    align-items: center;
+    gap: 8px;
+    padding: 16px 8px; /* 給予上下與右側適當空間避免被裁切 */
+    opacity: 1;
+    pointer-events: none; /* 讓隱藏時的空隙不會阻擋點擊 */
+}
+
+.stamp-menu.open {
+    pointer-events: auto;
+}
+
+.stamp-menu-item {
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* 動畫設定：點 A (收合隱藏狀態) */
+    opacity: 0;
+    /* 將各元素平移躲到右側 fab-stamp 後方：利用 index * 64px 精準歸零 */
+    transform: translateX(calc((var(--item-index) * 64px) + 64px)) scale(0.5);
+    pointer-events: none;
+    /* 收合時的退回動畫（較快無延遲） */
+    transition: all 0.25s ease-out;
+}
+
+.stamp-menu.open .stamp-menu-item {
+    opacity: 1;
+    /* 點 B (原本 flex 佈局位置) */
+    transform: translateX(0) scale(1);
+    pointer-events: auto;
+    
+    /* 更順暢的蘋果風格快出慢停 (Silky Smooth Fast-out Slow-in)，再加速 20% 至 0.25s */
+    transition: all 0.25s cubic-bezier(0.2, 0.9, 0.2, 1);
+    /* 縮短交錯間距，讓印章像流體一樣緊密跟隨 */
+    transition-delay: calc(var(--item-index) * 0.05s);
+}
+
+/* 給予左右多餘的安全空間，避免左右邊緣元件放大時被切斷 */
+.stamp-menu-item:first-child {
+    margin-right: 6px; /* row-reverse 中，first-child 在最左邊 */
+}
+.stamp-menu-item:last-child {
+    margin-left: 6px;  /* row-reverse 中，last-child 在最右邊（靠近按鈕） */
+}
+/* === END === */
+
+.stamp-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2.5px solid currentColor;
+    background: rgba(255, 255, 255, 0.95);
+    font-weight: 900;
+    font-size: 13px;
+    font-family: 'Noto Sans TC', serif;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
+}
+
+/* === 選單印章白底修復 START === */
+.stamp-preview.has-image {
+    border: none;
+    background: #fff; /* 將原本的 transparent 改為白底，完美襯托出紅色印金且不超出 */
+    padding: 0;
+    overflow: visible; /* 允許邊緣稍微突出，因為是真正的去背圖 */
+}
+/* === END === */
+
+.stamp-preview.has-image img {
+    width: 130%; /* 放大一點，因為去背圖通常有預留邊距 */
+    height: 130%;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+}
+
+.stamp-menu-item:hover .stamp-preview {
+    transform: scale(1.12);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+
+/* 自訂游標 */
+.stamp-cursor {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9000000;
+    transform: rotate(-20deg);
+}
+
+.stamp-cursor-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid currentColor;
+    background: rgba(255, 255, 255, 0.9);
+    font-weight: 900;
+    font-size: 14px;
+    font-family: 'Noto Sans TC', serif;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    user-select: none;
+}
+
+/* === 游標印章白底修復 START === */
+.stamp-cursor-inner.has-image {
+    border: none;
+    background: #fff; /* 游標同樣加上白底 */
+    padding: 0;
+    overflow: visible;
+}
+/* === END === */
+
+.stamp-cursor-inner.has-image img {
+    width: 140%;
+    height: 140%;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.25));
+}
+
+/* 蓋章模式：隱藏真實游標 */
+body.stamp-mode {
+    cursor: none !important;
+}
+
+/* 蓋章模式：便利貼 hover 提示 */
+.sticky-note.stampable:hover {
+    filter: drop-shadow(0 0 12px rgba(155, 89, 182, 0.6)) !important;
+}
+
+/* 蓋在便利貼中間的印章 */
+.stamp-on-note {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-12deg);
+    width: 160px;        /* 放大一倍 (原本 80px) */
+    height: 160px;       /* 放大一倍 (原本 80px) */
+    border-radius: 50%;
+    border: 3px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 30px;     /* 放大一倍 (原本 15px) */
+    font-family: 'Noto Sans TC', serif;
+    opacity: 0;          /* 初始透明，由動畫播出 */
+    pointer-events: none;
+    z-index: 5;          /* 在文字下面 */
+    user-select: none;
+}
+
+.stamp-on-note.has-image {
+    border: none;
+    background: transparent;
+    overflow: visible;
+}
+
+.stamp-on-note.has-image img {
+    width: 130%;
+    height: 130%;
+    object-fit: contain;
+}
+
+/* 蓋章按壓動畫 */
+@keyframes stamp-press {
+    0%   { transform: translate(-50%, -80%) rotate(-12deg) scale(1.4); opacity: 0; }
+    35%  { transform: translate(-50%, -50%) rotate(-12deg) scale(1.05); opacity: 0.65; }
+    55%  { transform: translate(-50%, -50%) rotate(-12deg) scale(0.95); opacity: 0.50; }
+    75%  { transform: translate(-50%, -50%) rotate(-12deg) scale(1.0);  opacity: 0.48; }
+    100% { transform: translate(-50%, -50%) rotate(-12deg) scale(1.0);  opacity: 0.45; } /* 微調淡化 */
+}
+
+.stamp-on-note.stamp-press {
+    animation: stamp-press 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+/* === 印章系統 END === */
+
+/* === 帳號控制台 Modal START === */
+.account-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    z-index: 900000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+
+.account-modal-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.account-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.92);
+    width: 440px;
+    max-width: 92vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+    z-index: 900001;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.account-modal.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.account-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #eee;
+}
+
+.account-modal-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #222;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.account-modal-header h2 i {
+    color: var(--accent);
+}
+
+.account-modal-body {
+    padding: 20px 24px 24px;
+}
+
+.account-section {
+    margin-bottom: 22px;
+}
+
+.account-section:last-child {
+    margin-bottom: 0;
+}
+
+.account-section label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.account-section select,
+.account-section input[type="range"] {
+    width: 100%;
+    font-family: var(--font-ui);
+}
+
+.account-section select {
+    padding: 10px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #333;
+    background: #fafafa;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+}
+
+.account-section select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* 滑桿 */
+.range-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.range-wrapper input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: #e0e0e0;
+    outline: none;
+}
+
+.range-wrapper input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(74, 144, 217, 0.4);
+    transition: transform 0.15s ease;
+}
+
+.range-wrapper input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+}
+
+.range-value {
+    min-width: 42px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #555;
+    background: #f0f0f0;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+/* 字体顏色選擇 */
+.font-color-picker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.font-color-swatches {
+    display: flex;
+    gap: 6px;
+}
+
+.font-color-swatch {
+    width: 30px;
+    height: 30px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.font-color-swatch:hover {
+    transform: scale(1.12);
+}
+
+.font-color-swatch.active {
+    border-color: #333;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #333;
+}
+
+.font-color-custom {
+    width: 30px;
+    height: 30px;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 0;
+    background: transparent;
+    overflow: hidden;
+}
+
+.font-color-custom input[type="color"] {
+    width: 40px;
+    height: 40px;
+    border: none;
+    cursor: pointer;
+    margin: -5px;
+}
+
+/* 預覽區 */
+.settings-preview {
+    background: var(--note-yellow);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+    text-align: center;
+    box-shadow: 2px 3px 8px rgba(0,0,0,0.12);
+}
+
+.settings-preview-text {
+    transition: all 0.3s ease;
+}
+
+/* 操作按鈕 */
+.account-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+}
+
+.btn-save-settings {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #4A90D9 0%, #357ABD 100%);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 3px 10px rgba(74, 144, 217, 0.3);
+}
+
+.btn-save-settings:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(74, 144, 217, 0.4);
+}
+
+.btn-reset-settings {
+    padding: 12px 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    background: #fff;
+    color: #666;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-reset-settings:hover {
+    border-color: #ccc;
+    background: #f8f8f8;
+}
+/* === 帳號控制台 Modal END === */
+
+/* === 單卡樣式設定 START === */
+.card-style-section {
+    border-top: 1px solid #eee;
+    padding-top: 16px;
+    margin-top: 8px;
+}
+
+.card-style-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.card-style-row label {
+    margin-bottom: 0 !important;
+    font-size: 12px !important;
+}
+
+.card-style-row select {
+    width: auto;
+    min-width: 140px;
+    padding: 6px 28px 6px 10px;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #444;
+    background: #fafafa;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    font-family: var(--font-ui);
+}
+
+.card-style-row input[type="number"] {
+    width: 64px;
+    padding: 6px 8px;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #444;
+    text-align: center;
+    font-family: var(--font-ui);
+}
+
+.card-style-row input[type="color"] {
+    width: 32px;
+    height: 28px;
+    border: 1.5px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 0;
+}
+
+.btn-reset-card-style {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    color: #888;
+    font-size: 12px;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 4px;
+}
+
+.btn-reset-card-style:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* === 膠帶隨機化 START === */
+.note-tape {
+    position: absolute;
+    top: -7px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 1px;
+    box-shadow:
+        0 1px 3px rgba(0,0,0,0.1),
+        inset 0 0 0 0.5px rgba(0,0,0,0.05);
+    z-index: 5;
+    pointer-events: none;
+    /* 磨砂質感 */
+    background-image: linear-gradient(
+        180deg,
+        rgba(255,255,255,0.3) 0%,
+        rgba(255,255,255,0) 40%,
+        rgba(0,0,0,0.03) 100%
+    );
+}
+
+/* 髒污變體 */
+.note-tape.tape-dirty {
+    background-color: rgba(235, 220, 185, 0.7);
+}
+
+/* 翹起變體 */
+.note-tape.tape-peeling {
+    transform-style: preserve-3d;
+    background: linear-gradient(
+        90deg,
+        rgba(255,255,255,0.75) 0%,
+        rgba(255,255,255,0.55) 60%,
+        rgba(255,255,255,0.25) 85%,
+        rgba(255,255,255,0.08) 100%
+    );
+    box-shadow:
+        0 1px 3px rgba(0,0,0,0.1),
+        4px -2px 4px rgba(0,0,0,0.06);
+    border-right: 1px solid rgba(255,255,255,0.3);
+}
+/* === 膠帶隨機化 END === */
+
+/* === Note Settings Panel START === */
+.note-settings {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 300px;
+    background: #fff;
+    border-radius: 16px 0 0 0;
+    box-shadow: -4px -4px 24px rgba(0, 0, 0, 0.15);
+    z-index: 900001; /* 提升至最高級層級 */
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.note-settings.visible {
+    transform: translateY(0);
+}
+
+.note-settings.hidden {
+    transform: translateY(100%);
+}
+
+.settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.settings-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.btn-icon {
+    padding: 6px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #999;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.settings-body {
+    padding: 20px;
+}
+
+.settings-section {
+    margin-bottom: 20px;
+}
+
+.settings-section:last-child {
+    margin-bottom: 0;
+}
+
+.settings-section label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* 顏色選擇器 */
+.color-picker {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.color-swatch {
+    width: 36px;
+    height: 36px;
+    border: 3px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.color-swatch:hover {
+    transform: scale(1.12);
+}
+
+.color-swatch.active {
+    border-color: #333;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #333;
+}
+
+/* 上傳按鈕 */
+.btn-upload {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    background: #fafafa;
+    color: #666;
+    font-size: 14px;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.btn-upload:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: #f0f6ff;
+}
+
+/* 刪除按鈕 */
+.btn-delete {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 10px;
+    background: #fff0f0;
+    color: var(--danger);
+    font-size: 14px;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    font-weight: 500;
+}
+
+.btn-delete:hover {
+    background: #ffe0e0;
+}
+
+/* 遮罩 */
+.settings-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 900000; /* 配合最高級彈窗 */
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+}
+
+.settings-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+/* === Note Settings Panel END === */
+
+/* === Loading Spinner START === */
+.spinner-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 9999;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+/* === Loading Spinner END === */
+
+/* === Toast Notification START === */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    padding: 12px 24px;
+    border-radius: 12px;
+    background: #333;
+    color: #fff;
+    font-size: 14px;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    z-index: 9999999;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+.toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast.error {
+    background: var(--danger);
+}
+
+.toast.success {
+    background: #2e7d32;
+}
+/* === Toast Notification END === */
+
+/* === Responsive START === */
+@media (max-width: 600px) {
+    .toolbar-brand span {
+        display: none;
+}
+    .user-name {
+        display: none;
+}
+    .note-count {
+        font-size: 11px;
+}
+    .sticky-note {
+        width: 220px;
+        min-height: 190px;
+}
+    .note-content {
+        font-size: 17px;
+}
+    .fab-add {
+        bottom: 20px;
+        right: 20px;
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+        border-radius: 14px;
+}
+    .note-settings {
+        width: 100%;
+        border-radius: 16px 16px 0 0;
+}
+    .account-modal {
+        width: 100%;
+        max-width: 100vw;
+        border-radius: 16px 16px 0 0;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        transform: translateY(100%);
+}
+    .account-modal.visible {
+        transform: translateY(0);
+}
+}
+/* === Responsive END === */
+
+/* === Archive Modal START === */
+.archive-modal-container {
+    width: 90%;
+    max-width: 1000px;
+    height: 85vh;
+}
+
+.archive-modal-body {
+    padding: 24px;
+    background: #f8f9fa;
+    overflow-y: auto;
+}
+
+.archive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px;
+    align-items: start;
+}
+
+.archive-empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.archived-note-card {
+    position: relative;
+    background: var(--note-color, #FFF176);
+    border-radius: 2px;
+    padding: 16px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.08);
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.archived-note-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1), 0 3px 6px rgba(0,0,0,0.08);
+}
+
+.archived-note-card::before {
+    content: '';
+    position: absolute;
+    top: -7px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 1px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    z-index: 1;
+}
+
+.archived-content {
+    flex: 1;
+    overflow: hidden;
+    color: var(--font-color, rgba(0,0,0,0.78));
+    font-family: var(--font-family, 'Caveat'), cursive;
+    font-size: var(--font-size, 20px);
+    line-height: 1.4;
+    word-break: break-word;
+    /* 加入遮罩讓文字過多時底部漸淡 */
+    mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+}
+
+.archived-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(0,0,0,0.1);
+    font-size: 12px;
+    color: rgba(0,0,0,0.5);
+    z-index: 2;
+}
+
+.archived-date {
+    font-family: var(--font-ui);
+    font-weight: 500;
+}
+
+.archived-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-archive-action {
+    background: rgba(255, 255, 255, 0.5);
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(0,0,0,0.6);
+    transition: all 0.2s;
+}
+
+.btn-archive-action:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: scale(1.1);
+}
+
+.btn-archive-restore:hover {
+    color: var(--primary);
+}
+
+.btn-archive-delete:hover {
+    color: var(--danger);
+}
+/* === Archive Modal END === */
+
+/* === Responsive END === */
+
+/* === Toast Notifications START === */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(33, 43, 54, 0.95);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    z-index: 9999999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.toast.visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+.toast.error {
+    background: rgba(231, 76, 60, 0.95);
+}
+
+.toast-action-btn {
+    background: transparent;
+    border: none;
+    color: #ffd700;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    /* 防止點擊時出現 focus 輪廓破壞外觀 */
+    outline: none;
+    font-size: 13px;
+    position: relative;
+    z-index: 10;
+}
+
+.toast-action-btn:hover {
+    text-decoration: underline;
+    color: #fff176;
+}
+/* === Toast Notifications END === */
+
+/* === AI 鬧鐘提醒特效 START === */
+@keyframes intense-shake {
+    0%   { translate: 0px 0px;   filter: drop-shadow(0 0 20px rgba(255, 30, 30, 0.9)); }
+    20%  { translate: 20px -8px; filter: drop-shadow(0 0 40px rgba(255, 30, 30, 1)); }
+    40%  { translate: -20px 8px; filter: drop-shadow(0 0 40px rgba(255, 30, 30, 1)); }
+    60%  { translate: 20px 4px;  filter: drop-shadow(0 0 40px rgba(255, 30, 30, 1)); }
+    80%  { translate: -20px -4px;filter: drop-shadow(0 0 40px rgba(255, 30, 30, 1)); }
+    100% { translate: 0px 0px;   filter: drop-shadow(0 0 20px rgba(255, 30, 30, 0.9)); }
+}
+
+.sticky-note.alarming {
+    animation: intense-shake 0.08s linear infinite !important;
+    z-index: 9999 !important;
+    transition: none !important;
+    will-change: translate, filter;
+}
+
+/* 時鐘小圖示 */
+.ai-alarm-badge {
+    position: absolute;
+    bottom: 8px;
+    left: 12px;
+    font-size: 11px;
+    color: rgba(231, 76, 60, 0.95);
+    background: rgba(255,255,255,0.85);
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    pointer-events: none;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.ai-alarm-badge i {
+    font-size: 10px;
+}
+/* === AI 鬧鐘提醒特效 END === */
+
+/* === 彩色流光 START === */
+@keyframes rainbow-bg {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.sticky-note.rainbow-note::before {
+    background-image: linear-gradient(
+        135deg,
+        #ffe0e0 0%,
+        #fff0c0 16%,
+        #e0ffe0 33%,
+        #c0f0ff 50%,
+        #e0e0ff 66%,
+        #ffe0f0 83%,
+        #ffe0e0 100%
+    ) !important;
+    background-size: 400% 400% !important;
+    animation: rainbow-bg 5s ease infinite !important;
+    transform: translateZ(0); /* 強制開啟 GPU 渲染層，避免瀏覽器 Repaint 錯誤 */
+    will-change: background-position;
+}
+
+/* 流光開關按鈕 */
+.btn-rainbow {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1.5px solid rgba(155, 89, 182, 0.4);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary, #888);
+    font-size: 13px;
+    font-family: 'Noto Sans TC', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-rainbow:hover {
+    background: rgba(155, 89, 182, 0.08);
+    border-color: rgba(155, 89, 182, 0.7);
+    color: #9b59b6;
+}
+
+.btn-rainbow.active {
+    background: linear-gradient(135deg, rgba(255,224,224,0.7), rgba(224,224,255,0.7));
+    border-color: #9b59b6;
+    color: #7d3c98;
+    font-weight: 600;
+}
+/* === 彩色流光 END === */
+
+/* === 即將到期警示 START === */
+@keyframes urgent-pulse {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(255, 100, 0, 0.55)); }
+    50%       { filter: drop-shadow(0 0 22px rgba(255, 60, 0, 1)); }
+}
+
+.sticky-note.urgent-note {
+    animation: urgent-pulse 1.2s ease-in-out infinite;
+}
+
+/* 若同時有流光 + 即將到期，urgent 優先 */
+.sticky-note.urgent-note.rainbow-note::before {
+    animation-play-state: paused !important;
+}
+/* === 即將到期警示 END === */
+
+/* === 印章光暈 START === */
+.sticky-note.stamp-glow {
+    filter: drop-shadow(0 0 10px var(--stamp-glow-color, rgba(100, 100, 100, 0.4)));
+    transition: filter 0.6s ease;
+}
+
+/* urgent 模式時，印章光暈讓位給 urgent animation */
+.sticky-note.urgent-note.stamp-glow {
+    filter: none;
+}
+/* === 印章光暈 END === */
+
+/* === 圖釘連線系統 START === */
+
+/* FAB 圖釘按鈕 */
+.fab-pin {
+    width: var(--fab-size);
+    height: var(--fab-size);
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: #fff;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow:
+        0 6px 20px rgba(231, 76, 60, 0.4),
+        0 2px 6px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fab-pin:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow:
+        0 10px 30px rgba(231, 76, 60, 0.5),
+        0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.fab-pin:active {
+    transform: translateY(0) scale(0.97);
+}
+
+.fab-pin.active {
+    background: linear-gradient(135deg, #c0392b 0%, #922b21 100%);
+    box-shadow:
+        0 0 0 3px rgba(231, 76, 60, 0.4),
+        0 6px 20px rgba(231, 76, 60, 0.5);
+    animation: pin-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pin-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(231,76,60,0.4), 0 6px 20px rgba(231,76,60,0.5); }
+    50%       { box-shadow: 0 0 0 8px rgba(231,76,60,0.15), 0 6px 20px rgba(231,76,60,0.5); }
+}
+
+/* SVG 連線覆蓋層 */
+#connections-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 500000; /* 確保線出現在一般便利貼前方，但低於各類 Modal (900000+) */
+    overflow: visible;
+}
+
+/* 圖釘模式下隱藏游標 */
+body.pin-mode {
+    cursor: none !important;
+}
+
+/* 圖釘自訂游標 */
+.pin-cursor {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9000000;
+    display: none;
+}
+.cursor-pin-img {
+    height: 48px;
+    width: auto;
+    filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.4));
+    transform: translate(-10px, -35px) rotate(15deg);
+}
+
+/* 便利貼選中等待配對狀態 */
+.sticky-note.pin-selected {
+    filter: drop-shadow(0 0 14px rgba(231, 76, 60, 0.8)) !important;
+    outline: 2px dashed #e74c3c;
+    outline-offset: 4px;
+}
+
+/* 實體圖釘 (駐留於便利貼上方) */
+.persistent-pin {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    pointer-events: auto; /* 允許本身互動（如果有需要） */
+}
+
+.board-pin-img {
+    height: 40px;
+    width: auto;
+    filter: drop-shadow(2px 3px 2px rgba(0,0,0,0.4));
+}
+
+/* 釘入動畫元素 */
+.pin-drop-anim {
+    position: absolute;
+    pointer-events: none;
+    z-index: 9000;
+    transform: translate(-50%, -100%);
+    animation: pin-drop 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes pin-drop {
+    0%   { transform: translate(-50%, -150%) scale(1.3); opacity: 0.8; }
+    40%  { transform: translate(-50%, -50%)  scale(1.0); opacity: 1; }
+    60%  { transform: translate(-50%, -70%)  scale(0.9); opacity: 1; }
+    100% { transform: translate(-50%, -80%)  scale(1.0); opacity: 0; }
+}
+
+.fab-pin-img {
+    height: 20px;
+    width: auto;
+    filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.3));
+}
+
+/* === 圖釘連線系統 END === */
+
+/* === 更新日誌與版本宣告 START === */
+.app-version {
+    align-self: flex-end;
+    margin-bottom: 3px;
+    font-size: 11px;
+    font-family: var(--font-ui);
+    color: rgba(255, 255, 255, 0.5);
+    margin-left: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.5px;
+}
+
+.app-version:hover {
+    color: #fff;
+}
+
+.changelog-modal-container {
+    max-width: 600px;
+    width: 90%;
+    /* 讓這個視窗比較大一點以容納大量文字 */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.changelog-modal-container::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+}
+
+.changelog-content {
+    color: rgba(0, 0, 0, 0.78);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 10px;
+}
+
+.changelog-content h2 {
+    color: #2c2c2c;
+    font-size: 20px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 8px;
+    margin-top: 24px;
+}
+
+.changelog-content h2:first-child {
+    margin-top: 0;
+}
+
+.changelog-content h3 {
+    color: #4A90D9;
+    font-size: 16px;
+    margin-bottom: 12px;
+    margin-top: 20px;
+}
+
+.changelog-content ul {
+    list-style-type: disc;
+    padding-left: 24px;
+    margin-bottom: 16px;
+}
+
+.changelog-content li {
+    margin-bottom: 8px;
+}
+
+.changelog-content strong {
+    color: #333;
+    font-weight: 600;
+}
+
+.changelog-content p {
+    margin-bottom: 12px;
+}
+
+.changelog-content hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 24px 0;
+}
+/* === 更新日誌與版本宣告 END === */
+
+
+
+
+
+/* =========================================
+   AI公告便利貼特效 (Tech/Cyberpunk 風格)
+   ========================================= */
+/* === 系統公告呼吸燈 START === */
+@keyframes ai-breathing-glow {
+    0%, 100% { filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.4)); }
+    50%      { filter: drop-shadow(0 0 30px rgba(0, 240, 255, 1)); }
+}
+/* === END === */
+
+.ai-system-note {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #e0f7fa !important;
+    /* === 系統公告呼吸燈 START === */
+    animation: ai-breathing-glow 3s ease-in-out infinite !important;
+    /* === END === */
+}
+
+/* 核心實體紙張 (取代底色與紋理) */
+.ai-system-note::before {
+    background-color: #1a2639 !important; /* 真正改變背板顏色的地方 */
+    background-image: linear-gradient(135deg, rgba(0,240,255,0.05) 0%, transparent 50%) !important;
+    /* 讓內圈有一點點低調的光暈效果 */
+    box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.2) !important;
+}
+
+/* 將折角背面也改成科技風的金屬灰藍色，不要純白 */
+.ai-system-note::after {
+    background: linear-gradient(
+        315deg, 
+        transparent 45%, 
+        rgba(30, 45, 70, 0.8) 47%, 
+        rgba(70, 100, 140, 0.95) 100%
+    ) !important;
+    border-top-left-radius: 8px !important;
+}
+
+/* 上方的皺褶膠帶，AI版可以改色或者隱藏 */
+.ai-system-note .sticky-tape {
+    background-color: rgba(0, 240, 255, 0.25) !important;
+    box-shadow: 0 1px 3px rgba(0,240,255,0.4) !important;
+}
+
+
+
+/* 第一行標記當作標題 */
+.ai-system-note .ai-note-header {
+    font-weight: 900;
+    margin-bottom: 12px;
+    font-size: 22px;
+    color: #00f0ff;
+    border-bottom: 2px solid rgba(0, 240, 255, 0.3);
+    padding-bottom: 8px;
+    text-shadow: 0 0 5px rgba(0, 240, 255, 0.5);
+}
+
+.ai-system-note a {
+    color: #ffd700 !important;
+}
+
+.ai-robot-icon {
+    position: absolute;
+    bottom: 15px;
+    right: 35px; /* 移開一點避免擋到捲角 */
+    color: #00f0ff;
+    font-size: 32px;
+    opacity: 0.8;
+    filter: drop-shadow(0 0 8px #00f0ff);
+    pointer-events: none;
+}
+
+/* 確保文字不會吃到手寫字體 */
+.ai-system-note .note-content, 
+.ai-system-note .note-content-body {
+    font-family: var(--font-ui) !important;
+    font-size: 17px !important;
+    line-height: 1.6 !important;
+    letter-spacing: 0.5px !important;
+    color: #f5f5f5 !important;
+    text-shadow: none !important;
+}
+
+
+
+/* =========================================
+   行動端響應式 (Mobile Responsive Layout)
+   全螢幕沉浸滑動 (Snap Scroll)
+   ========================================= */
+@media (max-width: 768px) {
+    body, html {
+        overflow: hidden;
+        overscroll-behavior-y: none;
+    }
+
+    /* 手機版側邊欄改為滑出抽屜 */
+    .board-sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        width: 250px !important;
+        height: 100dvh;
+        z-index: 3000;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+        transition: left 0.3s cubic-bezier(0.2, 0.9, 0.2, 1);
+    }
+    
+    .board-sidebar.mobile-open {
+        left: 0;
+    }
+    
+    /* 隱藏原生桌面收合按鈕 */
+    .sidebar-toggle {
+        display: none !important;
+    }
+    
+    /* 防呆遮罩 */
+    .mobile-sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100dvh;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(2px);
+        z-index: 2999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .mobile-sidebar-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    #toolbar { display: none !important; }
+
+    /* 頂部 Navigation Bar */
+    .mobile-tab-bar {
+        display: flex !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 60px;
+        background: rgba(26, 38, 57, 0.85);
+        backdrop-filter: blur(10px);
+        z-index: 3100 !important;
+        align-items: center;
+        justify-content: flex-start;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        padding: 0 10px;
+        gap: 10px;
+    }
+    .mobile-icon-btn {
+        background: transparent;
+        border: none;
+        color: #8da4c1;
+        font-size: 20px;
+        padding: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.2s ease;
+    }
+    .mobile-icon-btn:active {
+        opacity: 0.7;
+        transform: scale(0.9);
+    }
+    .mobile-tab-btn {
+        background: transparent;
+        border: none;
+        color: #8da4c1;
+        font-size: 16px;
+        font-weight: bold;
+        transition: 0.3s;
+        padding: 10px 20px;
+        border-radius: 20px;
+    }
+    .mobile-tab-btn.active {
+        color: #00f0ff;
+        background: rgba(0, 240, 255, 0.1);
+        box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.2);
+    }
+
+    /* 1. 白板變成全螢幕視窗，開啟 Snap Scroll */
+    .whiteboard {
+        position: fixed !important;
+        top: 60px;
+        left: 0;
+        width: 100vw !important; /* 強制覆蓋 */
+        height: calc(100dvh - 60px);
+        display: flex !important;
+        flex-direction: column-reverse; /* 最新新增的在最底部，但視窗反轉讓它掛在頂端 */
+        align-items: center;
+        padding: 0 0 20px 0 !important;
+        overflow-y: scroll !important;
+        scroll-snap-type: y mandatory; /* Y軸強力吸附 */
+        scroll-behavior: smooth;
+        background-attachment: scroll;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* 2. 拔除絕對座標，滿版紙張 */
+    .sticky-note {
+        position: relative !important;
+        left: auto !important;
+        top: auto !important;
+        min-height: unset !important;
+        height: calc(100dvh - 120px) !important; /* 滿版高度 */
+        width: 90vw !important;
+        margin: 20px auto !important;
+        scroll-snap-align: center; /* 滾動時自動聚焦對齊到螢幕中心 */
+        scroll-snap-stop: always; /* 強制一張一張停靠 */
+        transform: rotate(calc(var(--note-rotation, 0deg) * 0.1)) !important; /* 微小傾斜保持手感 */
+        z-index: auto !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+    }
+    
+    .sticky-note::before {
+        border-radius: 12px; /* 更圓潤舒適的卡片感 */
+    }
+
+    /* 文字輸入框無限放大 */
+    .note-content[contenteditable="true"], .note-content {
+        font-size: 24px !important;
+        height: 100%;
+        max-height: 100%;
+        overflow-y: auto;
+    }
+
+    /* 3. 隱藏連線 */
+    #connections-svg {
+        display: none !important;
+    }
+
+    /* 4. 浮動按鈕區微調 */
+    .fab-group {
+        bottom: 25px;
+        right: 20px;
+        z-index: 999;
+    }
+    .fab-pin, .fab-stamp, .fab-add {
+        width: 50px;
+        height: 50px;
+        font-size: 22px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+    
+    .stamp-wrapper:hover .stamp-menu {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(20px) scale(0.8);
+    }
+    .stamp-wrapper.mobile-open .stamp-menu {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        transform: translateY(0) scale(1) !important;
+    }
+    
+    .empty-hint {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        text-align: center;
+        width: 100%;
+    }
+}
+.mobile-tab-bar { display: none; }
+
+/* === 群組系統 START === */
+
+/* 群組暗幕 */
+.group-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0);
+    z-index: 900000;
+    pointer-events: none;
+    transition: background 0.3s ease;
+}
+
+.group-overlay.active {
+    background: rgba(0, 0, 0, 0.55);
+    pointer-events: auto;
+    backdrop-filter: blur(2px);
+}
+
+/* 群組計數徽章 */
+.group-count-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: #fff;
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+    z-index: 100;
+    pointer-events: none;
+    animation: badgePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes badgePop {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+}
+
+/* 群組收合時的厚度陰影 — 根據成員數量動態設定 */
+.sticky-note.group-stacked {
+    cursor: grab;
+}
+
+.sticky-note.group-stacked[data-group-count="2"] {
+    filter: drop-shadow(3px 5px 8px rgba(0, 0, 0, 0.25))
+            drop-shadow(4px 7px 0px rgba(0, 0, 0, 0.08));
+}
+
+.sticky-note.group-stacked[data-group-count="3"] {
+    filter: drop-shadow(3px 5px 8px rgba(0, 0, 0, 0.25))
+            drop-shadow(4px 7px 0px rgba(0, 0, 0, 0.08))
+            drop-shadow(7px 10px 0px rgba(0, 0, 0, 0.05));
+}
+
+/* 4 張以上 */
+.sticky-note.group-stacked[data-group-count="many"] {
+    filter: drop-shadow(3px 5px 8px rgba(0, 0, 0, 0.25))
+            drop-shadow(4px 7px 0px rgba(0, 0, 0, 0.08))
+            drop-shadow(7px 10px 0px rgba(0, 0, 0, 0.05))
+            drop-shadow(10px 13px 0px rgba(0, 0, 0, 0.03));
+}
+
+/* 群組幽靈牌 — 底下露出的其他便利貼 */
+.group-ghost {
+    position: absolute;
+    width: var(--note-min-w);
+    min-height: var(--note-min-h);
+    border-radius: 0;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.7;
+}
+
+.group-ghost::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: var(--ghost-color, #FFF176);
+    clip-path: polygon(0% 0%, 100% 0%, 100% calc(100% - 40px), calc(100% - 40px) 100%, 0% 100%);
+}
+
+/* 群組發光提示（合併偵測中） */
+.sticky-note.group-merge-target {
+    animation: mergeGlow 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes mergeGlow {
+    0% {
+        filter: drop-shadow(3px 5px 8px rgba(0, 0, 0, 0.25))
+                drop-shadow(0 0 8px rgba(74, 144, 217, 0.4));
+    }
+    100% {
+        filter: drop-shadow(3px 5px 8px rgba(0, 0, 0, 0.25))
+                drop-shadow(0 0 20px rgba(74, 144, 217, 0.8))
+                drop-shadow(0 0 40px rgba(74, 144, 217, 0.3));
+    }
+}
+
+/* 群組吸附動畫 */
+.sticky-note.group-attaching {
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                left 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                top 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 群組展開狀態的便利貼 */
+.sticky-note.group-expanded {
+    z-index: 900001 !important;
+    cursor: grab;
+    transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.3s ease;
+}
+
+.sticky-note.group-expanded:hover {
+    transform: translateY(-8px) rotate(0deg) !important;
+    filter: drop-shadow(3px 12px 16px rgba(0, 0, 0, 0.35));
+}
+
+/* 群組展開狀態的便利貼 — 收合動畫 */
+.sticky-note.group-collapsing {
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease;
+}
+
+/* 群組右鍵選單 */
+.group-context-menu {
+    position: fixed;
+    z-index: 950000;
+    background: rgba(30, 30, 46, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 6px 0;
+    min-width: 180px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transform: scale(0.9) translateY(-4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    pointer-events: none;
+}
+
+.group-context-menu.visible {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+}
+
+.group-context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+
+.group-context-menu-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.group-context-menu-item i {
+    width: 18px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.group-context-menu-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 4px 0;
+}
+
+/* 群組隱藏的便利貼（非頂層，收合狀態下不可見內容） */
+.sticky-note.group-hidden {
+    pointer-events: none;
+}
+
+.sticky-note.group-hidden .note-content,
+.sticky-note.group-hidden .note-timestamp,
+.sticky-note.group-hidden .note-settings-trigger,
+.sticky-note.group-hidden .note-delete-btn,
+.sticky-note.group-hidden .note-tape,
+.sticky-note.group-hidden .ai-alarm-badge {
+    visibility: hidden;
+}
+
+/* === 群組系統 END === */
