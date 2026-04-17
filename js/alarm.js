@@ -131,9 +131,9 @@ PostIt.Alarm = (function () {
             // 便利貼不在當前白板畫面上，彈出全域 Toast 提示並提供切換按鈕
             const noteData = globalNotesCache[noteId];
             if (noteData && typeof PostIt.Board !== 'undefined') {
-                const txt = noteData.content || '提醒';
+                const txt = String(noteData.content || '提醒').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 const snippet = txt.length > 15 ? txt.substring(0, 15) + '...' : txt;
-                PostIt.Board.showToast(`⏱️ 【白板: ${noteData.boardName}】時間到！<br>${snippet}`, 'info', {
+                PostIt.Board.showToast(`⏱️ 【白板: ${noteData.boardName}】時間到！\n${snippet}`, 'info', {
                     label: '前往',
                     onClick: () => {
                         if (typeof PostIt.BoardModel !== 'undefined') {
@@ -142,7 +142,7 @@ PostIt.Alarm = (function () {
                             window.location.reload();
                         }
                     }
-                }, 10000); // 顯示 10 秒
+                }, 0); // duration=0 代表常駐直到點擊或按鍵
             }
         }
         

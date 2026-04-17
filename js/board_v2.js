@@ -981,7 +981,7 @@ PostIt.Board = (function () {
         toast.className = `toast ${type}`;
         
         const msgSpan = document.createElement('span');
-        msgSpan.textContent = message;
+        msgSpan.innerHTML = String(message).replace(/\n/g, '<br>');
         toast.appendChild(msgSpan);
 
         // 如果有傳入動作（例如復原）
@@ -1005,12 +1005,26 @@ PostIt.Board = (function () {
             toast.classList.add('visible');
         });
 
-        // 自動消失
+        // 自動消失或等待使用者互動
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => {
-            toast.classList.remove('visible');
-            setTimeout(() => toast.remove(), 400);
-        }, 2500);
+        if (duration > 0) {
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('visible');
+                setTimeout(() => toast.remove(), 400);
+            }, duration);
+        } else {
+            // duration為0時，直到使用者按下任意鍵或點擊才關閉
+            const closeHandler = () => {
+                toast.classList.remove('visible');
+                setTimeout(() => toast.remove(), 400);
+                document.removeEventListener('keydown', closeHandler);
+                document.removeEventListener('mousedown', closeHandler);
+            };
+            setTimeout(() => {
+                document.addEventListener('keydown', closeHandler);
+                document.addEventListener('mousedown', closeHandler);
+            }, 100);
+        }
     }
 
     // ======== 工具函式 ========
