@@ -406,10 +406,11 @@ PostIt.Note = (function () {
             const snapshot = await storageRef.put(file);
             const downloadURL = await snapshot.ref.getDownloadURL();
 
-            // 更新貼紙 (保留原有文字 content，僅寫入 imageUrl)
+            // 更新貼紙
             const ref = getNotesRef();
             await ref.doc(noteId).update({
-                imageUrl: downloadURL,
+                type: 'image',
+                content: downloadURL,
                 storagePath: storagePath,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });

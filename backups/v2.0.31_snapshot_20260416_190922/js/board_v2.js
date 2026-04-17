@@ -355,16 +355,6 @@ PostIt.Board = (function () {
                 }
             });
         }
-        
-        // ===== 燈箱 Lightbox =====
-        const lightbox = document.getElementById('lightbox-overlay');
-        const btnCloseLightbox = document.getElementById('btn-close-lightbox');
-        if (lightbox && btnCloseLightbox) {
-            btnCloseLightbox.addEventListener('click', closeLightbox);
-            lightbox.addEventListener('click', (e) => {
-                if (e.target === lightbox) closeLightbox();
-            });
-        }
     }
 
     // ======== 自動排列 ========
@@ -597,32 +587,10 @@ PostIt.Board = (function () {
         if (Math.random() < 0.15) tape.classList.add('tape-peeling');
         el.appendChild(tape);
 
-        // 圖文分離：圖片區
-        const isUrlImg = /^https?:\/\/.*?\.(jpg|jpeg|png|gif|webp|svg|bmp)(?:\?.*)?$/i.test(String(note.content).trim()) || /^data:image\/[a-zA-Z0-9+]+;base64,/.test(String(note.content).trim());
-        const parsedImageUrl = note.imageUrl ? note.imageUrl : 
-                               ((note.type === 'image' || isUrlImg) ? note.content : null);
-
-        if (parsedImageUrl) {
-            const imgContainer = document.createElement('div');
-            imgContainer.className = 'note-image-container';
-            const img = document.createElement('img');
-            img.src = escapeHtml(parsedImageUrl);
-            img.className = 'note-img';
-            img.alt = '圖片';
-            img.loading = 'lazy';
-            img.draggable = false;
-            img.addEventListener('click', (e) => {
-                e.stopPropagation();
-                openLightbox(parsedImageUrl);
-            });
-            imgContainer.appendChild(img);
-            el.appendChild(imgContainer);
-        }
-
         // 內容區
         const contentEl = document.createElement('div');
         contentEl.className = 'note-content';
-        contentEl.innerHTML = renderContentText(note, parsedImageUrl);
+        contentEl.innerHTML = renderContent(note);
         el.appendChild(contentEl);
 
         // 時間戳
@@ -747,35 +715,7 @@ PostIt.Board = (function () {
         // 內容（只在非編輯時更新）
         const contentEl = el.querySelector('.note-content');
         if (contentEl && contentEl.getAttribute('contenteditable') !== 'true') {
-            const isUrlImg = /^https?:\/\/.*?\.(jpg|jpeg|png|gif|webp|svg|bmp)(?:\?.*)?$/i.test(String(note.content).trim()) || /^data:image\/[a-zA-Z0-9+]+;base64,/.test(String(note.content).trim());
-            const parsedImageUrl = note.imageUrl ? note.imageUrl : 
-                                   ((note.type === 'image' || isUrlImg) ? note.content : null);
-
-            // 更新圖片區
-            let imgContainer = el.querySelector('.note-image-container');
-            if (parsedImageUrl) {
-                if (!imgContainer) {
-                    imgContainer = document.createElement('div');
-                    imgContainer.className = 'note-image-container';
-                    const img = document.createElement('img');
-                    img.className = 'note-img';
-                    img.alt = '圖片';
-                    img.loading = 'lazy';
-                    img.draggable = false;
-                    img.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        openLightbox(parsedImageUrl);
-                    });
-                    imgContainer.appendChild(img);
-                    el.insertBefore(imgContainer, contentEl);
-                }
-                const img = imgContainer.querySelector('.note-img');
-                if (img) img.src = escapeHtml(parsedImageUrl);
-            } else if (imgContainer) {
-                imgContainer.remove();
-            }
-
-            contentEl.innerHTML = renderContentText(note, parsedImageUrl);
+            contentEl.innerHTML = renderContent(note);
         }
 
         // 套用字型樣式
@@ -863,15 +803,10 @@ PostIt.Board = (function () {
     }
 
     // ======== 渲染不同類型的內容 ========
-    function renderContentText(note, parsedImageUrl) {
+    function renderContent(note) {
         if (!note.content) return '';
 
         const text = String(note.content).trim();
-
-        // 如果這整個 content 就是那張圖片，而且我們已經在上方獨立顯示了該圖片，就把文字區隱藏起來，維持乾淨
-        if (text === parsedImageUrl && (note.type === 'image' || /^https?:\/\/.*?\.(jpg|jpeg|png|gif|webp|svg|bmp)(?:\?.*)?$/i.test(text) || /^data:image\/[a-zA-Z0-9+]+;base64,/.test(text))) {
-            return '';
-        }
 
         if (note.role === 'ai') {
             const lines = text.split('\n');
@@ -880,6 +815,12 @@ PostIt.Board = (function () {
                 const rest = lines.slice(1).join('\n');
                 return `<div class="ai-note-header">${escapeHtml(title)}</div><div class="note-content-body">${escapeHtml(rest).replace(/\\n/g, '<br>')}</div>`;
             }
+        }
+
+        // 智慧判斷：如果整段內容純粹就是一個圖片網址，直接渲染為圖片
+        const isImageUrl = /^https?:\/\/.*?\.(jpg|jpeg|png|gif|webp|svg|bmp)(?:\?.*)?$/i.test(text) || /^data:image\/[a-zA-Z0-9+]+;base64,/.test(text);
+        if (isImageUrl) {
+            return `<img src="${escapeHtml(text)}" alt="圖片" loading="lazy" draggable="false">`;
         }
 
         switch (note.type) {
@@ -893,8 +834,7 @@ PostIt.Board = (function () {
                 }
 
             case 'image':
-                // 已經分流處理了，這裡當作字串直接回傳 (若意外進入此區塊)
-                return escapeHtml(text).replace(/\n/g, '<br>');
+                return `<img src="${escapeHtml(text)}" alt="上傳的圖片" loading="lazy" draggable="false">`;
 
             default:
                 return escapeHtml(text).replace(/\n/g, '<br>');
@@ -910,6 +850,8 @@ PostIt.Board = (function () {
 
         // 如果 note 還在 cache 中（可能是新建立尚未同步），允許繼續
         const note = PostIt.Note.getNote(noteId);
+        // 圖片型不支持文字編輯（僅當 note 已載入時才判斷）
+        if (note && note.type === 'image') return;
         // AI/系統公告便利貼不支持直接文字竄改
         if (note && note.role === 'ai') return;
 
@@ -935,13 +877,6 @@ PostIt.Board = (function () {
             contentEl.removeAttribute('contenteditable');
             // innerText 會保留 Shift+Enter 產生的換行
             const newContent = contentEl.innerText.trim();
-            
-            // 無論有沒有改，先把 DOM 恢復正確渲染 (Bug 3 修復)
-            const simulatedNote = { ...note, content: newContent };
-            const isUrlImg = /^https?:\/\/.*?\.(jpg|jpeg|png|gif|webp|svg|bmp)(?:\?.*)?$/i.test(String(newContent).trim()) || /^data:image\/[a-zA-Z0-9+]+;base64,/.test(String(newContent).trim());
-            const parsedImageUrl = simulatedNote.imageUrl ? simulatedNote.imageUrl : 
-                                   ((simulatedNote.type === 'image' || isUrlImg) ? newContent : null);
-            contentEl.innerHTML = renderContentText(simulatedNote, parsedImageUrl);
             
             // 只有內容改變才更新並呼叫 AI
             if (newContent !== (note?.content || '')) {
@@ -1107,36 +1042,6 @@ PostIt.Board = (function () {
         const hours = d.getHours().toString().padStart(2, '0');
         const mins = d.getMinutes().toString().padStart(2, '0');
         return `${month}/${day} ${hours}:${mins}`;
-    }
-
-    // ======== 燈箱操作 ========
-    function openLightbox(url) {
-        const lightbox = document.getElementById('lightbox-overlay');
-        const img = document.getElementById('lightbox-image');
-        if (lightbox && img) {
-            img.src = url;
-            lightbox.classList.remove('hidden');
-            // force reflow
-            void lightbox.offsetWidth;
-            lightbox.classList.add('visible');
-            if (window.PostIt && window.PostIt.LayerManager) {
-                window.PostIt.LayerManager.bringToFront(lightbox, lightbox); // if we can pass same thing for modal/overlay
-            }
-        }
-    }
-
-    function closeLightbox() {
-        const lightbox = document.getElementById('lightbox-overlay');
-        if (lightbox) {
-            lightbox.classList.remove('visible');
-            setTimeout(() => {
-                lightbox.classList.add('hidden');
-                document.getElementById('lightbox-image').src = '';
-            }, 300);
-            if (window.PostIt && window.PostIt.LayerManager) {
-                window.PostIt.LayerManager.remove(lightbox);
-            }
-        }
     }
 
     // ======== 視窗 resize 時重新計算貼紙位置 ========
