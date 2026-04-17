@@ -80,7 +80,8 @@ PostIt.Board = (function () {
             loginScreen.classList.remove('hidden');
             app.classList.add('hidden');
 
-            // 清除白板
+            // 清除白板與全域鬧鐘
+            if(typeof PostIt.Alarm !== 'undefined') PostIt.Alarm.cleanup();
             PostIt.Note.cleanup();
             clearBoard();
 
@@ -506,10 +507,7 @@ PostIt.Board = (function () {
         // 更新計數
         updateNoteCount();
 
-        // 同步鬧鐘狀態
-        if (typeof PostIt.Alarm !== 'undefined') {
-            PostIt.Alarm.sync(notes);
-        }
+        // 移除在地同步鬧鐘 (改用全域監聽器)
 
         // 渲染群組視覺效果
         renderGroupVisuals(notes);
@@ -1061,6 +1059,11 @@ PostIt.Board = (function () {
 
     // ======== 多白板：側邊欄渲染 ========
     function renderSidebar(boards, activeBoardId) {
+        // 同步更新全域鬧鐘系統
+        if(typeof PostIt.Alarm !== 'undefined') {
+            PostIt.Alarm.initGlobalListeners(boards);
+        }
+
         const listEl = document.getElementById('sidebar-board-list');
         if (!listEl) return;
         listEl.innerHTML = '';
