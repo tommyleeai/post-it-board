@@ -1582,6 +1582,34 @@ PostIt.Board = (function () {
             // 產生字體顏色色票
             renderFontColorSwatches();
 
+            // 綁定 Gemini 測試按鈕
+            const btnTestGemini = document.getElementById('btn-test-gemini');
+            if (btnTestGemini) {
+                btnTestGemini.onclick = async (e) => {
+                    e.preventDefault();
+                    const apiKeyInput = document.getElementById('account-ai-key');
+                    const apiKey = apiKeyInput ? apiKeyInput.value : '';
+                    if (!apiKey.trim()) {
+                        showToast('請先填寫 Gemini API 金鑰', 'error');
+                        return;
+                    }
+                    
+                    const originalText = btnTestGemini.innerHTML;
+                    btnTestGemini.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 測試中';
+                    btnTestGemini.disabled = true;
+                    
+                    const result = await PostIt.AI.testGemini(apiKey.trim());
+                    if (result.success) {
+                        showToast(result.msg, 'success');
+                    } else {
+                        showToast(`測試失敗: ${result.msg}`, 'error', null, 6000);
+                    }
+                    
+                    btnTestGemini.innerHTML = originalText;
+                    btnTestGemini.disabled = false;
+                };
+            }
+
             // 綁定 Ollama 測試按鈕
             const btnTestOllama = document.getElementById('btn-test-ollama');
             if (btnTestOllama) {

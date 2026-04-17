@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css?v=8.87">
+    <link rel="stylesheet" href="css/style.css?v=8.88">
     <link rel="stylesheet" href="css/animations.css">
     <script>
         window.addEventListener('load', () => {
@@ -308,7 +308,10 @@
                 <!-- AI 助手設定 -->
                 <div class="account-section">
                     <label>Gemini API 金鑰（AI 提醒解析）</label>
-                    <input type="password" id="account-ai-key" class="settings-input" placeholder="AIzaSy... (選填)">
+                    <div style="display: flex; gap: 8px;">
+                        <input type="password" id="account-ai-key" class="settings-input" placeholder="AIzaSy... (選填)" style="flex: 1;">
+                        <button id="btn-test-gemini" style="padding: 0 15px; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; cursor: pointer; white-space: nowrap;">⚡ 測試連線</button>
+                    </div>
                 </div>
                 <!-- Ollama 本地 AI 備援設定 -->
                 <div class="account-section" style="border-top: 1px dashed #ddd; padding-top: 15px; margin-top: 15px;">
