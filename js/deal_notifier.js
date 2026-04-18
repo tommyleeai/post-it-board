@@ -3,7 +3,7 @@ window.PostIt = window.PostIt || {};
 PostIt.DealNotifier = (function () {
     'use strict';
 
-    const API_URL = 'http://127.0.0.1:8000/api/deal_radar?token=y9oBzyD2kDdXaQEKopp-ZQsan2uTXPes3PkFEnvdRfo';
+    const API_URL = 'http://127.0.0.1:8000/api/external/deal_radar?token=y9oBzyD2kDdXaQEKopp-ZQsan2uTXPes3PkFEnvdRfo';
     const POLL_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
     const STORAGE_KEY = 'postit_last_super_deal_id';
     let timer = null;
@@ -32,15 +32,12 @@ PostIt.DealNotifier = (function () {
      */
     async function checkDeals() {
         try {
-            // 注意：這裡先用 fetch 虛擬回應，未來串接時將此區塊換成實體 fetch
-            /*
             const response = await fetch(API_URL);
             if (!response.ok) return;
-            const deal = await response.json();
-            */
+            const data = await response.json();
             
-            // 開發測試用的 Mock Data
-            const deal = await mockFetch();
+            if (!data.success || !data.deal) return;
+            const deal = data.deal;
 
             if (!deal || !deal.id) return;
 
