@@ -3339,10 +3339,9 @@ body.pin-mode {
 
 /* === Super Deal Notifier START === */
 .super-deal-note {
-    background: #fff !important;
+    background: transparent !important;
     border: none;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15), 0 0 0 2px rgba(255, 215, 0, 0.4);
+    border-radius: 0; /* Let ::before handle the border-radius so clip-path works correctly */
     padding: 0;
     color: #333;
     width: 260px !important; /* Force fixed width for deal card */
@@ -3351,7 +3350,7 @@ body.pin-mode {
 
 /* 霓虹與震動出場動畫 */
 .super-deal-entrance {
-    animation: superDealShake 0.8s cubic-bezier(.36,.07,.19,.97) both, neonGlow 2s infinite alternate;
+    animation: superDealShake 0.8s cubic-bezier(.36,.07,.19,.97) both, neonDropGlow 2s infinite alternate;
 }
 
 @keyframes superDealShake {
@@ -3361,9 +3360,9 @@ body.pin-mode {
     40%, 60% { transform: translate3d(5px, 0, 0) rotate(-3deg); }
 }
 
-@keyframes neonGlow {
-    from { box-shadow: 0 0 10px #ffeaa7, 0 0 20px #ffeaa7, 0 0 30px #fdcb6e; }
-    to { box-shadow: 0 0 20px #fdcb6e, 0 0 30px #e17055, 0 0 40px #e17055; }
+@keyframes neonDropGlow {
+    from { filter: drop-shadow(3px 5px 8px rgba(0,0,0,0.15)) drop-shadow(0 0 10px #fdcb6e); }
+    to   { filter: drop-shadow(3px 5px 8px rgba(0,0,0,0.15)) drop-shadow(0 0 25px #e17055); }
 }
 
 /* 閃耀過場特效 (Shimmer) 移至標題區避免裁切錯誤 */
@@ -3414,6 +3413,9 @@ body.pin-mode {
 .super-deal-note .note-settings-trigger {
     display: flex !important;
     z-index: 20;
+    /* Move setting trigger slightly left/up to match the 42px fold */
+    right: 14px;
+    bottom: 14px;
 }
 
 .super-deal-note::before {
@@ -3427,6 +3429,8 @@ body.pin-mode {
     overflow: hidden;
     position: relative;
     z-index: 1;
+    /* 切除右下角配合原生 dog-ear 捲起動畫 */
+    clip-path: polygon(0% 0%, 100% 0%, 100% calc(100% - 40px), calc(100% - 40px) 100%, 0% 100%);
 }
 
 .deal-img {
