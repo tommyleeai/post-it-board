@@ -114,45 +114,42 @@ PostIt.DealNotifier = (function () {
     }
 
     /**
-     * 供你隨時手動打開 Console 測試的按鈕
+     * 手動強制呼叫好物雷達，獲取過去 1 小時最高分
      */
-    function triggerTestAlert() {
-        const dummyDeal = {
-            id: 'test_' + Date.now(),
-            title: 'Samsung 990 PRO 2TB SSD 歷史低價',
-            image: 'https://images.unsplash.com/photo-1597848212624-a19eb35e2651?auto=format&fit=crop&q=80&w=600',
-            price: '$119.99',
-            originalPrice: '$249.99',
-            promoCode: 'SAMSUNG50',
-            url: 'https://www.amazon.com/dp/B0BHJTJC2M'
-        };
-        
-        // 不防呆，強制重發
-        localStorage.removeItem(STORAGE_KEY);
-        triggerAlert(dummyDeal);
-    }
+    async function triggerRadarManual() {
+        console.log('[DealNotifier] 手動偵測雷達啟動...');
+        try {
+            const tempBtn = document.getElementById('btn-test-radar');
+            if (tempBtn) tempBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 掃描中';
 
-    // 模擬假資料回傳
-    function mockFetch() {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                resolve({
-                    id: 'mock_101',
-                    title: 'Sony WH-1000XM5 黑科技降噪耳罩式耳機 (全新未拆)',
-                    image: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?auto=format&fit=crop&q=80&w=600',
-                    price: '$298.00',
-                    originalPrice: '$398.00',
-                    promoCode: 'AUTO_APPLY',
-                    url: 'https://www.amazon.com/dp/B09XS7JWHH'
-                });
-            }, 500);
-        });
+            const response = await fetch(API_URL + '&hours=1');
+            if (!response.ok) throw new Error('API fetch failed');
+            const data = await response.json();
+            
+            if (tempBtn) tempBtn.innerHTML = '🚨 好物雷達';
+
+            if (!data.success || !data.deal) {
+                if (window.PostIt && window.PostIt.Board) {
+                    window.PostIt.Board.showToast('過去 1 小時內沒有夠強的好物！', 'error');
+                }
+                return;
+            }
+            
+            // 手動觸發不檢查 localStorage 快取，直接顯示
+            triggerAlert(data.deal);
+
+        } catch (err) {
+            console.error('[DealNotifier] 手動掃描失敗:', err);
+            if (window.PostIt && window.PostIt.Board) {
+                window.PostIt.Board.showToast('伺服器連線失敗', 'error');
+            }
+        }
     }
 
     return {
         start,
         stop,
-        triggerTestAlert
+        triggerRadarManual
     };
 })();
 
