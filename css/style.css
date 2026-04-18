@@ -1594,7 +1594,8 @@ body.stamp-mode {
         0 1px 3px rgba(0,0,0,0.1),
         inset 0 0 0 0.5px rgba(0,0,0,0.05);
     z-index: 5;
-    pointer-events: none;
+    pointer-events: auto;
+    cursor: grab;
     /* 磨砂質感 */
     background-image: linear-gradient(
         180deg,
