@@ -43,30 +43,18 @@
 
 
 
+## [2.1.42] - 2026-04-18
+
+### 🐛 修正與優化 (Fixed & Changed)
+*   **群組合併瞬移修正**：修復了拖曳便利貼合併群組時，放開滑鼠的瞬間會跳回舊座標的惡性 Bug。現在合併建立的當下會精準地將最新的拖曳座標同步寫入 Firebase，確保視覺與資料庫的排版完全一致。
+
 ## [2.1.41] - 2026-04-18
 
-### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.1.41
-## [2.1.40] - 2026-04-18
+### ✨ 新增 (Added)
+*   **好物雷達無縫輪播與容錯機制**：
+    *   **無重複智能推送**：好物雷達現已支援 `offset` 位移追蹤，能動態偵測白板上已存在的商品卡片，並依序拉取「下一順位」的高分推薦，避免同樣的商品重複出現佔據版面。
+    *   **無伺服器備援 (Fallback)**：當後端 API 無法連線時，會自動無縫降級切換至本地端的 Mock 測試資料庫循環顯示，確保 UI 體驗與介面測試流程絕不中斷。
 
-### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.1.40
-## [2.1.39] - 2026-04-18
-
-### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.1.39
-## [2.1.38] - 2026-04-18
-
-### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.1.38
-## [2.1.37] - 2026-04-18
-
-### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.1.37
-## [2.1.36] - 2026-04-18
-
-### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.1.36
 ## [2.1.36] - 2026-04-18
 
 ### ✨ 新增 (Added)
