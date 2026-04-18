@@ -3344,7 +3344,6 @@ body.pin-mode {
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.15), 0 0 0 2px rgba(255, 215, 0, 0.4);
     padding: 0;
-    overflow: hidden;
     color: #333;
     width: 260px !important; /* Force fixed width for deal card */
     min-height: auto;
@@ -3401,6 +3400,8 @@ body.pin-mode {
     position: relative;
     overflow: hidden;
     z-index: 2;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
 }
 
 .deal-card {
