@@ -944,9 +944,9 @@ PostIt.Board = (function () {
             if (window.PostIt && PostIt.Drag) PostIt.Drag.setMaxZIndex(zVal);
         }
 
-        // 內容（只在非編輯時更新）
+        // 內容（只在非編輯時更新，且若是超級好物則不破壞其專屬 DOM 結構）
         const contentEl = el.querySelector('.note-content');
-        if (contentEl && contentEl.getAttribute('contenteditable') !== 'true') {
+        if (contentEl && contentEl.getAttribute('contenteditable') !== 'true' && note.type !== 'super_deal') {
             const contentStr2 = String(note.content).trim();
             const urlMatch2 = contentStr2.match(/https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s]*)?/i) || contentStr2.match(/data:image\/[a-zA-Z0-9+]+;base64,[^\s]+/);
             const extractedUrl2 = urlMatch2 ? urlMatch2[0] : null;
