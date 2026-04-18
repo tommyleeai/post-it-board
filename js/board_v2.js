@@ -772,7 +772,7 @@ PostIt.Board = (function () {
         if (parsedYtId) {
             const iframeContainer = document.createElement('div');
             iframeContainer.className = 'note-video-container';
-            iframeContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>`;
+            iframeContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
             el.appendChild(iframeContainer);
         }
 
@@ -964,7 +964,7 @@ PostIt.Board = (function () {
                 if (!videoContainer) {
                     videoContainer = document.createElement('div');
                     videoContainer.className = 'note-video-container';
-                    videoContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>`;
+                    videoContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
                     el.insertBefore(videoContainer, contentEl);
                 } else {
                     const iframe = videoContainer.querySelector('iframe');
@@ -1415,6 +1415,27 @@ PostIt.Board = (function () {
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(handleResize, 150);
+    });
+
+    // 監聽 fullscreen 解決影片放大縮小時版面錯亂與 Safari 旋轉跑版 Bug
+    document.addEventListener('fullscreenchange', () => {
+        const fsElement = document.fullscreenElement || document.webkitFullscreenElement;
+        if (fsElement && fsElement.tagName === 'IFRAME') {
+            const noteEl = fsElement.closest('.sticky-note');
+            if (noteEl) {
+                noteEl.dataset.fsTransform = noteEl.style.transform || 'none';
+                noteEl.style.transform = 'none'; // 暫時移除旋轉避免滿版跑版
+            }
+        } else {
+            // 退出時還原旋轉
+            document.querySelectorAll('.sticky-note[data-fs-transform]').forEach(el => {
+                el.style.transform = el.dataset.fsTransform;
+                el.removeAttribute('data-fs-transform');
+            });
+            // 強制重算座標兩次以防過渡動畫干擾
+            setTimeout(handleResize, 100);
+            setTimeout(handleResize, 400);
+        }
     });
 
     // ======== DOM Ready ========
