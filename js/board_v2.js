@@ -750,7 +750,7 @@ PostIt.Board = (function () {
             contentEl.innerHTML = `
                 <div class="deal-top-badge">🚨 超級好物</div>
                 <div class="deal-card">
-                    ${dealData.image ? `<img src="${dealData.image}" class="deal-img" draggable="false">` : ''}
+                    ${dealData.image ? `<img src="${dealData.image}" class="deal-img" draggable="false" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : ''}
                     <h3 class="deal-title">${dealData.title || ''}</h3>
                     <div class="deal-pricing">
                         <span class="deal-new-price">${dealData.price || ''}</span>

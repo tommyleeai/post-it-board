@@ -3035,6 +3035,201 @@ body.pin-mode {
 .sticky-note.image-only .note-edit-trigger,
 .sticky-note.video-only .note-settings-trigger,
 .sticky-note.video-only .note-edit-trigger {
+}
+
+.group-context-menu.visible {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+}
+
+.group-context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+
+.group-context-menu-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.group-context-menu-item i {
+    width: 18px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.group-context-menu-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 4px 0;
+}
+
+/* 群組隱藏的便利貼（非頂層，收合狀態下不可見內容） */
+.sticky-note.group-hidden {
+    pointer-events: none;
+}
+
+.sticky-note.group-hidden .note-content,
+.sticky-note.group-hidden .note-timestamp,
+.sticky-note.group-hidden .note-settings-trigger,
+.sticky-note.group-hidden .note-delete-btn,
+.sticky-note.group-hidden .note-tape,
+.sticky-note.group-hidden .ai-alarm-badge {
+    visibility: hidden;
+}
+
+/* === 群組系統 END === */
+
+
+/* === 統一背景模糊遮罩 === */
+.unified-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: var(--z-overlay-base);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+
+.unified-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* === 圖片放大與圖文共存 START === */
+
+/* 圖文分離容器 */
+.note-image-container {
+    width: 100%;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: center;
+}
+
+.note-img {
+    max-width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 4px;
+    cursor: zoom-in;
+    transition: transform 0.2s ease, filter 0.2s ease;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.note-img:hover {
+    transform: scale(1.02);
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+}
+
+/* 燈箱背景遮罩 */
+.lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.lightbox-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: zoom-out;
+}
+
+/* 燈箱圖片 */
+.lightbox-image {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+}
+
+.lightbox-overlay.visible .lightbox-image {
+    transform: scale(1);
+}
+
+/* 關閉按鈕 */
+.btn-close-lightbox {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.btn-close-lightbox:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.1);
+}
+/* === END === */
+
+/* === 無文字圖片放大與影片填充設計 START === */
+.sticky-note.image-only,
+.sticky-note.video-only {
+    padding: 0 !important;
+}
+
+.sticky-note.video-only {
+    min-height: auto !important;
+    aspect-ratio: 16 / 9;
+}
+
+/* 關閉右下角狗耳朵捲起裁切效果，使全圖/全片保持方形 */
+.sticky-note.image-only::before,
+.sticky-note.video-only::before {
+    clip-path: none !important;
+}
+.sticky-note.image-only::after,
+.sticky-note.video-only::after {
+    display: none !important;
+}
+
+/* 隱藏時間戳記 */
+.sticky-note.image-only .note-timestamp,
+.sticky-note.video-only .note-timestamp {
+    display: none !important;
+}
+
+/* 將設定按鈕與編輯按鈕在平常隱藏，hover 時才浮現 */
+.sticky-note.image-only .note-settings-trigger,
+.sticky-note.image-only .note-edit-trigger,
+.sticky-note.video-only .note-settings-trigger,
+.sticky-note.video-only .note-edit-trigger {
     bottom: 8px;
     background: rgba(255, 255, 255, 0.45);
     border-radius: 50%;
@@ -3172,13 +3367,13 @@ body.pin-mode {
     to { box-shadow: 0 0 20px #fdcb6e, 0 0 30px #e17055, 0 0 40px #e17055; }
 }
 
-/* 閃耀過場特效 (Shimmer) */
-.super-deal-note::after {
+/* 閃耀過場特效 (Shimmer) 移至標題區避免裁切錯誤 */
+.deal-top-badge::after {
     content: '';
     position: absolute;
     top: 0;
     left: -100%;
-    width: 50%;
+    width: 60%;
     height: 100%;
     background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0) 100%);
     transform: skewX(-20deg);
@@ -3204,11 +3399,12 @@ body.pin-mode {
     letter-spacing: 1px;
     text-transform: uppercase;
     position: relative;
+    overflow: hidden;
     z-index: 2;
 }
 
 .deal-card {
-    padding: 12px;
+    padding: 12px 12px 20px 12px; /* 底部加寬，避免擠壓到右下角捲角 */
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -3278,7 +3474,9 @@ body.pin-mode {
     padding: 10px;
     border-radius: 8px;
     font-weight: bold;
-    text-decoration: none;
+    text-decoration: none !important;
+    border-bottom: none !important;
+    outline: none !important;
     margin-top: 4px;
     transition: transform 0.1s, box-shadow 0.2s;
 }
@@ -3288,6 +3486,8 @@ body.pin-mode {
     box-shadow: 0 4px 10px rgba(255, 153, 0, 0.3);
 }
 
-/* 針對 Super Deal 卡片隱藏圖釘卷角等不必要的元素 (如果想要純淨閱讀的話可以留著，但通常會蓋住內容) */
-.super-deal-note .note-timestamp { display: none; }
+/* 針對 Super Deal 卡片隱藏圖釘卷角等不必要的元素及編輯器 */
+.super-deal-note .note-timestamp,
+.super-deal-note .note-edit-trigger,
+.super-deal-note .note-settings-trigger { display: none !important; }
 /* === Super Deal Notifier END === */
