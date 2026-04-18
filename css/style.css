@@ -3400,8 +3400,6 @@ body.pin-mode {
     position: relative;
     overflow: hidden;
     z-index: 2;
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
 }
 
 .deal-card {
@@ -3411,6 +3409,14 @@ body.pin-mode {
     gap: 8px;
     position: relative;
     z-index: 2;
+}
+
+/* 將內核整體切圓角，避免蓋破底層 sticky-note 的卷角陰影以及上方膠帶 */
+.super-deal-note .note-content {
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
 }
 
 .deal-img {
