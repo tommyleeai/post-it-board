@@ -120,7 +120,7 @@ PostIt.DealNotifier = (function () {
         const dummyDeal = {
             id: 'test_' + Date.now(),
             title: 'Samsung 990 PRO 2TB SSD 歷史低價',
-            image: 'https://images-na.ssl-images-amazon.com/images/I/71R2nJ+-Y+L._AC_SL1500_.jpg',
+            image: 'https://images.unsplash.com/photo-1597848212624-a19eb35e2651?auto=format&fit=crop&q=80&w=600',
             price: '$119.99',
             originalPrice: '$249.99',
             promoCode: 'SAMSUNG50',
@@ -139,7 +139,7 @@ PostIt.DealNotifier = (function () {
                 resolve({
                     id: 'mock_101',
                     title: 'Sony WH-1000XM5 黑科技降噪耳罩式耳機 (全新未拆)',
-                    image: 'https://m.media-amazon.com/images/I/61+OigWo2IL._AC_SX522_.jpg',
+                    image: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?auto=format&fit=crop&q=80&w=600',
                     price: '$298.00',
                     originalPrice: '$398.00',
                     promoCode: 'AUTO_APPLY',
