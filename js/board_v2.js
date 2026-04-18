@@ -772,7 +772,7 @@ PostIt.Board = (function () {
         if (parsedYtId) {
             const iframeContainer = document.createElement('div');
             iframeContainer.className = 'note-video-container';
-            iframeContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}?mute=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            iframeContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
             el.appendChild(iframeContainer);
         }
 
@@ -964,12 +964,12 @@ PostIt.Board = (function () {
                 if (!videoContainer) {
                     videoContainer = document.createElement('div');
                     videoContainer.className = 'note-video-container';
-                    videoContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}?mute=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                    videoContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
                     el.insertBefore(videoContainer, contentEl);
                 } else {
                     const iframe = videoContainer.querySelector('iframe');
                     if (iframe && !iframe.src.includes(parsedYtId)) {
-                         iframe.src = `https://www.youtube.com/embed/${parsedYtId}?mute=1`;
+                         iframe.src = `https://www.youtube.com/embed/${parsedYtId}`;
                     }
                 }
             } else if (videoContainer) {
