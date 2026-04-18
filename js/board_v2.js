@@ -763,7 +763,7 @@ PostIt.Board = (function () {
         }
 
         // 圖文分離：YouTube 影音區
-        const ytRegex1 = /https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})[^\s]*/i;
+        const ytRegex1 = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})[^\s]*/i;
         const ytMatch1 = contentStr1.match(ytRegex1);
         const extractedYtUrl1 = ytMatch1 ? ytMatch1[0] : null;
         const ytId1 = ytMatch1 ? ytMatch1[1] : null;
@@ -772,7 +772,7 @@ PostIt.Board = (function () {
         if (parsedYtId) {
             const iframeContainer = document.createElement('div');
             iframeContainer.className = 'note-video-container';
-            iframeContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            iframeContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>`;
             el.appendChild(iframeContainer);
         }
 
@@ -953,7 +953,7 @@ PostIt.Board = (function () {
             }
 
             // 更新 YouTube 影音區
-            const ytRegex2 = /https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})[^\s]*/i;
+            const ytRegex2 = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})[^\s]*/i;
             const ytMatch2 = contentStr2.match(ytRegex2);
             const extractedYtUrl2 = ytMatch2 ? ytMatch2[0] : null;
             const ytId2 = ytMatch2 ? ytMatch2[1] : null;
@@ -964,7 +964,7 @@ PostIt.Board = (function () {
                 if (!videoContainer) {
                     videoContainer = document.createElement('div');
                     videoContainer.className = 'note-video-container';
-                    videoContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                    videoContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>`;
                     el.insertBefore(videoContainer, contentEl);
                 } else {
                     const iframe = videoContainer.querySelector('iframe');
