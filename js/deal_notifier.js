@@ -113,6 +113,8 @@ PostIt.DealNotifier = (function () {
         synth.speak(utterance);
     }
 
+    let manualOffsetCount = 0;
+
     /**
      * 手動強制呼叫好物雷達，獲取過去 1 小時最高分
      */
@@ -122,11 +124,9 @@ PostIt.DealNotifier = (function () {
             const tempBtn = document.getElementById('btn-test-radar');
             if (tempBtn) tempBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 掃描中';
 
-            // 自動偵測畫面上已經存在的超級好物卡片數量
-            const existingCount = document.querySelectorAll('.super-deal-note').length;
-
+            // 改用獨立的變數來計算，避免算到舊的或昨天的超級好物卡片
             // 放回 hours=1 取得排名，並透過 offset 來循序拿下一張
-            const response = await fetch(`${API_URL}&hours=1&offset=${existingCount}`);
+            const response = await fetch(`${API_URL}&hours=1&offset=${manualOffsetCount}`);
             if (!response.ok) throw new Error('API fetch failed');
             const data = await response.json();
             
@@ -134,10 +134,13 @@ PostIt.DealNotifier = (function () {
 
             if (!data.success || !data.deal) {
                 if (window.PostIt && window.PostIt.Board) {
-                    window.PostIt.Board.showToast(existingCount > 0 ? '過去 1 小時內沒有更多好物了！' : '過去 1 小時內沒有夠強的好物！', 'error');
+                    window.PostIt.Board.showToast(manualOffsetCount > 0 ? '過去 1 小時內沒有更多好物了！' : '過去 1 小時內沒有夠強的好物！', 'error');
                 }
                 return;
             }
+            
+            // 成功拉到資料後，計數加 1，下次就會拉下一筆
+            manualOffsetCount++;
             
             // 手動觸發不檢查 localStorage 快取，直接顯示
             triggerAlert(data.deal);
