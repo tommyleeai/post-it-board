@@ -3411,6 +3411,16 @@ body.pin-mode {
     z-index: 2;
 }
 
+.super-deal-note .note-settings-trigger {
+    display: flex !important;
+    z-index: 20;
+}
+
+.super-deal-note::before {
+    border-radius: 12px !important;
+    background: #fff !important; /* 強制背景為白色，覆蓋自訂顏色 */
+}
+
 /* 將內核整體切圓角，避免蓋破底層 sticky-note 的卷角陰影以及上方膠帶 */
 .super-deal-note .note-content {
     border-radius: 12px;

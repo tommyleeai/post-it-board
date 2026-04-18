@@ -71,8 +71,8 @@ PostIt.DealNotifier = (function () {
         const payloadStr = JSON.stringify(deal);
         
         // 呼叫底層新增，type 為 'super_deal'
-        // color 可以固定，也可以設 null 讓外層 CSS 全權掌控
-        const newNoteId = await PostIt.Note.create(payloadStr, 'super_deal', '#2A2A2A', 'system');
+        // color 給予白色，確保卡片呈現乾淨的商品預設色
+        const newNoteId = await PostIt.Note.create(payloadStr, 'super_deal', '#FFFFFF', 'system');
         
         if (newNoteId) {
             // 利用 setTimeout 等待 React/DOM 重新渲染，再為它掛上過場動畫
