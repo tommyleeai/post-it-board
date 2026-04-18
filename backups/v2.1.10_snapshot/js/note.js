@@ -653,6 +653,54 @@ PostIt.Note = (function () {
         }
     }
 
+    // 刪除整個群組的所有便利貼及其圖檔
+    async function removeGroup(groupId) {
+        if (!groupId) return;
+        const members = getGroupNotes(groupId);
+        if (members.length === 0) return;
+
+        try {
+            const db = PostIt.Firebase.getDb();
+            const storage = PostIt.Firebase.getStorage();
+            const batch = db.batch();
+            const ref = getNotesRef();
+
+            for (const member of members) {
+                // 如果有圖片，順便刪除 Firebase Storage 的圖檔
+                if (member.type === 'image' && member.imageUrl && member.imageUrl.includes('firebasestorage.googleapis.com')) {
+                    try {
+                        let fileRef;
+                        if (member.imageRefPath) {
+                            fileRef = storage.ref().child(member.imageRefPath);
+                        } else {
+                            fileRef = storage.refFromURL(member.imageUrl);
+                        }
+                        await fileRef.delete();
+                        console.log('Storage 圖片已刪除:', member.id);
+                    } catch (e) {
+                        console.warn('Storage 圖片刪除失敗 (可能已被刪除或權限不足):', e);
+                    }
+                }
+                
+                // 加入 batch 中待刪除
+                batch.delete(ref.doc(member.id));
+                
+                // 從畫面與快取中移除
+                delete notesCache[member.id];
+                const el = document.querySelector(`[data-note-id="${member.id}"]`);
+                if (el) el.remove();
+            }
+
+            // 一次性執行刪除
+            await batch.commit();
+            console.log('群組已完整刪除:', groupId);
+            PostIt.Board.showToast('群組已刪除');
+        } catch (error) {
+            console.error('刪除整個群組時發生錯誤:', error);
+            PostIt.Board.showToast('刪除群組失敗，請檢查網路連線', 'error');
+        }
+    }
+
     // 取得群組內所有便利貼（按建立時間排序）
     function getGroupNotes(groupId) {
         if (!groupId) return [];
@@ -676,7 +724,7 @@ PostIt.Note = (function () {
         subscribe, cleanup, create, updateContent, updatePosition,
         updateColor, updateStyle, archive, unarchive, deleteArchive, getArchivedNotes, remove, uploadImage, detectType,
         updateReminderLogic, updateReminderStatus, getNotesRef,
-        mergeToGroup, removeFromGroup, disbandGroup, getGroupNotes, MAX_GROUP_SIZE,
+        mergeToGroup, removeFromGroup, disbandGroup, removeGroup, getGroupNotes, MAX_GROUP_SIZE,
         getCache, getCount, getNote, getActiveNoteId, setActiveNoteId
     };
 })();

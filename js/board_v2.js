@@ -762,15 +762,29 @@ PostIt.Board = (function () {
             el.appendChild(imgContainer);
         }
 
+        // 圖文分離：YouTube 影音區
+        const ytRegex1 = /https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})[^\s]*/i;
+        const ytMatch1 = contentStr1.match(ytRegex1);
+        const extractedYtUrl1 = ytMatch1 ? ytMatch1[0] : null;
+        const ytId1 = ytMatch1 ? ytMatch1[1] : null;
+        const parsedYtId = note.youtubeId ? note.youtubeId : ytId1;
+
+        if (parsedYtId) {
+            const iframeContainer = document.createElement('div');
+            iframeContainer.className = 'note-video-container';
+            iframeContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}?mute=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            el.appendChild(iframeContainer);
+        }
+
         // 內容區
         const contentEl = document.createElement('div');
         contentEl.className = 'note-content';
-        const textHTML = renderContentText(note, parsedImageUrl);
+        const textHTML = renderContentText(note, parsedImageUrl, extractedYtUrl1);
         contentEl.innerHTML = textHTML;
-        if (parsedImageUrl && !String(textHTML).replace(/<[^>]*>?/gm, '').trim()) {
-            el.classList.add('image-only');
+        if ((parsedImageUrl || parsedYtId) && !String(textHTML).replace(/<[^>]*>?/gm, '').trim()) {
+            el.classList.add(parsedYtId ? 'video-only' : 'image-only');
         } else {
-            el.classList.remove('image-only');
+            el.classList.remove('image-only', 'video-only');
         }
         el.appendChild(contentEl);
 
@@ -938,12 +952,37 @@ PostIt.Board = (function () {
                 imgContainer.remove();
             }
 
-            const textHTML = renderContentText(note, parsedImageUrl);
+            // 更新 YouTube 影音區
+            const ytRegex2 = /https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})[^\s]*/i;
+            const ytMatch2 = contentStr2.match(ytRegex2);
+            const extractedYtUrl2 = ytMatch2 ? ytMatch2[0] : null;
+            const ytId2 = ytMatch2 ? ytMatch2[1] : null;
+            const parsedYtId = note.youtubeId ? note.youtubeId : ytId2;
+
+            let videoContainer = el.querySelector('.note-video-container');
+            if (parsedYtId) {
+                if (!videoContainer) {
+                    videoContainer = document.createElement('div');
+                    videoContainer.className = 'note-video-container';
+                    videoContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}?mute=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                    el.insertBefore(videoContainer, contentEl);
+                } else {
+                    const iframe = videoContainer.querySelector('iframe');
+                    if (iframe && !iframe.src.includes(parsedYtId)) {
+                         iframe.src = `https://www.youtube.com/embed/${parsedYtId}?mute=1`;
+                    }
+                }
+            } else if (videoContainer) {
+                videoContainer.remove();
+            }
+
+            const textHTML = renderContentText(note, parsedImageUrl, extractedYtUrl2);
             contentEl.innerHTML = textHTML;
-            if (parsedImageUrl && !String(textHTML).replace(/<[^>]*>?/gm, '').trim()) {
-                el.classList.add('image-only');
+            if ((parsedImageUrl || parsedYtId) && !String(textHTML).replace(/<[^>]*>?/gm, '').trim()) {
+                el.classList.add(parsedYtId ? 'video-only' : 'image-only');
+                el.classList.remove(parsedYtId ? 'image-only' : 'video-only');
             } else {
-                el.classList.remove('image-only');
+                el.classList.remove('image-only', 'video-only');
             }
         }
 
@@ -1032,14 +1071,17 @@ PostIt.Board = (function () {
     }
 
     // ======== 渲染不同類型的內容 ========
-    function renderContentText(note, parsedImageUrl) {
+    function renderContentText(note, parsedImageUrl, extractedYtUrl) {
         if (!note.content) return '';
 
         let text = String(note.content).trim();
 
-        // 如果已經獨立顯示了這張圖片，就將圖片 URL 從內文中剝離，避免重複顯示又醜
+        // 如果已經獨立顯示了圖片或影片，就將其 URL 從內文中剝離，避免重複顯示又醜
         if (parsedImageUrl && !note.imageUrl && text.includes(parsedImageUrl)) {
             text = text.replace(parsedImageUrl, '').trim();
+        }
+        if (extractedYtUrl && text.includes(extractedYtUrl)) {
+            text = text.replace(extractedYtUrl, '').trim();
         }
 
         // 如果剝離後沒剩文字，就直接不顯示文字區
@@ -1090,8 +1132,8 @@ PostIt.Board = (function () {
         // 如果已經在編輯狀態中，不要重新設定以免覆蓋使用者正在輸入的內容並導致游標重製跳動
         if (contentEl.getAttribute('contenteditable') === 'true') return;
 
-        // 為了讓無文字的圖片卡片能順利輸入文字，暫時移除 image-only class
-        noteEl.classList.remove('image-only');
+        // 為了讓無文字的卡片能順利輸入文字，暫時移除相關 class
+        noteEl.classList.remove('image-only', 'video-only');
 
         // ======== 準備要讓使用者編輯的純文字 ========
         let textForEditing = String(note?.content || '');

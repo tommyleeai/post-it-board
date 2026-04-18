@@ -403,47 +403,99 @@ PostIt.Board = (function () {
                 btnCopyImg.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const src = lightboxImg.src;
-                    try {
-                        const response = await fetch(src);
-                        const blob = await response.blob();
-                        await navigator.clipboard.write([
-                            new ClipboardItem({
-                                [blob.type]: blob
-                            })
-                        ]);
-                        if(window.showToast) window.showToast('已複製圖片', 'success');
-                    } catch(err) {
-                        console.error('複製圖片失敗:', err);
+
+                    // 視覺效果 (閃光) + 音效
+                    const playCopyEffect = () => {
+                        const flash = document.createElement('div');
+                        flash.style.position = 'absolute';
+                        flash.style.top = '0';
+                        flash.style.left = '0';
+                        flash.style.width = '100%';
+                        flash.style.height = '100%';
+                        flash.style.backgroundColor = 'white';
+                        flash.style.opacity = '0.6';
+                        flash.style.transition = 'opacity 0.3s ease-out';
+                        flash.style.zIndex = '9999999';
+                        flash.style.pointerEvents = 'none';
+                        document.body.appendChild(flash);
                         
-                        // Fallback: 如果因為跨域導致 fetch 失敗，我們可以使用 canvas
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                flash.style.opacity = '0';
+                            });
+                        });
+                        setTimeout(() => flash.remove(), 350);
+
                         try {
+                            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                            const oscillator = audioCtx.createOscillator();
+                            const gainNode = audioCtx.createGain();
+                            
+                            oscillator.type = 'triangle';
+                            oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                            oscillator.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+                            
+                            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                            gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.02);
+                            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                            
+                            oscillator.connect(gainNode);
+                            gainNode.connect(audioCtx.destination);
+                            
+                            oscillator.start(audioCtx.currentTime);
+                            oscillator.stop(audioCtx.currentTime + 0.15);
+                        } catch(e) {
+                            console.warn('音效播放失敗:', e);
+                        }
+                    };
+
+                    const copyViaCanvas = (imageSrc) => {
+                        return new Promise((resolve, reject) => {
                             const canvas = document.createElement('canvas');
                             const ctx = canvas.getContext('2d');
-                            // 確保圖片具有 crossOrigin
                             const tempImg = new Image();
                             tempImg.crossOrigin = 'Anonymous';
-                            tempImg.onload = async () => {
+                            tempImg.onload = () => {
                                 canvas.width = tempImg.width;
                                 canvas.height = tempImg.height;
                                 ctx.drawImage(tempImg, 0, 0);
-                                canvas.toBlob(async (cblob) => {
-                                    try {
-                                        await navigator.clipboard.write([
-                                            new ClipboardItem({ [cblob.type]: cblob })
-                                        ]);
-                                        if(window.showToast) window.showToast('已複製圖片', 'success');
-                                    } catch (err3) {
-                                        if(window.showToast) window.showToast('無法存取剪貼簿', 'error');
-                                    }
-                                });
+                                canvas.toBlob((cblob) => {
+                                    if(cblob) resolve(cblob);
+                                    else reject(new Error('Canvas toBlob failed'));
+                                }, 'image/png');
                             };
-                            tempImg.onerror = () => {
-                                if(window.showToast) window.showToast('圖片包含跨域限制，無法直接複製', 'error');
-                            };
-                            tempImg.src = src;
-                        } catch(err2) {
-                            if(window.showToast) window.showToast('無法複製此圖片', 'error');
+                            tempImg.onerror = () => reject(new Error('Image failed to load with CORS'));
+                            tempImg.src = imageSrc;
+                        });
+                    };
+
+                    try {
+                        let finalBlob = null;
+                        
+                        try {
+                            const response = await fetch(src);
+                            const blob = await response.blob();
+                            
+                            if (blob.type === 'image/png') {
+                                finalBlob = blob;
+                            } else {
+                                const objUrl = URL.createObjectURL(blob);
+                                finalBlob = await copyViaCanvas(objUrl);
+                                URL.revokeObjectURL(objUrl);
+                            }
+                        } catch(err) {
+                            finalBlob = await copyViaCanvas(src);
                         }
+
+                        await navigator.clipboard.write([
+                            new ClipboardItem({ 'image/png': finalBlob })
+                        ]);
+                        playCopyEffect();
+                        if(window.showToast) window.showToast('已複製圖片', 'success');
+
+                    } catch(err) {
+                        console.error('複製圖片失敗:', err);
+                        if(window.showToast) window.showToast('複製失敗，可能是跨域限制或瀏覽器不支援', 'error');
                     }
                     hideMenu();
                 });
@@ -609,7 +661,7 @@ PostIt.Board = (function () {
         // 如果場上殘留舊的異常高層級 (大於 490000)，重新壓縮並寫回資料庫
         if (typeof PostIt.Drag !== 'undefined' && typeof PostIt.Drag.normalizeZIndex === 'function') {
             let hasAnomalies = false;
-            document.querySelectorAll('.sticky-note').forEach(el => {
+            document.querySelectorAll('.sticky-note:not(.group-expanded)').forEach(el => {
                 if (parseInt(el.style.zIndex || 0) > 490000) hasAnomalies = true;
             });
             if (hasAnomalies) {
@@ -636,6 +688,11 @@ PostIt.Board = (function () {
         }
         el.dataset.noteId = note.id;
         if (note.groupId) el.dataset.groupId = note.groupId;
+
+        // 加入 Hover 防抖用的 Hitbox 延伸層
+        const hitbox = document.createElement('div');
+        hitbox.className = 'group-hover-hitbox';
+        el.appendChild(hitbox);
 
         // 位置（百分比轉像素）— 跨裝置獨立座標
         const mode = (window.PostIt && PostIt.getDeviceMode) ? PostIt.getDeviceMode() : 'desktop';
@@ -1036,10 +1093,23 @@ PostIt.Board = (function () {
         // 為了讓無文字的圖片卡片能順利輸入文字，暫時移除 image-only class
         noteEl.classList.remove('image-only');
 
+        // ======== 準備要讓使用者編輯的純文字 ========
+        let textForEditing = String(note?.content || '');
+        let migratedUrl = null;
+
+        // 如果是系統上傳的圖片貼紙，不該讓使用者在編輯框看到冗長的 URL 污染畫面
+        if (note && note.type === 'image') {
+            const urlMatch = textForEditing.match(/https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s]*)?/i) || textForEditing.match(/data:image\/[a-zA-Z0-9+]+;base64,[^\s]+/);
+            if (urlMatch && textForEditing.includes(urlMatch[0])) {
+                migratedUrl = urlMatch[0];
+                textForEditing = textForEditing.replace(migratedUrl, '').trim();
+            }
+        }
+
         // 設為可編輯
         contentEl.setAttribute('contenteditable', 'true');
-        // 用 innerText 保留換行符
-        contentEl.innerText = note?.content || '';
+        // 用 innerText 保留換行符，並且使用濾掉 URL 後的乾淨文字
+        contentEl.innerText = textForEditing;
         contentEl.focus();
 
         // 游標移到最後
@@ -1054,10 +1124,25 @@ PostIt.Board = (function () {
         const onBlur = async () => {
             contentEl.removeAttribute('contenteditable');
             // innerText 會保留 Shift+Enter 產生的換行
-            const newContent = contentEl.innerText.trim();
-            
+            const typedContent = contentEl.innerText.trim();
+            let newContent = typedContent;
+
+            // 針對舊版未攜帶 imageUrl 的相片，悄悄執行資料庫結構遷移
+            if (migratedUrl && !note.imageUrl) {
+                try {
+                    await PostIt.Note.getNotesRef().doc(noteId).update({ imageUrl: migratedUrl });
+                    // 此後 note.imageUrl 已存在，就不再依賴 content 欄位儲存 URL
+                } catch (e) {
+                    console.error('舊版相片遷移失敗:', e);
+                    // 如果遷移失敗，為了確保照片不會就此人間蒸發，只好把 URL 塞回 content 保命
+                    newContent = migratedUrl + (typedContent ? '\n' + typedContent : '');
+                }
+            }
+
             // 無論有沒有改，先把 DOM 恢復正確渲染 (Bug 3 修復)
             const simulatedNote = { ...note, content: newContent };
+            if (migratedUrl && !note.imageUrl) simulatedNote.imageUrl = migratedUrl; // 即使等待重整前，也要確保畫面正確抓到 image
+
             const contentStr3 = String(newContent).trim();
             const urlMatch3 = contentStr3.match(/https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s]*)?/i) || contentStr3.match(/data:image\/[a-zA-Z0-9+]+;base64,[^\s]+/);
             const extractedUrl3 = urlMatch3 ? urlMatch3[0] : null;
@@ -1074,7 +1159,7 @@ PostIt.Board = (function () {
                 noteEl.classList.remove('image-only');
             }
             
-            // 只有內容改變才更新並呼叫 AI
+            // 如果儲存的內容跟原始內容 (note.content) 相比有發生改變（包含我們主動把他清理掉 URL 的情況）
             if (newContent !== (note?.content || '')) {
                 PostIt.Note.updateContent(noteId, newContent);
                 
@@ -1481,8 +1566,84 @@ PostIt.Board = (function () {
             const aiKeyInput = document.getElementById('account-ai-key');
             aiKeyInput.value = PostIt.Settings.getAiKey() === 'AIzaSyA4rngnyQfawDPXU1W2clDtUHbrqHB8DnU' ? '' : PostIt.Settings.getAiKey();
 
+            // 填充 Ollama 設定
+            const ollamaSettings = PostIt.Settings.getOllamaSettings();
+            const ollamaEnable = document.getElementById('account-ollama-enable');
+            const ollamaUrl = document.getElementById('account-ollama-url');
+            const ollamaModel = document.getElementById('account-ollama-model');
+            const ollamaGroup = document.getElementById('ollama-settings-group');
+            if (ollamaEnable && ollamaUrl && ollamaModel && ollamaGroup) {
+                ollamaEnable.checked = ollamaSettings.enableFallback;
+                ollamaUrl.value = ollamaSettings.url || 'http://localhost:11434';
+                ollamaModel.value = ollamaSettings.model || '';
+                ollamaGroup.style.display = ollamaSettings.enableFallback ? 'flex' : 'none';
+                
+                // 動態連動開關顯示
+                ollamaEnable.onchange = (e) => {
+                    ollamaGroup.style.display = e.target.checked ? 'flex' : 'none';
+                };
+            }
+
             // 產生字體顏色色票
             renderFontColorSwatches();
+
+            // 綁定 Gemini 測試按鈕
+            const btnTestGemini = document.getElementById('btn-test-gemini');
+            if (btnTestGemini) {
+                btnTestGemini.onclick = async (e) => {
+                    e.preventDefault();
+                    const apiKeyInput = document.getElementById('account-ai-key');
+                    const apiKey = apiKeyInput ? apiKeyInput.value : '';
+                    if (!apiKey.trim()) {
+                        showToast('請先填寫 Gemini API 金鑰', 'error');
+                        return;
+                    }
+                    
+                    const originalText = btnTestGemini.innerHTML;
+                    btnTestGemini.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 測試中';
+                    btnTestGemini.disabled = true;
+                    
+                    const result = await PostIt.AI.testGemini(apiKey.trim());
+                    if (result.success) {
+                        showToast(result.msg, 'success');
+                    } else {
+                        showToast(`測試失敗: ${result.msg}`, 'error', null, 6000);
+                    }
+                    
+                    btnTestGemini.innerHTML = originalText;
+                    btnTestGemini.disabled = false;
+                };
+            }
+
+            // 綁定 Ollama 測試按鈕
+            const btnTestOllama = document.getElementById('btn-test-ollama');
+            if (btnTestOllama) {
+                btnTestOllama.onclick = async (e) => {
+                    e.preventDefault();
+                    if (!ollamaUrl.value || !ollamaModel.value) {
+                        showToast('請先填寫網址與模型名稱再測試', 'error');
+                        return;
+                    }
+                    if (!ollamaEnable.checked) {
+                        showToast('請先打勾「啟用本地端備援」', 'error');
+                        return;
+                    }
+                    
+                    const originalText = btnTestOllama.innerHTML;
+                    btnTestOllama.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 測試中';
+                    btnTestOllama.disabled = true;
+                    
+                    const result = await PostIt.AI.testOllama(ollamaUrl.value.trim(), ollamaModel.value.trim());
+                    if (result.success) {
+                        showToast(result.msg, 'success');
+                    } else {
+                        showToast(`測試失敗: ${result.msg}`, 'error', null, 6000);
+                    }
+                    
+                    btnTestOllama.innerHTML = originalText;
+                    btnTestOllama.disabled = false;
+                };
+            }
 
             // 更新貼紙顏色選擇
             document.querySelectorAll('#account-note-color .color-swatch').forEach(s => {
@@ -1624,6 +1785,18 @@ PostIt.Board = (function () {
                 // 儲存 AI Key (本地)
                 const aiKeyInput = document.getElementById('account-ai-key');
                 PostIt.Settings.setAiKey(aiKeyInput.value);
+
+                // 儲存 Ollama 設定 (本地)
+                const ollamaEnable = document.getElementById('account-ollama-enable');
+                const ollamaUrl = document.getElementById('account-ollama-url');
+                const ollamaModel = document.getElementById('account-ollama-model');
+                if (ollamaEnable && ollamaUrl && ollamaModel) {
+                    PostIt.Settings.setOllamaSettings({
+                        enableFallback: ollamaEnable.checked,
+                        url: ollamaUrl.value.trim() || 'http://localhost:11434',
+                        model: ollamaModel.value.trim()
+                    });
+                }
 
                 // 儲存其他設定 (雲端)
                 const bgImageUrl = document.getElementById('account-bg-image-url') ? document.getElementById('account-bg-image-url').value.trim() : '';

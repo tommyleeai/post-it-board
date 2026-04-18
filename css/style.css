@@ -3002,27 +3002,33 @@ body.pin-mode {
 }
 /* === END === */
 
-/* === 無文字圖片放大填充設計 START === */
-.sticky-note.image-only {
+/* === 無文字圖片放大與影片填充設計 START === */
+.sticky-note.image-only,
+.sticky-note.video-only {
     padding: 0 !important;
 }
 
-/* 關閉右下角狗耳朵捲起裁切效果，使全圖保持方形 */
-.sticky-note.image-only::before {
+/* 關閉右下角狗耳朵捲起裁切效果，使全圖/全片保持方形 */
+.sticky-note.image-only::before,
+.sticky-note.video-only::before {
     clip-path: none !important;
 }
-.sticky-note.image-only::after {
+.sticky-note.image-only::after,
+.sticky-note.video-only::after {
     display: none !important;
 }
 
 /* 隱藏時間戳記 */
-.sticky-note.image-only .note-timestamp {
+.sticky-note.image-only .note-timestamp,
+.sticky-note.video-only .note-timestamp {
     display: none !important;
 }
 
 /* 將設定按鈕與編輯按鈕在平常隱藏，hover 時才浮現 */
 .sticky-note.image-only .note-settings-trigger,
-.sticky-note.image-only .note-edit-trigger {
+.sticky-note.image-only .note-edit-trigger,
+.sticky-note.video-only .note-settings-trigger,
+.sticky-note.video-only .note-edit-trigger {
     bottom: 8px;
     background: rgba(255, 255, 255, 0.45);
     border-radius: 50%;
@@ -3031,18 +3037,24 @@ body.pin-mode {
     pointer-events: none; /* 隱藏時不可點擊 */
     transition: opacity 0.2s ease, background 0.2s ease, transform 0.2s ease;
 }
-.sticky-note.image-only .note-settings-trigger { right: 8px; }
-.sticky-note.image-only .note-edit-trigger { right: 44px; }
+.sticky-note.image-only .note-settings-trigger,
+.sticky-note.video-only .note-settings-trigger { right: 8px; }
+.sticky-note.image-only .note-edit-trigger,
+.sticky-note.video-only .note-edit-trigger { right: 44px; }
 
-/* 只要滑鼠停留在整張圖片範圍內，就讓按鈕浮現 */
+/* 只要滑鼠停留在整張範圍內，就讓按鈕浮現 */
 .sticky-note.image-only:hover .note-settings-trigger,
-.sticky-note.image-only:hover .note-edit-trigger {
+.sticky-note.image-only:hover .note-edit-trigger,
+.sticky-note.video-only:hover .note-settings-trigger,
+.sticky-note.video-only:hover .note-edit-trigger {
     opacity: 1;
     pointer-events: auto; /* 出現時開放點擊 */
 }
 
 .sticky-note.image-only .note-settings-trigger:hover,
-.sticky-note.image-only .note-edit-trigger:hover {
+.sticky-note.image-only .note-edit-trigger:hover,
+.sticky-note.video-only .note-settings-trigger:hover,
+.sticky-note.video-only .note-edit-trigger:hover {
     background: rgba(255, 255, 255, 0.85);
 }
 
@@ -3061,7 +3073,23 @@ body.pin-mode {
     clip-path: none;
 }
 
-.sticky-note.image-only .note-content {
+.sticky-note.video-only .note-video-container {
+    width: 100%;
+    height: 100%;
+    background: #000;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0;
+}
+
+.sticky-note.video-only .note-video-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.sticky-note.image-only .note-content,
+.sticky-note.video-only .note-content {
     display: none; /* 隱藏無文字區域 */
 }
 /* === END === */
@@ -3106,4 +3134,4 @@ body.pin-mode {
 .note-edit-trigger:hover { color: rgba(0, 0, 0, 0.5); }
 .sticky-note.group-hidden .note-edit-trigger { display: none; }
 
-@media (hover: none) { .sticky-note.image-only .note-settings-trigger, .sticky-note.image-only .note-edit-trigger { opacity: 0.85; pointer-events: auto; } }
+@media (hover: none) { .sticky-note.image-only .note-settings-trigger, .sticky-note.image-only .note-edit-trigger, .sticky-note.video-only .note-settings-trigger, .sticky-note.video-only .note-edit-trigger { opacity: 0.85; pointer-events: auto; } }

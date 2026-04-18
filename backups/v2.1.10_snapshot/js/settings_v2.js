@@ -129,6 +129,37 @@ PostIt.Settings = (function () {
         }
     }
 
+    // -------- Ollama 本地備援設定 (純本地端儲存) --------
+    const OLLAMA_SETTINGS_KEY = 'postit_ollama_settings';
+    const DEFAULT_OLLAMA_SETTINGS = {
+        enableFallback: false,
+        url: 'http://localhost:11434',
+        model: ''
+    };
+
+    function getOllamaSettings() {
+        try {
+            const raw = localStorage.getItem(OLLAMA_SETTINGS_KEY);
+            if (raw) {
+                return { ...DEFAULT_OLLAMA_SETTINGS, ...JSON.parse(raw) };
+            }
+        } catch (e) {
+            console.warn('[Settings] 解析 Ollama 設定失敗', e);
+        }
+        return { ...DEFAULT_OLLAMA_SETTINGS };
+    }
+
+    function setOllamaSettings(settings) {
+        try {
+            const current = getOllamaSettings();
+            const merged = { ...current, ...settings };
+            localStorage.setItem(OLLAMA_SETTINGS_KEY, JSON.stringify(merged));
+            return merged;
+        } catch (e) {
+            console.error('[Settings] 儲存 Ollama 設定失敗', e);
+        }
+    }
+
     // -------- 取得系統預設 --------
     function getDefaults() {
         return { ...DEFAULTS };
@@ -148,6 +179,7 @@ PostIt.Settings = (function () {
         load, save, reset,
         getEffective, getAccountSettings, getDefaults,
         getFontOptions, getFontColorPresets,
-        getAiKey, setAiKey
+        getAiKey, setAiKey,
+        getOllamaSettings, setOllamaSettings
     };
 })();

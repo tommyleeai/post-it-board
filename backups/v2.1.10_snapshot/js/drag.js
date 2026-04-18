@@ -256,7 +256,7 @@ PostIt.Drag = (function () {
     }
 
     function normalizeZIndex(saveToDb = false) {
-        const notes = Array.from(document.querySelectorAll('.sticky-note:not(.dragging)'));
+        const notes = Array.from(document.querySelectorAll('.sticky-note:not(.dragging):not(.group-expanded)'));
         // 依照目前的 z-index 由小到大排序
         notes.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0));
         

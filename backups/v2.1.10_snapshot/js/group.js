@@ -42,6 +42,53 @@ PostIt.Group = (function () {
         }
         overlayEl.addEventListener('click', collapseGroup);
 
+        // 初始化群組專屬的懸浮工具列 (Group Action Bar)
+        var actionBar = document.getElementById('group-action-bar');
+        if (!actionBar) {
+            actionBar = document.createElement('div');
+            actionBar.id = 'group-action-bar';
+            actionBar.style.cssText = 'position: fixed; bottom: -80px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 9999999; background: rgba(255,255,255,0.95); padding: 12px 24px; border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); backdrop-filter: blur(10px); transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; pointer-events: none;';
+            actionBar.innerHTML = 
+                '<button id="btn-group-bar-disband" style="background: #f8f9fa; border: 1px solid #ddd; padding: 10px 20px; font-size: 15px; font-weight: bold; border-radius: 25px; cursor: pointer; color: #333; display: flex; align-items: center; gap: 8px; transition: background 0.2s;"><i class="fa-solid fa-object-ungroup"></i> 解散群組</button>' +
+                '<button id="btn-group-bar-delete" style="background: #fff0f0; border: 1px solid #ffccd5; padding: 10px 20px; font-size: 15px; font-weight: bold; border-radius: 25px; cursor: pointer; color: #e74c3c; display: flex; align-items: center; gap: 8px; transition: background 0.2s;"><i class="fa-solid fa-trash"></i> 永久刪除</button>';
+            document.body.appendChild(actionBar);
+
+            // 事件綁定
+            var btnDisband = document.getElementById('btn-group-bar-disband');
+            var btnDelete = document.getElementById('btn-group-bar-delete');
+
+            btnDisband.onmouseenter = function() { this.style.background = '#e9ecef'; };
+            btnDisband.onmouseleave = function() { this.style.background = '#f8f9fa'; };
+            btnDelete.onmouseenter = function() { this.style.background = '#ffe5e5'; };
+            btnDelete.onmouseleave = function() { this.style.background = '#fff0f0'; };
+
+            btnDisband.addEventListener('click', function(ev) {
+                ev.stopPropagation(); // 阻止冒泡到 `#board` 或 `document` 引發其他行為
+                var groupId = expandedGroupId;
+                if (!groupId) return;
+                collapseGroup();
+                PostIt.Note.disbandGroup(groupId);
+                if (typeof PostIt.Sound !== 'undefined') PostIt.Sound.play('group_disband');
+                PostIt.Board.showToast('群組已解散');
+            });
+
+            btnDelete.addEventListener('click', function(ev) {
+                ev.stopPropagation();
+                var groupId = expandedGroupId;
+                if (!groupId) return;
+                var members = PostIt.Note.getGroupNotes(groupId);
+                if (!confirm('確定要刪除整個群組嗎？\n共 ' + members.length + ' 張貼紙將永久刪除，此操作無法復原！')) return;
+                collapseGroup();
+                // 使用我們在 note.js 新增的批次刪除功能
+                if (typeof PostIt.Note.removeGroup === 'function') {
+                    PostIt.Note.removeGroup(groupId);
+                    if (typeof PostIt.Sound !== 'undefined') PostIt.Sound.play('note_delete');
+                } else {
+                    PostIt.Board.showToast('系統版本不匹配，無法執行批次刪除', 'error');
+                }
+            });
+        }
+
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && expandedGroupId) {
                 collapseGroup();
@@ -272,11 +319,21 @@ PostIt.Group = (function () {
 
         // 動態計算 z-index 基準值：確保 overlay 和展開的卡片永遠在所有便利貼之上
         var currentMaxZ = PostIt.Drag.getMaxZIndex();
-        var overlayZ = Math.max(900000, currentMaxZ + 100);
+        var overlayZ = Math.max(450000, currentMaxZ + 100);
         var expandedBaseZ = overlayZ + 1;
 
         overlayEl.style.zIndex = overlayZ;
         overlayEl.classList.add('active');
+
+        var actionBar = document.getElementById('group-action-bar');
+        if (actionBar) {
+            actionBar.style.opacity = '1';
+            actionBar.style.pointerEvents = 'auto';
+            actionBar.style.bottom = '40px';
+            
+            // 更新按鈕文字上的數字
+            document.getElementById('btn-group-bar-delete').innerHTML = '<i class="fa-solid fa-trash"></i> 永久刪除 (' + members.length + ')';
+        }
 
         var board = document.getElementById('whiteboard');
         var boardRect = board.getBoundingClientRect();
@@ -345,6 +402,13 @@ PostIt.Group = (function () {
 
         if (typeof PostIt.Sound !== 'undefined') PostIt.Sound.play('group_collapse', members.length);
         overlayEl.classList.remove('active');
+
+        var actionBar = document.getElementById('group-action-bar');
+        if (actionBar) {
+            actionBar.style.opacity = '0';
+            actionBar.style.pointerEvents = 'none';
+            actionBar.style.bottom = '-80px';
+        }
 
         members.forEach(function (member) {
             var el = document.querySelector('[data-note-id="' + member.id + '"]');
@@ -438,6 +502,16 @@ PostIt.Group = (function () {
 
             if (dist > FAN_DETACH_THRESHOLD) {
                 if (typeof PostIt.Sound !== 'undefined') PostIt.Sound.play('group_detach');
+                
+                // 完全清理殘留的 inline style 與攔截器，避免影響卡片後續行為
+                el.style.transform = '';
+                el.style.transition = '';
+                el.style.filter = '';
+                if (el._groupDragHandler) {
+                    el.removeEventListener('pointerdown', el._groupDragHandler);
+                    delete el._groupDragHandler;
+                }
+
                 PostIt.Note.removeFromGroup(noteId);
                 var xPercent = (parseFloat(el.style.left) / cachedBoardRect.width) * 100;
                 var yPercent = (parseFloat(el.style.top) / cachedBoardRect.height) * 100;
@@ -474,11 +548,8 @@ PostIt.Group = (function () {
         e.preventDefault();
 
         if (expandedGroupId && expandedGroupId === note.groupId) {
-            // Expanded -> disband
+            // Expanded -> just collapse it (disband is now handled by the Floating Action Bar)
             collapseGroup();
-            PostIt.Note.disbandGroup(note.groupId);
-            if (typeof PostIt.Sound !== 'undefined') PostIt.Sound.play('group_disband');
-            PostIt.Board.showToast('群組已解散');
         } else {
             // Collapsed -> expand
             expandGroup(note.groupId);

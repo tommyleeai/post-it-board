@@ -28,7 +28,7 @@
 
     /* 4. 全域遮罩與焦點視窗層 900,000 ~ 9,000,000 */
     /* 這裡使用動態分配的主力交給 LayerManager */
-    --z-overlay-base: 900000;    /* 暗幕的起始層級 */
+    --z-overlay-base: 450000;    /* 暗幕的起始層級 */
     --z-modal-base: 900010;      /* 對話框起始層級 (由層級管理器動態上升) */
 
     /* 5. 系統最頂層 (不接受視窗覆蓋) */
@@ -2243,7 +2243,7 @@ body.stamp-mode {
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 500000; /* 確保線出現在一般便利貼前方，但低於各類 Modal (900000+) */
+    z-index: 449000; /* 確保線出現在一般便利貼前方，但低於各類暗幕與 Modal (450000+) */
     overflow: visible;
 }
 
@@ -2796,8 +2796,24 @@ body.pin-mode {
 }
 
 .sticky-note.group-expanded:hover {
-    transform: translateY(-8px) rotate(0deg) !important;
-    filter: drop-shadow(3px 12px 16px rgba(0, 0, 0, 0.35));
+    transform: translateY(-70%) rotate(0deg) !important;
+    filter: drop-shadow(0px 24px 32px rgba(0, 0, 0, 0.45));
+}
+
+/* 解決 Hover 防抖：讓 Hover 熱區自動向下延伸，填補圖卡上升後的空缺 */
+.group-hover-hitbox {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: -1;
+    pointer-events: none; /* 平常不截斷任何事件 */
+}
+
+.sticky-note.group-expanded:hover .group-hover-hitbox {
+    bottom: -75%; /* 往下延伸覆蓋原本的卡片範圍 */
+    pointer-events: auto; /* Hover 時啟動防抖熱區 */
 }
 
 /* 群組展開狀態的便利貼 — 收合動畫 */
