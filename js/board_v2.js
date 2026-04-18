@@ -907,6 +907,11 @@ PostIt.Board = (function () {
                 return;
             }
 
+            // 超級好物卡片禁止進入編輯模式（避免破壞版面把內容變成 raw JSON）
+            if (note.type === 'super_deal') {
+                return;
+            }
+
             startEditing(el, note.id);
         });
 
