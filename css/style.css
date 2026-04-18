@@ -3008,6 +3008,11 @@ body.pin-mode {
     padding: 0 !important;
 }
 
+.sticky-note.video-only {
+    min-height: auto !important;
+    aspect-ratio: 16 / 9;
+}
+
 /* 關閉右下角狗耳朵捲起裁切效果，使全圖/全片保持方形 */
 .sticky-note.image-only::before,
 .sticky-note.video-only::before {
