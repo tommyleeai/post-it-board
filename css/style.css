@@ -3141,3 +3141,153 @@ body.pin-mode {
 .sticky-note.group-hidden .note-edit-trigger { display: none; }
 
 @media (hover: none) { .sticky-note.image-only .note-settings-trigger, .sticky-note.image-only .note-edit-trigger, .sticky-note.video-only .note-settings-trigger, .sticky-note.video-only .note-edit-trigger { opacity: 0.85; pointer-events: auto; } }
+
+/* === Super Deal Notifier START === */
+.super-deal-note {
+    background: #fff !important;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15), 0 0 0 2px rgba(255, 215, 0, 0.4);
+    padding: 0;
+    overflow: hidden;
+    color: #333;
+    width: 260px !important; /* Force fixed width for deal card */
+    min-height: auto;
+}
+
+/* 霓虹與震動出場動畫 */
+.super-deal-entrance {
+    animation: superDealShake 0.8s cubic-bezier(.36,.07,.19,.97) both, neonGlow 2s infinite alternate;
+}
+
+@keyframes superDealShake {
+    10%, 90% { transform: translate3d(-2px, 0, 0) rotate(0deg); }
+    20%, 80% { transform: translate3d(3px, 0, 0) rotate(-2deg); }
+    30%, 50%, 70% { transform: translate3d(-5px, 0, 0) rotate(3deg); }
+    40%, 60% { transform: translate3d(5px, 0, 0) rotate(-3deg); }
+}
+
+@keyframes neonGlow {
+    from { box-shadow: 0 0 10px #ffeaa7, 0 0 20px #ffeaa7, 0 0 30px #fdcb6e; }
+    to { box-shadow: 0 0 20px #fdcb6e, 0 0 30px #e17055, 0 0 40px #e17055; }
+}
+
+/* 閃耀過場特效 (Shimmer) */
+.super-deal-note::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0) 100%);
+    transform: skewX(-20deg);
+    animation: shimmerSweep 3s infinite;
+    pointer-events: none;
+    z-index: 10;
+}
+
+@keyframes shimmerSweep {
+    0% { left: -100%; }
+    20% { left: 200%; }
+    100% { left: 200%; }
+}
+
+/* 卡片佈局 */
+.deal-top-badge {
+    background: linear-gradient(135deg, #ff4757, #ff6b81);
+    color: white;
+    text-align: center;
+    font-weight: 800;
+    font-size: 14px;
+    padding: 6px 0;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    position: relative;
+    z-index: 2;
+}
+
+.deal-card {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    z-index: 2;
+}
+
+.deal-img {
+    width: 100%;
+    height: 160px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: #f9f9f9;
+}
+
+.deal-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-family: 'Inter', 'Noto Sans TC', sans-serif;
+}
+
+.deal-pricing {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.deal-new-price {
+    font-size: 22px;
+    font-weight: 700;
+    color: #e17055;
+}
+
+.deal-old-price {
+    font-size: 13px;
+    color: #999;
+    text-decoration: line-through;
+}
+
+.deal-promo {
+    border: 2px dashed #0984e3;
+    background: rgba(9, 132, 227, 0.05);
+    color: #0984e3;
+    text-align: center;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.deal-promo:hover {
+    background: rgba(9, 132, 227, 0.1);
+}
+
+.deal-btn {
+    display: block;
+    background: #FF9900;
+    color: white !important;
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-decoration: none;
+    margin-top: 4px;
+    transition: transform 0.1s, box-shadow 0.2s;
+}
+
+.deal-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(255, 153, 0, 0.3);
+}
+
+/* 針對 Super Deal 卡片隱藏圖釘卷角等不必要的元素 (如果想要純淨閱讀的話可以留著，但通常會蓋住內容) */
+.super-deal-note .note-timestamp { display: none; }
+/* === Super Deal Notifier END === */

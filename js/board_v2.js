@@ -738,55 +738,80 @@ PostIt.Board = (function () {
         if (Math.random() < 0.15) tape.classList.add('tape-peeling');
         el.appendChild(tape);
 
-        // 圖文分離：圖片區
-        const contentStr1 = String(note.content).trim();
-        const urlMatch1 = contentStr1.match(/https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s]*)?/i) || contentStr1.match(/data:image\/[a-zA-Z0-9+]+;base64,[^\s]+/);
-        const extractedUrl1 = urlMatch1 ? urlMatch1[0] : null;
-        const parsedImageUrl = note.imageUrl ? note.imageUrl : 
-                               (note.type === 'image' ? contentStr1 : extractedUrl1);
-
-        if (parsedImageUrl) {
-            const imgContainer = document.createElement('div');
-            imgContainer.className = 'note-image-container';
-            const img = document.createElement('img');
-            img.src = parsedImageUrl;
-            img.className = 'note-img';
-            img.alt = '圖片';
-            img.loading = 'lazy';
-            img.draggable = false;
-            img.addEventListener('click', (e) => {
-                e.stopPropagation();
-                openLightbox(parsedImageUrl);
-            });
-            imgContainer.appendChild(img);
-            el.appendChild(imgContainer);
-        }
-
-        // 圖文分離：YouTube 影音區
-        const ytRegex1 = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})[^\s]*/i;
-        const ytMatch1 = contentStr1.match(ytRegex1);
-        const extractedYtUrl1 = ytMatch1 ? ytMatch1[0] : null;
-        const ytId1 = ytMatch1 ? ytMatch1[1] : null;
-        const parsedYtId = note.youtubeId ? note.youtubeId : ytId1;
-
-        if (parsedYtId) {
-            const iframeContainer = document.createElement('div');
-            iframeContainer.className = 'note-video-container';
-            iframeContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-            el.appendChild(iframeContainer);
-        }
-
-        // 內容區
-        const contentEl = document.createElement('div');
-        contentEl.className = 'note-content';
-        const textHTML = renderContentText(note, parsedImageUrl, extractedYtUrl1);
-        contentEl.innerHTML = textHTML;
-        if ((parsedImageUrl || parsedYtId) && !String(textHTML).replace(/<[^>]*>?/gm, '').trim()) {
-            el.classList.add(parsedYtId ? 'video-only' : 'image-only');
+        if (note.type === 'super_deal') {
+            el.classList.add('super-deal-note');
+            let dealData = {};
+            try {
+                dealData = JSON.parse(String(note.content).trim());
+            } catch(e) {}
+            
+            const contentEl = document.createElement('div');
+            contentEl.className = 'note-content';
+            contentEl.innerHTML = `
+                <div class="deal-top-badge">🚨 超級好物</div>
+                <div class="deal-card">
+                    ${dealData.image ? `<img src="${dealData.image}" class="deal-img" draggable="false">` : ''}
+                    <h3 class="deal-title">${dealData.title || ''}</h3>
+                    <div class="deal-pricing">
+                        <span class="deal-new-price">${dealData.price || ''}</span>
+                        ${dealData.originalPrice ? `<span class="deal-old-price">${dealData.originalPrice}</span>` : ''}
+                    </div>
+                    ${dealData.promoCode ? `<div class="deal-promo" onclick="try{navigator.clipboard.writeText('${dealData.promoCode}'); window.PostIt.Board.showToast('已複製折扣碼！');}catch(e){}">Promo: <strong>${dealData.promoCode}</strong> <i class="fa-regular fa-copy"></i></div>` : ''}
+                    ${dealData.url ? `<a href="${dealData.url}" target="_blank" class="deal-btn">前往 Amazon <i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : ''}
+                </div>
+            `;
+            el.appendChild(contentEl);
         } else {
-            el.classList.remove('image-only', 'video-only');
+            // 圖文分離：圖片區
+            const contentStr1 = String(note.content).trim();
+            const urlMatch1 = contentStr1.match(/https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s]*)?/i) || contentStr1.match(/data:image\/[a-zA-Z0-9+]+;base64,[^\s]+/);
+            const extractedUrl1 = urlMatch1 ? urlMatch1[0] : null;
+            const parsedImageUrl = note.imageUrl ? note.imageUrl : 
+                                   (note.type === 'image' ? contentStr1 : extractedUrl1);
+    
+            if (parsedImageUrl) {
+                const imgContainer = document.createElement('div');
+                imgContainer.className = 'note-image-container';
+                const img = document.createElement('img');
+                img.src = parsedImageUrl;
+                img.className = 'note-img';
+                img.alt = '圖片';
+                img.loading = 'lazy';
+                img.draggable = false;
+                img.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openLightbox(parsedImageUrl);
+                });
+                imgContainer.appendChild(img);
+                el.appendChild(imgContainer);
+            }
+    
+            // 圖文分離：YouTube 影音區
+            const ytRegex1 = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})[^\s]*/i;
+            const ytMatch1 = contentStr1.match(ytRegex1);
+            const extractedYtUrl1 = ytMatch1 ? ytMatch1[0] : null;
+            const ytId1 = ytMatch1 ? ytMatch1[1] : null;
+            const parsedYtId = note.youtubeId ? note.youtubeId : ytId1;
+    
+            if (parsedYtId) {
+                const iframeContainer = document.createElement('div');
+                iframeContainer.className = 'note-video-container';
+                iframeContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${parsedYtId}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                el.appendChild(iframeContainer);
+            }
+    
+            // 內容區
+            const contentEl = document.createElement('div');
+            contentEl.className = 'note-content';
+            const textHTML = renderContentText(note, parsedImageUrl, extractedYtUrl1);
+            contentEl.innerHTML = textHTML;
+            if ((parsedImageUrl || parsedYtId) && !String(textHTML).replace(/<[^>]*>?/gm, '').trim()) {
+                el.classList.add(parsedYtId ? 'video-only' : 'image-only');
+            } else {
+                el.classList.remove('image-only', 'video-only');
+            }
+            el.appendChild(contentEl);
         }
-        el.appendChild(contentEl);
 
         // 時間戳
         const timeEl = document.createElement('div');
