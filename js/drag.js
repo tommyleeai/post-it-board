@@ -202,6 +202,15 @@ PostIt.Drag = (function () {
         if (typeof PostIt.Group !== 'undefined' && PostIt.Group.hasAttached()) {
             justDragged = true;
             setTimeout(() => { justDragged = false; }, 100);
+            saveNotePosition(note);
+            if (typeof PostIt.Group !== "undefined" && typeof PostIt.Group.saveAttachedPositions === "function") {
+                PostIt.Group.saveAttachedPositions();
+            }
+            const noteId = note.dataset.noteId;
+            const noteData = PostIt.Note.getNote(noteId);
+            if (noteData && noteData.groupId) {
+                PostIt.Group.saveGroupPositions(noteData.groupId);
+            }
             await PostIt.Group.finalizeMerge(note);
             PostIt.Group.clearMergeState();
             return;

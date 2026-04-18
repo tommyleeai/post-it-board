@@ -587,6 +587,18 @@ PostIt.Group = (function () {
         });
     }
 
+    function saveAttachedPositions() {
+        var board = document.getElementById('whiteboard');
+        var boardRect = board.getBoundingClientRect();
+        attachedNotes.forEach(function (id) {
+            var el = document.querySelector('[data-note-id="' + id + '"]');
+            if (!el) return;
+            var xPercent = (parseFloat(el.style.left) / boardRect.width) * 100;
+            var yPercent = (parseFloat(el.style.top) / boardRect.height) * 100;
+            PostIt.Note.updatePosition(id, xPercent, yPercent, parseInt(el.style.zIndex || 1));
+        });
+    }
+
     // ================================================================
     // Public API
     // ================================================================
@@ -606,6 +618,7 @@ PostIt.Group = (function () {
         isExpanded: isExpanded,
         getExpandedGroupId: function() { return expandedGroupId; },
         moveGroupMembers: moveGroupMembers,
-        saveGroupPositions: saveGroupPositions
+        saveGroupPositions: saveGroupPositions,
+        saveAttachedPositions: saveAttachedPositions
     };
 })();
