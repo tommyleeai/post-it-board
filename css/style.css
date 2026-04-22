@@ -2485,6 +2485,10 @@ body.pin-mode {
     text-shadow: none !important;
 }
 
+.ai-system-note .note-timestamp {
+    color: rgba(255, 255, 255, 0.75) !important;
+}
+
 
 
 /* =========================================
