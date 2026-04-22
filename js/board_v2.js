@@ -1058,8 +1058,18 @@ PostIt.Board = (function () {
                     const newText = (note.content || '') + "\n(備註: " + ans + ")";
                     PostIt.Note.updateContent(note.id, newText);
                     if (typeof PostIt.AI !== 'undefined') {
-                        PostIt.AI.parseIntent(newText).then(res => {
-                            if(res && res.hasIntent) PostIt.Note.updateReminderLogic(note.id, res);
+                        const notesCache = PostIt.Note.getCache();
+                        const otherNotesContext = Object.values(notesCache)
+                            .filter(n => n.id !== note.id && n.content && n.eventTime)
+                            .map(n => `- ${n.eventTime}: ${n.content.trim()}`)
+                            .join('\n');
+                        PostIt.AI.parseIntent(newText, otherNotesContext).then(res => {
+                            if(res && res.hasIntent) {
+                                PostIt.Note.updateReminderLogic(note.id, res);
+                                if (res.conflictWarning) {
+                                    showToast('⚠️ 行程衝突警告：\n' + res.conflictWarning, 'error', null, 10000);
+                                }
+                            }
                         });
                     }
                 }
@@ -1246,9 +1256,17 @@ PostIt.Board = (function () {
                 
                 // AI 背景語意解析
                 if (typeof PostIt.AI !== 'undefined') {
-                    const aiResult = await PostIt.AI.parseIntent(newContent);
+                    const notesCache = PostIt.Note.getCache();
+                    const otherNotesContext = Object.values(notesCache)
+                        .filter(n => n.id !== noteId && n.content && n.eventTime)
+                        .map(n => `- ${n.eventTime}: ${n.content.trim()}`)
+                        .join('\n');
+                    const aiResult = await PostIt.AI.parseIntent(newContent, otherNotesContext);
                     if (aiResult && aiResult.hasIntent) {
                         PostIt.Note.updateReminderLogic(noteId, aiResult);
+                        if (aiResult.conflictWarning) {
+                            showToast('⚠️ 行程衝突警告：\n' + aiResult.conflictWarning, 'error', null, 10000);
+                        }
                     } else if (aiResult && aiResult.hasIntent === false && !aiResult.error) {
                         PostIt.Note.updateReminderLogic(noteId, null);
                     }
