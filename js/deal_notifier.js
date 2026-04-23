@@ -235,7 +235,17 @@ PostIt.DealNotifier = (function () {
         const savedTop = localStorage.getItem('postit_radar_btn_top');
         if (savedTop) {
             btn.style.bottom = 'auto'; // 取消 bottom
-            btn.style.top = savedTop;
+            let parsedTop = parseFloat(savedTop);
+            if (!isNaN(parsedTop)) {
+                // 確保讀取的座標不會被卡在上方工具列內 (工具列 52px)
+                parsedTop = Math.max(65, parsedTop);
+                // 避免視窗縮小時卡在下方視窗外
+                const maxY = window.innerHeight - 50; 
+                parsedTop = Math.min(parsedTop, maxY);
+                btn.style.top = parsedTop + 'px';
+            } else {
+                btn.style.top = savedTop;
+            }
         }
 
         let isDragging = false;
@@ -270,9 +280,12 @@ PostIt.DealNotifier = (function () {
             }
             
             let newTop = startTop + deltaY;
-            // 限制在畫面內，預留上下 10px 邊界
-            const maxY = window.innerHeight - btn.offsetHeight - 10;
-            newTop = Math.max(10, Math.min(newTop, maxY));
+            // 限制在畫面內
+            // 頂部必須避開 52px 的 Toolbar，預留一點緩衝，設為 65px
+            const minY = 65;
+            // 底部可以完美貼齊邊緣
+            const maxY = window.innerHeight - btn.offsetHeight;
+            newTop = Math.max(minY, Math.min(newTop, maxY));
             
             btn.style.top = newTop + 'px';
         });
