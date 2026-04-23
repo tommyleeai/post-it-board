@@ -224,15 +224,90 @@ PostIt.DealNotifier = (function () {
         }
     }
 
+    /**
+     * 初始設定雷達按鈕上下拖曳功能
+     */
+    function initDraggableButton() {
+        const btn = document.getElementById('btn-deal-radar-float');
+        if (!btn) return;
+
+        // 嘗試從 localStorage 讀取上次的 Y 座標
+        const savedTop = localStorage.getItem('postit_radar_btn_top');
+        if (savedTop) {
+            btn.style.bottom = 'auto'; // 取消 bottom
+            btn.style.top = savedTop;
+        }
+
+        let isDragging = false;
+        let startY = 0;
+        let startTop = 0;
+        let hasMoved = false;
+
+        btn.addEventListener('pointerdown', (e) => {
+            // 只接受滑鼠左鍵或觸控
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+            
+            isDragging = true;
+            hasMoved = false;
+            startY = e.clientY;
+            
+            const rect = btn.getBoundingClientRect();
+            // 切換為由 top 定位，以便拖曳
+            btn.style.bottom = 'auto';
+            btn.style.top = rect.top + 'px';
+            startTop = rect.top;
+            
+            btn.setPointerCapture(e.pointerId);
+            btn.style.transition = 'none'; // 拖曳時取消動畫
+            btn.style.cursor = 'grabbing';
+        });
+
+        btn.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            const deltaY = e.clientY - startY;
+            if (Math.abs(deltaY) > 5) {
+                hasMoved = true;
+            }
+            
+            let newTop = startTop + deltaY;
+            // 限制在畫面內，預留上下 10px 邊界
+            const maxY = window.innerHeight - btn.offsetHeight - 10;
+            newTop = Math.max(10, Math.min(newTop, maxY));
+            
+            btn.style.top = newTop + 'px';
+        });
+
+        btn.addEventListener('pointerup', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            btn.releasePointerCapture(e.pointerId);
+            btn.style.transition = 'transform 0.2s';
+            btn.style.cursor = 'grab';
+            
+            if (hasMoved) {
+                // 有移動過，儲存新位置
+                localStorage.setItem('postit_radar_btn_top', btn.style.top);
+            } else {
+                // 沒移動，當作點擊
+                triggerRadarManual();
+            }
+        });
+    }
+
     return {
+        init: function() {
+            initDraggableButton();
+        },
         start,
         stop,
         triggerRadarManual
     };
 })();
 
-// 頁面載入後，延遲5秒自動啟動雷達，避免與初次白板渲染搶資源
+// 頁面載入後，初始化拖曳按鈕，並延遲5秒自動啟動雷達
 window.addEventListener('load', () => {
+    PostIt.DealNotifier.init();
+
     setTimeout(() => {
         if (PostIt.Auth && PostIt.Auth.getUid()) {
             PostIt.DealNotifier.start();
