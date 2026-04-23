@@ -119,55 +119,64 @@ PostIt.YjsSync = (function () {
     }
 
     async function migrateOldNotesToYjs(boardId, isMigrated) {
-        if (isMigrated) return; // 如果已經遷移過，不再重複遷移
-        if (!yNotesMap) return;
-
         try {
-            if (typeof PostIt.Note === 'undefined' || !PostIt.Note.getNotesRef) return;
-            const ref = PostIt.Note.getNotesRef();
-            if (!ref) return;
+            const db = PostIt.Firebase.getDb();
+            const uid = PostIt.Auth.getUid();
+            if (!db || !uid || !yNotesMap) return;
 
-            console.log('[Yjs] 偵測到尚未遷移至 v3，開始從舊版 Firestore 遷移資料...');
-            const snapshot = await ref.get();
-            if (snapshot.empty) {
-                console.log('[Yjs] 舊版無資料需遷移');
-                // 標記為已遷移
-                await PostIt.Firebase.getDb().collection('boards').doc(boardId).set({ v3_migrated: true }, { merge: true });
-                return;
+            // Check new migration flag
+            const docSnap = await db.collection('boards').doc(boardId).get();
+            if (docSnap.exists && docSnap.data().v3_deep_migrated) {
+                return; // Already deep migrated
             }
 
+            console.log('[Yjs] 開始執行深度資料救援/遷移...');
             let count = 0;
-            snapshot.forEach(doc => {
-                const id = doc.id;
-                const data = doc.data();
-                
-                if (yNotesMap.has(id)) return;
 
-                const yNote = new Y.Map();
-                for (const [k, v] of Object.entries(data)) {
-                    yNote.set(k, v);
-                }
-                if (data.layouts) {
-                    const yLayouts = new Y.Map();
-                    for (const [mode, layout] of Object.entries(data.layouts)) {
-                        const yMode = new Y.Map();
-                        for (const [lk, lv] of Object.entries(layout)) {
-                            yMode.set(lk, lv);
-                        }
-                        yLayouts.set(mode, yMode);
+            async function processSnapshot(snapshot) {
+                if (snapshot.empty) return;
+                snapshot.forEach(doc => {
+                    const id = doc.id;
+                    const data = doc.data();
+                    
+                    // 只有當 Yjs 裡面沒有這張便利貼時才寫入，保護已存在的資料
+                    if (yNotesMap.has(id)) return;
+
+                    const yNote = new Y.Map();
+                    for (const [k, v] of Object.entries(data)) {
+                        yNote.set(k, v);
                     }
-                    yNote.set('layouts', yLayouts);
-                }
+                    if (data.layouts) {
+                        const yLayouts = new Y.Map();
+                        for (const [mode, layout] of Object.entries(data.layouts)) {
+                            const yMode = new Y.Map();
+                            for (const [lk, lv] of Object.entries(layout)) {
+                                yMode.set(lk, lv);
+                            }
+                            yLayouts.set(mode, yMode);
+                        }
+                        yNote.set('layouts', yLayouts);
+                    }
 
-                yNotesMap.set(id, yNote);
-                count++;
-            });
-            console.log(`[Yjs] 成功從舊版遷移 ${count} 筆便利貼`);
+                    yNotesMap.set(id, yNote);
+                    count++;
+                });
+            }
+
+            // 1. 撈取 v2 (boards/{boardId}/notes)
+            const v2Snap = await db.collection('boards').doc(boardId).collection('notes').get();
+            await processSnapshot(v2Snap);
+
+            // 2. 撈取 v1 (users/{uid}/postit_notes) - 以防 v1 根本沒成功搬到 v2
+            const v1Snap = await db.collection('users').doc(uid).collection('postit_notes').get();
+            await processSnapshot(v1Snap);
+
+            console.log(`[Yjs] 深度遷移完成，共救援 ${count} 筆舊便利貼`);
             
-            // 標記為已遷移
-            await PostIt.Firebase.getDb().collection('boards').doc(boardId).set({ v3_migrated: true }, { merge: true });
+            // 標記為已深度遷移
+            await db.collection('boards').doc(boardId).set({ v3_deep_migrated: true }, { merge: true });
         } catch (e) {
-            console.error('[Yjs] 遷移舊資料失敗:', e);
+            console.error('[Yjs] 深度遷移失敗:', e);
         }
     }
 
