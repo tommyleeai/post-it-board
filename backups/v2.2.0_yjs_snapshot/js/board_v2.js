@@ -1422,10 +1422,7 @@ PostIt.Board = (function () {
 
     function formatTimestamp(ts) {
         if (!ts) return '';
-        let d;
-        if (ts.toDate) d = ts.toDate();
-        else if (ts.seconds) d = new Date(ts.seconds * 1000);
-        else d = new Date(ts);
+        const d = ts.toDate ? ts.toDate() : new Date(ts);
         const month = d.getMonth() + 1;
         const day = d.getDate();
         const hours = d.getHours().toString().padStart(2, '0');
