@@ -353,16 +353,17 @@ PostIt.BoardModel = (function () {
         if (!ref || !uid || !boardId) return false;
 
         try {
+            // 先嘗試加入成員，因為如果先呼叫 .get()，可能會被 Firestore rules (必須是 member 才能 read) 阻擋
+            await ref.doc(boardId).update({
+                members: firebase.firestore.FieldValue.arrayUnion(uid)
+            });
+
+            // 加入成功後，我們已經是 member，此時 .get() 就不會被阻擋
             const doc = await ref.doc(boardId).get();
             if (!doc.exists) {
                 PostIt.Board.showToast('找不到該白板', 'error');
                 return false;
             }
-
-            // 使用 arrayUnion 避免重複加入
-            await ref.doc(boardId).update({
-                members: firebase.firestore.FieldValue.arrayUnion(uid)
-            });
 
             // 先手動將資料寫入 cache，確保 setActive 時能順利通過檢查
             boardsCache[boardId] = { id: doc.id, ...doc.data() };
