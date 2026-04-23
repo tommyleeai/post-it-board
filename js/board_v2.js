@@ -1633,7 +1633,7 @@ PostIt.Board = (function () {
         }
 
         // 3. 重新訂閱新白板的資料
-        PostIt.Note.subscribe(renderNotes);
+        PostIt.Note.subscribe(renderNotes, renderOnlineUsers);
 
         // 4. 重新載入圖釘連線
         if (typeof PostIt.Connect !== 'undefined') PostIt.Connect.start();

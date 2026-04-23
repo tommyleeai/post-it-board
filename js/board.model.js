@@ -364,6 +364,9 @@ PostIt.BoardModel = (function () {
                 members: firebase.firestore.FieldValue.arrayUnion(uid)
             });
 
+            // 先手動將資料寫入 cache，確保 setActive 時能順利通過檢查
+            boardsCache[boardId] = { id: doc.id, ...doc.data() };
+
             // 切換過去
             setActive(boardId);
             PostIt.Board.showToast('已成功加入共用白板 🎉', 'success');
