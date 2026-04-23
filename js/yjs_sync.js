@@ -143,7 +143,13 @@ PostIt.YjsSync = (function () {
                     if (yNotesMap.has(id)) return;
 
                     const yNote = new Y.Map();
-                    for (const [k, v] of Object.entries(data)) {
+                    for (let [k, v] of Object.entries(data)) {
+                        // Normalize legacy absolute coordinates (px) to percentages (0-100)
+                        if ((k === 'x' || k === 'y') && typeof v === 'number' && Math.abs(v) > 150) {
+                            v = (k === 'x') ? (v / 1920) * 100 : (v / 1080) * 100;
+                            v = Math.max(0, Math.min(v, 95)); // clamp to screen
+                        }
+
                         // Fix for Yjs crashing on custom classes like firebase.firestore.Timestamp
                         if (v && typeof v === 'object') {
                             if (typeof v.toDate === 'function') {
@@ -168,7 +174,11 @@ PostIt.YjsSync = (function () {
                         const yLayouts = new Y.Map();
                         for (const [mode, layout] of Object.entries(data.layouts)) {
                             const yMode = new Y.Map();
-                            for (const [lk, lv] of Object.entries(layout)) {
+                            for (let [lk, lv] of Object.entries(layout)) {
+                                if ((lk === 'x' || lk === 'y') && typeof lv === 'number' && Math.abs(lv) > 150) {
+                                    lv = (lk === 'x') ? (lv / 1920) * 100 : (lv / 1080) * 100;
+                                    lv = Math.max(0, Math.min(lv, 95));
+                                }
                                 yMode.set(lk, lv);
                             }
                             yLayouts.set(mode, yMode);

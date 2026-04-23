@@ -944,8 +944,20 @@ PostIt.Board = (function () {
             const mode = (window.PostIt && PostIt.getDeviceMode) ? PostIt.getDeviceMode() : 'desktop';
             const layoutData = (note.layouts && note.layouts[mode]) ? note.layouts[mode] : note; // 降級相容舊版
             
-            const xVal = typeof layoutData.x === 'number' ? layoutData.x : (note.x || 0);
-            const yVal = typeof layoutData.y === 'number' ? layoutData.y : (note.y || 0);
+            let xVal = typeof layoutData.x === 'number' ? layoutData.x : (note.x || 0);
+            let yVal = typeof layoutData.y === 'number' ? layoutData.y : (note.y || 0);
+            
+            // 自動修正：如果讀到舊版絕對座標（大於150），即時轉換為百分比並回寫 Yjs
+            if (Math.abs(xVal) > 150 || Math.abs(yVal) > 150) {
+                xVal = (xVal / 1920) * 100;
+                yVal = (yVal / 1080) * 100;
+                xVal = Math.max(0, Math.min(xVal, 95));
+                yVal = Math.max(0, Math.min(yVal, 95));
+                if (window.PostIt && PostIt.Note && PostIt.Note.updatePosition) {
+                    PostIt.Note.updatePosition(note.id, xVal, yVal, typeof layoutData.zIndex === 'number' ? layoutData.zIndex : (note.zIndex || 1));
+                }
+            }
+
             const zVal = typeof layoutData.zIndex === 'number' ? layoutData.zIndex : (note.zIndex || 1);
 
             const boardRect = boardEl.getBoundingClientRect();

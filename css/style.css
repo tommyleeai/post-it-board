@@ -2449,7 +2449,7 @@ body.pin-mode {
 
 
 /* 第一行標記當作標題 */
-.ai-system-note .ai-note-header {
+.ai-system-note .ai-update-title {
     font-weight: 900;
     margin-bottom: 12px;
     font-size: 22px;
@@ -2476,7 +2476,7 @@ body.pin-mode {
 
 /* 確保文字不會吃到手寫字體 */
 .ai-system-note .note-content, 
-.ai-system-note .note-content-body {
+.ai-system-note .ai-update-body {
     font-family: var(--font-ui) !important;
     font-size: 17px !important;
     line-height: 1.6 !important;
