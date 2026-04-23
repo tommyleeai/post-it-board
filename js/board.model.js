@@ -51,25 +51,49 @@ PostIt.BoardModel = (function () {
             console.log('[BoardModel] 已建立預設白板');
         }
 
-        // ====== 自動遷移舊資料（每次都檢查） ======
-        // 條件：boards/default_{uid}/notes 為空 且舊版 users/{uid}/boards/default/notes 有資料
-        const newNotesSnap = await defaultBoardRef.collection('notes').limit(1).get();
-        if (newNotesSnap.empty) {
-            const db = PostIt.Firebase.getDb();
-            const userRef = db.collection('users').doc(uid);
-            
-            // 檢查 v2.1 版的舊白板
-            const v2OldNotesSnap = await userRef.collection('boards').doc('default').collection('notes').limit(1).get();
-            if (!v2OldNotesSnap.empty) {
-                console.log('[BoardModel] 偵測到 v2.1 舊白板資料，開始遷移至共用區...');
-                await migrateOldData(userRef.collection('boards').doc('default'), defaultBoardRef);
-            } else {
-                // 檢查 v1 版的最舊資料
-                const v1OldNotesSnap = await userRef.collection('postit_notes').limit(1).get();
-                if (!v1OldNotesSnap.empty) {
-                    console.log('[BoardModel] 偵測到 v1 舊資料，開始遷移至共用區...');
-                    await migrateV1Data(userRef, defaultBoardRef);
+        // ====== 自動遷移所有的舊資料 ======
+        const db = PostIt.Firebase.getDb();
+        const userRef = db.collection('users').doc(uid);
+        
+        // 1. 遷移 V2 的所有的舊白板 (users/{uid}/boards/{boardId})
+        const oldBoardsSnap = await userRef.collection('boards').get();
+        if (!oldBoardsSnap.empty) {
+            for (const oldBoardDoc of oldBoardsSnap.docs) {
+                const oldBoardId = oldBoardDoc.id;
+                const newBoardId = (oldBoardId === 'default') ? defaultBoardId : `${uid}_${oldBoardId}`;
+                const newBoardRef = ref.doc(newBoardId);
+                
+                // 檢查是否已遷移過（只要 notes 且未建立過就算未遷移，但我們可以用 doc.exists 判斷，或者看 notes）
+                const newNotesSnap = await newBoardRef.collection('notes').limit(1).get();
+                const newBoardSnap = await newBoardRef.get();
+                
+                // 如果是 default，剛剛一定已經建立了 doc，但 notes 可能是空的。所以看 notes。
+                if (newNotesSnap.empty) {
+                    // 檢查舊的是否真的有資料
+                    const oldNotesSnap = await userRef.collection('boards').doc(oldBoardId).collection('notes').limit(1).get();
+                    if (!oldNotesSnap.empty) {
+                        console.log(`[BoardModel] 偵測到 v2.1 舊白板 ${oldBoardId}，開始遷移...`);
+                        const oldData = oldBoardDoc.data();
+                        await newBoardRef.set({
+                            ...DEFAULT_BOARD,
+                            ...oldData,
+                            ownerId: uid,
+                            members: [uid]
+                        }, { merge: true });
+                        
+                        await migrateOldData(userRef.collection('boards').doc(oldBoardId), newBoardRef);
+                    }
                 }
+            }
+        }
+        
+        // 2. 檢查 V1 殘留的 postit_notes (如果預設白板是空的)
+        const newDefaultNotesSnap = await defaultBoardRef.collection('notes').limit(1).get();
+        if (newDefaultNotesSnap.empty) {
+            const v1OldNotesSnap = await userRef.collection('postit_notes').limit(1).get();
+            if (!v1OldNotesSnap.empty) {
+                console.log('[BoardModel] 偵測到 v1 舊資料，開始遷移至共用區...');
+                await migrateV1Data(userRef, defaultBoardRef);
             }
         }
 
