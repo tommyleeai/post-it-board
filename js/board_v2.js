@@ -1605,7 +1605,7 @@ PostIt.Board = (function () {
             const board = PostIt.BoardModel.getBoard(boardId);
             title.innerHTML = '<i class="fa-solid fa-pen"></i> 編輯白板';
             nameInput.value = board ? board.name : '';
-            deleteBtn.style.display = (boardId === PostIt.BoardModel.DEFAULT_BOARD_ID) ? 'none' : 'inline-flex';
+            deleteBtn.style.display = (boardId === PostIt.BoardModel.getDefaultBoardId()) ? 'none' : 'inline-flex';
 
             // 預選圖示
             document.querySelectorAll('#board-icon-picker .board-icon-option').forEach(btn => {

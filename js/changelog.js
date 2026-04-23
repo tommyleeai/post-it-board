@@ -4,7 +4,7 @@
 PostIt.Changelog = (function () {
     'use strict';
 
-    const CURRENT_VERSION = '2.1.54';
+    const CURRENT_VERSION = '2.2.0';
     const STORAGE_KEY = 'postit_last_seen_version';
 
     function init() {
@@ -13,7 +13,7 @@ PostIt.Changelog = (function () {
         if (lastSeen !== CURRENT_VERSION) {
             // 僅在預設白板上顯示系統公告
             if (typeof PostIt.BoardModel !== 'undefined' &&
-                PostIt.BoardModel.getActive() !== PostIt.BoardModel.DEFAULT_BOARD_ID) {
+                PostIt.BoardModel.getActive() !== PostIt.BoardModel.getDefaultBoardId()) {
                 return;
             }
             // 延遲 2 秒執行，一來營造系統稍後派發的儀式感，
