@@ -355,8 +355,9 @@ html, body {
     background: rgba(255,255,255,0.1);
 }
 
-/* 新增白板按鈕 */
-.sidebar-add-btn {
+/* 新增白板與邀請成員按鈕 */
+.sidebar-add-btn,
+.sidebar-invite-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -375,22 +376,30 @@ html, body {
     flex-shrink: 0;
 }
 
-.sidebar-add-btn:hover {
+.sidebar-add-btn:hover,
+.sidebar-invite-btn:hover {
     border-color: rgba(255,255,255,0.3);
     color: rgba(255,255,255,0.7);
     background: rgba(255,255,255,0.05);
 }
 
-.sidebar-add-btn .sidebar-label {
+.sidebar-add-btn .sidebar-label,
+.sidebar-invite-btn .sidebar-label {
     font-size: 12px;
     white-space: nowrap;
     opacity: 0;
+    width: 0;
+    overflow: hidden;
     transition: opacity 0.2s ease 0.1s;
 }
 
 .board-sidebar.expanded .sidebar-add-btn .sidebar-label,
-.board-sidebar.mobile-open .sidebar-add-btn .sidebar-label {
+.board-sidebar.mobile-open .sidebar-add-btn .sidebar-label,
+.board-sidebar.expanded .sidebar-invite-btn .sidebar-label,
+.board-sidebar.mobile-open .sidebar-invite-btn .sidebar-label {
     opacity: 1;
+    width: auto;
+    overflow: visible;
 }
 
 /* === Board Sidebar END === */
@@ -3554,26 +3563,7 @@ body.pin-mode {
 /* === Super Deal Notifier END === */
 
 /* === Multi-Account Collaboration START === */
-.sidebar-invite-btn {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    width: 100%;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border-top: 1px solid var(--border-light);
-}
-
-.sidebar-invite-btn:hover {
-    background-color: var(--hover-bg);
-    color: var(--primary-color);
-}
+/* 邀請成員按鈕樣式已與 sidebar-add-btn 合併 */
 
 .board-shared-icon {
     margin-left: auto;
