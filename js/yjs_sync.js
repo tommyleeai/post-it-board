@@ -64,10 +64,10 @@ PostIt.YjsSync = (function () {
         // 本地 DB 載入完成後，拉取雲端備份合併
         currentPersistence.whenSynced.then(async () => {
             console.log('[Yjs] IndexedDB 同步完成');
-            await restoreFromCloud(boardId);
+            const hasCloudYjs = await restoreFromCloud(boardId);
             
-            // 如果 Yjs 為空，執行自動遷移
-            await migrateOldNotesToYjs(boardId);
+            // 如果從未備份到雲端，執行自動遷移
+            await migrateOldNotesToYjs(boardId, hasCloudYjs);
 
             // 手動觸發一次 UI 更新 (確保載入後畫面刷新)
             triggerUpdate();
@@ -99,11 +99,15 @@ PostIt.YjsSync = (function () {
     }
 
     async function restoreFromCloud(boardId) {
+        let isMigrated = false;
         try {
             const db = PostIt.Firebase.getDb();
             const docSnap = await db.collection('boards').doc(boardId).get();
             if (docSnap.exists) {
                 const data = docSnap.data();
+                if (data.v3_migrated) {
+                    isMigrated = true;
+                }
                 if (data.yjs_state) {
                     const bytes = data.yjs_state.toUint8Array();
                     Y.applyUpdate(currentDoc, bytes);
@@ -111,19 +115,24 @@ PostIt.YjsSync = (function () {
                 }
             }
         } catch(e) { console.error('[Yjs] Cloud restore failed', e); }
+        return isMigrated;
     }
 
-    async function migrateOldNotesToYjs(boardId) {
-        if (!yNotesMap || yNotesMap.size > 0) return;
+    async function migrateOldNotesToYjs(boardId, isMigrated) {
+        if (isMigrated) return; // 如果已經遷移過，不再重複遷移
+        if (!yNotesMap) return;
+
         try {
             if (typeof PostIt.Note === 'undefined' || !PostIt.Note.getNotesRef) return;
             const ref = PostIt.Note.getNotesRef();
             if (!ref) return;
 
-            console.log('[Yjs] 偵測到 Yjs 為空，開始從舊版 Firestore 遷移資料...');
+            console.log('[Yjs] 偵測到尚未遷移至 v3，開始從舊版 Firestore 遷移資料...');
             const snapshot = await ref.get();
             if (snapshot.empty) {
                 console.log('[Yjs] 舊版無資料需遷移');
+                // 標記為已遷移
+                await PostIt.Firebase.getDb().collection('boards').doc(boardId).set({ v3_migrated: true }, { merge: true });
                 return;
             }
 
@@ -154,6 +163,9 @@ PostIt.YjsSync = (function () {
                 count++;
             });
             console.log(`[Yjs] 成功從舊版遷移 ${count} 筆便利貼`);
+            
+            // 標記為已遷移
+            await PostIt.Firebase.getDb().collection('boards').doc(boardId).set({ v3_migrated: true }, { merge: true });
         } catch (e) {
             console.error('[Yjs] 遷移舊資料失敗:', e);
         }
