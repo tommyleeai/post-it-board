@@ -374,7 +374,7 @@ PostIt.BoardModel = (function () {
             return true;
         } catch (error) {
             console.error('[BoardModel] 加入白板失敗:', error);
-            PostIt.Board.showToast('加入失敗', 'error');
+            PostIt.Board.showToast('加入失敗: ' + (error.message || '未知錯誤'), 'error');
             return false;
         }
     }
