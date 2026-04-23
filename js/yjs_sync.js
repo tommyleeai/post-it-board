@@ -126,11 +126,11 @@ PostIt.YjsSync = (function () {
 
             // Check new migration flag
             const docSnap = await db.collection('boards').doc(boardId).get();
-            if (docSnap.exists && docSnap.data().v3_deep_migrated_v2) {
+            if (docSnap.exists && docSnap.data().v3_deep_migrated_v4) {
                 return; // Already deep migrated
             }
 
-            console.log('[Yjs] 開始執行深度資料救援/遷移...');
+            console.log('[Yjs] 開始執行乾淨資料重置 (清除舊版幽靈並還原正確座標)...');
             let count = 0;
 
             async function processSnapshot(snapshot) {
@@ -191,18 +191,27 @@ PostIt.YjsSync = (function () {
                 });
             }
 
-            // 1. 撈取 v2 (boards/{boardId}/notes)
+            // 1. 保留今天新建立的便利貼，清除其他所有從舊版錯誤復活的幽靈便利貼
+            const currentKeys = Array.from(yNotesMap.keys());
+            for (const key of currentKeys) {
+                const n = yNotesMap.get(key);
+                // 如果是今天新建立的，其 createdAt 已經是 {seconds} 格式，且大於 1776910000 (2026/04/22)
+                const createdAt = n.get('createdAt');
+                if (createdAt && typeof createdAt.seconds === 'number' && createdAt.seconds > 1776900000) {
+                    continue; // 保留今天新做的筆記
+                }
+                yNotesMap.delete(key);
+            }
+
+            // 2. 僅從 v2 官方資料夾 (boards/{boardId}/notes) 撈取有效便利貼
+            // 這裡不掃描 users/{uid}/postit_notes 以免復活舊版已刪除的檔案
             const v2Snap = await db.collection('boards').doc(boardId).collection('notes').get();
             await processSnapshot(v2Snap);
 
-            // 2. 撈取 v1 (users/{uid}/postit_notes) - 以防 v1 根本沒成功搬到 v2
-            const v1Snap = await db.collection('users').doc(uid).collection('postit_notes').get();
-            await processSnapshot(v1Snap);
-
-            console.log(`[Yjs] 深度遷移完成，共救援 ${count} 筆舊便利貼`);
+            console.log(`[Yjs] 乾淨重置完成，共載入 ${count} 筆有效便利貼`);
             
             // 標記為已深度遷移
-            await db.collection('boards').doc(boardId).set({ v3_deep_migrated_v2: true }, { merge: true });
+            await db.collection('boards').doc(boardId).set({ v3_deep_migrated_v4: true }, { merge: true });
         } catch (e) {
             console.error('[Yjs] 深度遷移失敗:', e);
         }
