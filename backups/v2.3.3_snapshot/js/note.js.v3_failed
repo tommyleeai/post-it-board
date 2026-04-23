@@ -38,7 +38,7 @@ PostIt.Note = (function () {
     // -------- 獲取當前白板的 notes collection ref --------
     
     // -------- 訂閱 Yjs 即時更新 --------
-    async function subscribe(onUpdate, onAwarenessUpdate) {
+    async function subscribe(onUpdate) {
         cleanup();
         const boardId = typeof PostIt.BoardModel !== 'undefined' ? PostIt.BoardModel.getActive() : null;
         if (!boardId) return;
@@ -47,7 +47,7 @@ PostIt.Note = (function () {
         await PostIt.YjsSync.init(boardId, (notesMapData) => {
             notesCache = notesMapData;
             if (onUpdate) onUpdate(notesCache);
-        }, onAwarenessUpdate);
+        });
     }
 
     function cleanup() {
@@ -638,17 +638,7 @@ PostIt.Note = (function () {
     }
 
     // -------- Getters --------
-    function getNotesRef() {
-        if (typeof PostIt.Auth === 'undefined') return null;
-        const uid = PostIt.Auth.getUid();
-        if (!uid) return null;
-        if (typeof PostIt.Firebase === 'undefined') return null;
-        const db = PostIt.Firebase.getDb();
-        if (typeof PostIt.BoardModel !== 'undefined') {
-            return PostIt.BoardModel.getActiveNotesRef();
-        }
-        return db.collection('users').doc(uid).collection('postit_notes');
-    }
+    function getNotesRef() { return null; }
     function getCache() { return notesCache; }
     function getCount() { return Object.keys(notesCache).length; }
     function getNote(id) { return notesCache[id] || null; }
