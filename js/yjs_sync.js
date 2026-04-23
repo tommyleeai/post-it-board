@@ -126,7 +126,7 @@ PostIt.YjsSync = (function () {
 
             // Check new migration flag
             const docSnap = await db.collection('boards').doc(boardId).get();
-            if (docSnap.exists && docSnap.data().v3_deep_migrated) {
+            if (docSnap.exists && docSnap.data().v3_deep_migrated_v2) {
                 return; // Already deep migrated
             }
 
@@ -144,7 +144,25 @@ PostIt.YjsSync = (function () {
 
                     const yNote = new Y.Map();
                     for (const [k, v] of Object.entries(data)) {
-                        yNote.set(k, v);
+                        // Fix for Yjs crashing on custom classes like firebase.firestore.Timestamp
+                        if (v && typeof v === 'object') {
+                            if (typeof v.toDate === 'function') {
+                                // Firestore Timestamp
+                                yNote.set(k, { seconds: v.seconds, nanoseconds: v.nanoseconds });
+                            } else if (v.seconds !== undefined) {
+                                // Already plain object
+                                yNote.set(k, { seconds: v.seconds, nanoseconds: v.nanoseconds });
+                            } else {
+                                // Array or plain object
+                                try {
+                                    yNote.set(k, JSON.parse(JSON.stringify(v)));
+                                } catch (e) {
+                                    yNote.set(k, v); // Fallback
+                                }
+                            }
+                        } else {
+                            yNote.set(k, v);
+                        }
                     }
                     if (data.layouts) {
                         const yLayouts = new Y.Map();
@@ -174,7 +192,7 @@ PostIt.YjsSync = (function () {
             console.log(`[Yjs] 深度遷移完成，共救援 ${count} 筆舊便利貼`);
             
             // 標記為已深度遷移
-            await db.collection('boards').doc(boardId).set({ v3_deep_migrated: true }, { merge: true });
+            await db.collection('boards').doc(boardId).set({ v3_deep_migrated_v2: true }, { merge: true });
         } catch (e) {
             console.error('[Yjs] 深度遷移失敗:', e);
         }
