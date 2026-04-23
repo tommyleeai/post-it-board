@@ -66,6 +66,9 @@ PostIt.YjsSync = (function () {
             console.log('[Yjs] IndexedDB 同步完成');
             await restoreFromCloud(boardId);
             
+            // 如果 Yjs 為空，執行自動遷移
+            await migrateOldNotesToYjs(boardId);
+
             // 手動觸發一次 UI 更新 (確保載入後畫面刷新)
             triggerUpdate();
         });
@@ -108,6 +111,52 @@ PostIt.YjsSync = (function () {
                 }
             }
         } catch(e) { console.error('[Yjs] Cloud restore failed', e); }
+    }
+
+    async function migrateOldNotesToYjs(boardId) {
+        if (!yNotesMap || yNotesMap.size > 0) return;
+        try {
+            if (typeof PostIt.Note === 'undefined' || !PostIt.Note.getNotesRef) return;
+            const ref = PostIt.Note.getNotesRef();
+            if (!ref) return;
+
+            console.log('[Yjs] 偵測到 Yjs 為空，開始從舊版 Firestore 遷移資料...');
+            const snapshot = await ref.get();
+            if (snapshot.empty) {
+                console.log('[Yjs] 舊版無資料需遷移');
+                return;
+            }
+
+            let count = 0;
+            snapshot.forEach(doc => {
+                const id = doc.id;
+                const data = doc.data();
+                
+                if (yNotesMap.has(id)) return;
+
+                const yNote = new Y.Map();
+                for (const [k, v] of Object.entries(data)) {
+                    yNote.set(k, v);
+                }
+                if (data.layouts) {
+                    const yLayouts = new Y.Map();
+                    for (const [mode, layout] of Object.entries(data.layouts)) {
+                        const yMode = new Y.Map();
+                        for (const [lk, lv] of Object.entries(layout)) {
+                            yMode.set(lk, lv);
+                        }
+                        yLayouts.set(mode, yMode);
+                    }
+                    yNote.set('layouts', yLayouts);
+                }
+
+                yNotesMap.set(id, yNote);
+                count++;
+            });
+            console.log(`[Yjs] 成功從舊版遷移 ${count} 筆便利貼`);
+        } catch (e) {
+            console.error('[Yjs] 遷移舊資料失敗:', e);
+        }
     }
 
     async function backupToCloud(boardId) {
