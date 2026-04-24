@@ -38,7 +38,7 @@ PostIt.Note = (function () {
     // -------- 獲取當前白板的 notes collection ref --------
     
     // -------- 訂閱 Yjs 即時更新 --------
-    async function subscribe(onUpdate, onAwarenessUpdate) {
+    async function subscribe(onUpdate) {
         cleanup();
         const boardId = typeof PostIt.BoardModel !== 'undefined' ? PostIt.BoardModel.getActive() : null;
         if (!boardId) return;
@@ -47,7 +47,7 @@ PostIt.Note = (function () {
         await PostIt.YjsSync.init(boardId, (notesMapData) => {
             notesCache = notesMapData;
             if (onUpdate) onUpdate(notesCache);
-        }, onAwarenessUpdate);
+        });
     }
 
     function cleanup() {
@@ -210,11 +210,6 @@ PostIt.Note = (function () {
             const ref = getNotesRef();
             await ref.doc(noteId).delete();
 
-            const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
-            if (yNotesMap) {
-                yNotesMap.delete(noteId);
-            }
-
             console.log('[Note] 貼紙已歸檔:', docRef.id);
             return docRef.id;
         } catch (error) {
@@ -253,18 +248,6 @@ PostIt.Note = (function () {
                 await ref.add(data);
             }
             
-            // 同步寫入 Yjs 以恢復顯示
-            const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
-            if (yNotesMap) {
-                const Y = PostIt.YjsSync.getY();
-                const yNote = new Y.Map();
-                for (const [k, v] of Object.entries(data)) {
-                    yNote.set(k, v);
-                }
-                const restoreId = originalId || 'note_' + Date.now().toString(36);
-                yNotesMap.set(restoreId, yNote);
-            }
-
             // 從歸檔集合刪除
             await archiveRef.delete();
             console.log('[Note] 貼紙已復原');
@@ -655,17 +638,7 @@ PostIt.Note = (function () {
     }
 
     // -------- Getters --------
-    function getNotesRef() {
-        if (typeof PostIt.Auth === 'undefined') return null;
-        const uid = PostIt.Auth.getUid();
-        if (!uid) return null;
-        if (typeof PostIt.Firebase === 'undefined') return null;
-        const db = PostIt.Firebase.getDb();
-        if (typeof PostIt.BoardModel !== 'undefined') {
-            return PostIt.BoardModel.getActiveNotesRef();
-        }
-        return db.collection('users').doc(uid).collection('postit_notes');
-    }
+    function getNotesRef() { return null; }
     function getCache() { return notesCache; }
     function getCount() { return Object.keys(notesCache).length; }
     function getNote(id) { return notesCache[id] || null; }
