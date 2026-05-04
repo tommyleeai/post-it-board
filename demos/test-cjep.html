@@ -50,7 +50,7 @@
     </div>
 
     <label for="url">CJEP 伺服器網址</label>
-    <input type="text" id="url" value="http://localhost:8880/v1/chat/completions" readonly />
+    <input type="text" id="url" value="http://localhost:8880/v1/chat/completions" />
 
     <label for="prompt">對話內容 (您可以隨意更改)</label>
     <textarea id="prompt" rows="3">請用一句話形容人工智慧。</textarea>
@@ -61,6 +61,12 @@
 </div>
 
 <script>
+    // 自動偵測當前網址，方便在 iPad 透過區域網路 IP 開啟時自動帶入正確的 IP
+    window.onload = function() {
+        const host = window.location.hostname || 'localhost';
+        document.getElementById('url').value = `http://${host}:8880/v1/chat/completions`;
+    };
+
     async function testConnection() {
         const urlObj = document.getElementById('url').value;
         const promptObj = document.getElementById('prompt').value;
