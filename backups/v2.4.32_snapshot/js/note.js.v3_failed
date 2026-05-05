@@ -38,7 +38,7 @@ PostIt.Note = (function () {
     // -------- 獲取當前白板的 notes collection ref --------
     
     // -------- 訂閱 Yjs 即時更新 --------
-    async function subscribe(onUpdate, onAwarenessUpdate) {
+    async function subscribe(onUpdate) {
         cleanup();
         const boardId = typeof PostIt.BoardModel !== 'undefined' ? PostIt.BoardModel.getActive() : null;
         if (!boardId) return;
@@ -47,7 +47,7 @@ PostIt.Note = (function () {
         await PostIt.YjsSync.init(boardId, (notesMapData) => {
             notesCache = notesMapData;
             if (onUpdate) onUpdate(notesCache);
-        }, onAwarenessUpdate);
+        });
     }
 
     function cleanup() {
@@ -210,11 +210,6 @@ PostIt.Note = (function () {
             const ref = getNotesRef();
             await ref.doc(noteId).delete();
 
-            const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
-            if (yNotesMap) {
-                yNotesMap.delete(noteId);
-            }
-
             console.log('[Note] 貼紙已歸檔:', docRef.id);
             return docRef.id;
         } catch (error) {
@@ -253,18 +248,6 @@ PostIt.Note = (function () {
                 await ref.add(data);
             }
             
-            // 同步寫入 Yjs 以恢復顯示
-            const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
-            if (yNotesMap) {
-                const Y = PostIt.YjsSync.getY();
-                const yNote = new Y.Map();
-                for (const [k, v] of Object.entries(data)) {
-                    yNote.set(k, v);
-                }
-                const restoreId = originalId || 'note_' + Date.now().toString(36);
-                yNotesMap.set(restoreId, yNote);
-            }
-
             // 從歸檔集合刪除
             await archiveRef.delete();
             console.log('[Note] 貼紙已復原');
@@ -454,8 +437,6 @@ PostIt.Note = (function () {
 
     // 合併兩張（或兩組）便利貼到同一群組，使用 Firestore batch write 確保一致性
     async function mergeToGroup(noteAId, noteBId) {
-        // noteA 是拖曳的卡片 (Dragged), noteB 是底下的卡片 (Target)
-        // 確保 A 永遠在 B 之上
         const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
         if (!yNotesMap) return null;
 
@@ -467,38 +448,53 @@ PostIt.Note = (function () {
         const groupIdB = noteB.groupId || null;
 
         let targetGroupId;
+        let existingCount = 0;
 
-        // 檢查人數限制
-        const countA = groupIdA ? Object.values(notesCache).filter(n => n.groupId === groupIdA).length : 1;
-        const countB = groupIdB ? Object.values(notesCache).filter(n => n.groupId === groupIdB).length : 1;
-        if (groupIdA !== groupIdB && countA + countB > MAX_GROUP_SIZE) {
-            PostIt.Board.showToast('群組已滿，最多 ' + MAX_GROUP_SIZE + ' 張', 'error');
-            if (typeof PostIt.Sound !== 'undefined') PostIt.Sound.play('group_full');
-            return null;
+        if (groupIdA && groupIdB) {
+            targetGroupId = groupIdA;
+            const countA = Object.values(notesCache).filter(n => n.groupId === groupIdA).length;
+            const countB = Object.values(notesCache).filter(n => n.groupId === groupIdB).length;
+            if (countA + countB > MAX_GROUP_SIZE) {
+                PostIt.Board.showToast('群組已滿，最多 ' + MAX_GROUP_SIZE + ' 張', 'error');
+                if (typeof PostIt.Sound !== 'undefined') PostIt.Sound.play('group_full');
+                return null;
+            }
+            existingCount = countA;
+        } else if (groupIdA) {
+            targetGroupId = groupIdA;
+            existingCount = Object.values(notesCache).filter(n => n.groupId === groupIdA).length;
+            if (existingCount + 1 > MAX_GROUP_SIZE) {
+                PostIt.Board.showToast('群組已滿，最多 ' + MAX_GROUP_SIZE + ' 張', 'error');
+                if (typeof PostIt.Sound !== 'undefined') PostIt.Sound.play('group_full');
+                return null;
+            }
+        } else if (groupIdB) {
+            targetGroupId = groupIdB;
+            existingCount = Object.values(notesCache).filter(n => n.groupId === groupIdB).length;
+            if (existingCount + 1 > MAX_GROUP_SIZE) {
+                PostIt.Board.showToast('群組已滿，最多 ' + MAX_GROUP_SIZE + ' 張', 'error');
+                if (typeof PostIt.Sound !== 'undefined') PostIt.Sound.play('group_full');
+                return null;
+            }
+        } else {
+            targetGroupId = generateGroupId();
+            existingCount = 0;
         }
 
         try {
             if (groupIdA && groupIdB && groupIdA !== groupIdB) {
-                // 群組 A 拖到 群組 B 上面 -> A 搬進 B，且 A 的成員疊加在 B 之上
-                targetGroupId = groupIdB;
                 const bMembers = Object.values(notesCache).filter(n => n.groupId === groupIdB);
-                const aMembers = Object.values(notesCache).filter(n => n.groupId === groupIdA);
-                
-                const maxOrderB = Math.max(...bMembers.map(m => m.groupOrder || 0), -1);
-                
-                aMembers.sort((a, b) => (a.groupOrder || 0) - (b.groupOrder || 0)).forEach((member, i) => {
+                bMembers.forEach((member, i) => {
                     const yNote = yNotesMap.get(member.id);
                     if (yNote) {
                         yNote.set('groupId', targetGroupId);
-                        yNote.set('groupOrder', maxOrderB + 1 + i);
+                        yNote.set('groupOrder', existingCount + i);
                         yNote.set('groupOffsetX', (Math.random() - 0.5) * 6);
                         yNote.set('groupOffsetY', (Math.random() - 0.5) * 6);
                         yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
                     }
                 });
             } else if (!groupIdA && !groupIdB) {
-                // 單張 A 拖到 單張 B -> A 在 B 上面 (A=1, B=0)
-                targetGroupId = generateGroupId();
                 const yNoteB = yNotesMap.get(noteBId);
                 if (yNoteB) {
                     yNoteB.set('groupId', targetGroupId);
@@ -513,34 +509,15 @@ PostIt.Note = (function () {
                     yNoteA.set('groupOffsetX', (Math.random() - 0.5) * 6);
                     yNoteA.set('groupOffsetY', (Math.random() - 0.5) * 6);
                 }
-            } else if (groupIdA && !groupIdB) {
-                // 群組 A 拖到 單張 B -> A 在 B 上面，所以將 B 塞入 A 的最底層
-                targetGroupId = groupIdA;
-                const aMembers = Object.values(notesCache).filter(n => n.groupId === groupIdA);
-                const minOrderA = Math.min(...aMembers.map(m => m.groupOrder || 0), 0);
-                
-                const yNoteB = yNotesMap.get(noteBId);
-                if (yNoteB) {
-                    yNoteB.set('groupId', targetGroupId);
-                    yNoteB.set('groupOrder', minOrderA - 1);
-                    yNoteB.set('groupOffsetX', (Math.random() - 0.5) * 6);
-                    yNoteB.set('groupOffsetY', (Math.random() - 0.5) * 6);
-                }
-            } else if (!groupIdA && groupIdB) {
-                // 單張 A 拖到 群組 B -> A 放在 B 的最上層
-                targetGroupId = groupIdB;
-                const bMembers = Object.values(notesCache).filter(n => n.groupId === groupIdB);
-                const maxOrderB = Math.max(...bMembers.map(m => m.groupOrder || 0), -1);
-                
-                const yNoteA = yNotesMap.get(noteAId);
-                if (yNoteA) {
-                    yNoteA.set('groupId', targetGroupId);
-                    yNoteA.set('groupOrder', maxOrderB + 1);
-                    yNoteA.set('groupOffsetX', (Math.random() - 0.5) * 6);
-                    yNoteA.set('groupOffsetY', (Math.random() - 0.5) * 6);
-                }
             } else {
-                targetGroupId = groupIdA; // 已經在同個群組
+                const loneId = groupIdA ? noteBId : noteAId;
+                const yNoteLone = yNotesMap.get(loneId);
+                if (yNoteLone) {
+                    yNoteLone.set('groupId', targetGroupId);
+                    yNoteLone.set('groupOrder', existingCount);
+                    yNoteLone.set('groupOffsetX', (Math.random() - 0.5) * 6);
+                    yNoteLone.set('groupOffsetY', (Math.random() - 0.5) * 6);
+                }
             }
 
             console.log('[Note] 群組合併成功:', targetGroupId);
@@ -661,17 +638,7 @@ PostIt.Note = (function () {
     }
 
     // -------- Getters --------
-    function getNotesRef() {
-        if (typeof PostIt.Auth === 'undefined') return null;
-        const uid = PostIt.Auth.getUid();
-        if (!uid) return null;
-        if (typeof PostIt.Firebase === 'undefined') return null;
-        const db = PostIt.Firebase.getDb();
-        if (typeof PostIt.BoardModel !== 'undefined') {
-            return PostIt.BoardModel.getActiveNotesRef();
-        }
-        return db.collection('users').doc(uid).collection('postit_notes');
-    }
+    function getNotesRef() { return null; }
     function getCache() { return notesCache; }
     function getCount() { return Object.keys(notesCache).length; }
     function getNote(id) { return notesCache[id] || null; }
