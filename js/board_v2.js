@@ -705,13 +705,18 @@ PostIt.Board = (function () {
                 img.decoding = 'async';
                 img.draggable = false;
                 // 橫式圖片偵測：寬高比 > 1.3 時加倍便利貼寬度
-                img.addEventListener('load', () => {
-                    if (img.naturalWidth / img.naturalHeight > 1.3) {
-                        el.classList.add('landscape-image');
-                    } else {
-                        el.classList.remove('landscape-image');
+                const checkLandscape = () => {
+                    if (img.naturalWidth && img.naturalHeight) {
+                        if (img.naturalWidth / img.naturalHeight > 1.3) {
+                            el.classList.add('landscape-image');
+                        } else {
+                            el.classList.remove('landscape-image');
+                        }
                     }
-                });
+                };
+                img.addEventListener('load', checkLandscape);
+                // 快取圖片不會觸發 load，需額外檢查
+                if (img.complete) checkLandscape();
                 img.addEventListener('click', (e) => {
                     e.stopPropagation();
                     openLightbox(parsedImageUrl);
@@ -924,13 +929,17 @@ PostIt.Board = (function () {
                     img.decoding = 'async';
                     img.draggable = false;
                     // 橫式圖片偵測：寬高比 > 1.3 時加倍便利貼寬度
-                    img.addEventListener('load', () => {
-                        if (img.naturalWidth / img.naturalHeight > 1.3) {
-                            el.classList.add('landscape-image');
-                        } else {
-                            el.classList.remove('landscape-image');
+                    const checkLandscapeNew = () => {
+                        if (img.naturalWidth && img.naturalHeight) {
+                            if (img.naturalWidth / img.naturalHeight > 1.3) {
+                                el.classList.add('landscape-image');
+                            } else {
+                                el.classList.remove('landscape-image');
+                            }
                         }
-                    });
+                    };
+                    img.addEventListener('load', checkLandscapeNew);
+                    if (img.complete) checkLandscapeNew();
                     img.addEventListener('click', (e) => {
                         e.stopPropagation();
                         openLightbox(parsedImageUrl);
@@ -942,7 +951,21 @@ PostIt.Board = (function () {
                     el.insertBefore(imgContainer, contentEl);
                 }
                 const img = imgContainer.querySelector('.note-img');
-                if (img) img.src = parsedImageUrl;
+                if (img) {
+                    img.src = parsedImageUrl;
+                    // 已存在的圖片也要偵測橫式比例
+                    const checkLandscapeExisting = () => {
+                        if (img.naturalWidth && img.naturalHeight) {
+                            if (img.naturalWidth / img.naturalHeight > 1.3) {
+                                el.classList.add('landscape-image');
+                            } else {
+                                el.classList.remove('landscape-image');
+                            }
+                        }
+                    };
+                    img.addEventListener('load', checkLandscapeExisting);
+                    if (img.complete) checkLandscapeExisting();
+                }
             } else if (imgContainer) {
                 imgContainer.remove();
             }
