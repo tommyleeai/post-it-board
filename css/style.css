@@ -3324,6 +3324,12 @@ body.pin-mode {
 /* === 圖片卡片 hover 浮起效果 END === */
 /* === END === */
 
+/* === 橫式圖片便利貼加倍寬度 START === */
+.sticky-note.landscape-image {
+    width: calc(var(--note-min-w) * 2);
+}
+/* === 橫式圖片便利貼加倍寬度 END === */
+
 /* === 燈箱右鍵選單 START === */
 .lightbox-context-menu {
     position: absolute;

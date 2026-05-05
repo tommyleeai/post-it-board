@@ -122,8 +122,13 @@ PostIt.Group = (function () {
         var bestTarget = null;
         var bestIoS = 0;
 
+        // 橫式圖片便利貼禁止群組合併
+        if (dragEl.classList.contains('landscape-image')) return;
+
         document.querySelectorAll('.sticky-note').forEach(function (el) {
             if (el === dragEl) return;
+            // 橫式圖片便利貼禁止被合併
+            if (el.classList.contains('landscape-image')) return;
             var elId = el.dataset.noteId;
             var dragNote = PostIt.Note.getNote(dragId);
             var elNote = PostIt.Note.getNote(elId);

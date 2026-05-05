@@ -704,6 +704,14 @@ PostIt.Board = (function () {
                 img.loading = 'lazy';
                 img.decoding = 'async';
                 img.draggable = false;
+                // 橫式圖片偵測：寬高比 > 1.3 時加倍便利貼寬度
+                img.addEventListener('load', () => {
+                    if (img.naturalWidth / img.naturalHeight > 1.3) {
+                        el.classList.add('landscape-image');
+                    } else {
+                        el.classList.remove('landscape-image');
+                    }
+                });
                 img.addEventListener('click', (e) => {
                     e.stopPropagation();
                     openLightbox(parsedImageUrl);
@@ -915,6 +923,14 @@ PostIt.Board = (function () {
                     img.loading = 'lazy';
                     img.decoding = 'async';
                     img.draggable = false;
+                    // 橫式圖片偵測：寬高比 > 1.3 時加倍便利貼寬度
+                    img.addEventListener('load', () => {
+                        if (img.naturalWidth / img.naturalHeight > 1.3) {
+                            el.classList.add('landscape-image');
+                        } else {
+                            el.classList.remove('landscape-image');
+                        }
+                    });
                     img.addEventListener('click', (e) => {
                         e.stopPropagation();
                         openLightbox(parsedImageUrl);
