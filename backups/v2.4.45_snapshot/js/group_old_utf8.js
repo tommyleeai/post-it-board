@@ -1,4 +1,4 @@
-// ============================================
+﻿// ============================================
 // Group Interaction Engine
 // ============================================
 // Merge detection, snap animation, fan-out, detach
@@ -42,18 +42,18 @@ PostIt.Group = (function () {
         }
         overlayEl.addEventListener('click', collapseGroup);
 
-        // 初始化群組專屬的懸浮工具列 (Group Action Bar)
+        // σê¥σºïσîûτ╛ñτ╡äσ░êσ▒¼τÜäµç╕µ╡«σ╖Ñσà╖σêù (Group Action Bar)
         var actionBar = document.getElementById('group-action-bar');
         if (!actionBar) {
             actionBar = document.createElement('div');
             actionBar.id = 'group-action-bar';
             actionBar.style.cssText = 'position: fixed; bottom: -80px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 9999999; background: rgba(255,255,255,0.95); padding: 12px 24px; border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); backdrop-filter: blur(10px); transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; pointer-events: none;';
             actionBar.innerHTML = 
-                '<button id="btn-group-bar-disband" style="background: #f8f9fa; border: 1px solid #ddd; padding: 10px 20px; font-size: 15px; font-weight: bold; border-radius: 25px; cursor: pointer; color: #333; display: flex; align-items: center; gap: 8px; transition: background 0.2s;"><i class="fa-solid fa-object-ungroup"></i> 解散群組</button>' +
-                '<button id="btn-group-bar-delete" style="background: #fff0f0; border: 1px solid #ffccd5; padding: 10px 20px; font-size: 15px; font-weight: bold; border-radius: 25px; cursor: pointer; color: #e74c3c; display: flex; align-items: center; gap: 8px; transition: background 0.2s;"><i class="fa-solid fa-trash"></i> 永久刪除</button>';
+                '<button id="btn-group-bar-disband" style="background: #f8f9fa; border: 1px solid #ddd; padding: 10px 20px; font-size: 15px; font-weight: bold; border-radius: 25px; cursor: pointer; color: #333; display: flex; align-items: center; gap: 8px; transition: background 0.2s;"><i class="fa-solid fa-object-ungroup"></i> Φºúµòúτ╛ñτ╡ä</button>' +
+                '<button id="btn-group-bar-delete" style="background: #fff0f0; border: 1px solid #ffccd5; padding: 10px 20px; font-size: 15px; font-weight: bold; border-radius: 25px; cursor: pointer; color: #e74c3c; display: flex; align-items: center; gap: 8px; transition: background 0.2s;"><i class="fa-solid fa-trash"></i> µ░╕Σ╣àσê¬ΘÖñ</button>';
             document.body.appendChild(actionBar);
 
-            // 事件綁定
+            // Σ║ïΣ╗╢τ╢üσ«Ü
             var btnDisband = document.getElementById('btn-group-bar-disband');
             var btnDelete = document.getElementById('btn-group-bar-delete');
 
@@ -63,13 +63,13 @@ PostIt.Group = (function () {
             btnDelete.onmouseleave = function() { this.style.background = '#fff0f0'; };
 
             btnDisband.addEventListener('click', function(ev) {
-                ev.stopPropagation(); // 阻止冒泡到 `#board` 或 `document` 引發其他行為
+                ev.stopPropagation(); // Θÿ╗µ¡óσåÆµ│íσê░ `#board` µêû `document` σ╝òτÖ╝σà╢Σ╗ûΦíîτé║
                 var groupId = expandedGroupId;
                 if (!groupId) return;
                 collapseGroup();
                 PostIt.Note.disbandGroup(groupId);
                 if (typeof PostIt.Sound !== 'undefined') PostIt.Sound.play('group_disband');
-                PostIt.Board.showToast('群組已解散');
+                PostIt.Board.showToast('τ╛ñτ╡äσ╖▓Φºúµòú');
             });
 
             btnDelete.addEventListener('click', function(ev) {
@@ -77,21 +77,21 @@ PostIt.Group = (function () {
                 var groupId = expandedGroupId;
                 if (!groupId) return;
                 var members = PostIt.Note.getGroupNotes(groupId);
-                if (!confirm('確定要刪除整個群組嗎？\n共 ' + members.length + ' 張貼紙將永久刪除，此操作無法復原！')) return;
+                if (!confirm('τó║σ«ÜΦªüσê¬ΘÖñµò┤σÇïτ╛ñτ╡äσùÄ∩╝ƒ\nσà▒ ' + members.length + ' σ╝╡Φ▓╝τ┤Öσ░çµ░╕Σ╣àσê¬ΘÖñ∩╝îµ¡ñµôìΣ╜£τäíµ│òσ╛⌐σÄƒ∩╝ü')) return;
                 collapseGroup();
-                // 使用我們在 note.js 新增的批次刪除功能
+                // Σ╜┐τö¿µêæσÇæσ£¿ note.js µû░σó₧τÜäµë╣µ¼íσê¬ΘÖñσèƒΦâ╜
                 if (typeof PostIt.Note.removeGroup === 'function') {
                     PostIt.Note.removeGroup(groupId);
                     if (typeof PostIt.Sound !== 'undefined') PostIt.Sound.play('note_delete');
                 } else {
-                    PostIt.Board.showToast('系統版本不匹配，無法執行批次刪除', 'error');
+                    PostIt.Board.showToast('τ│╗τ╡▒τëêµ£¼Σ╕ìσî╣Θàì∩╝îτäíµ│òσƒ╖Φíîµë╣µ¼íσê¬ΘÖñ', 'error');
                 }
             });
         }
 
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
-                // 層級順序：燈箱優先 → 群組其次
+                // σ▒ñτ┤ÜΘáåσ║Å∩╝Üτçêτ«▒σä¬σàê ΓåÆ τ╛ñτ╡äσà╢µ¼í
                 if (typeof PostIt.Board !== 'undefined' && PostIt.Board.isLightboxOpen && PostIt.Board.isLightboxOpen()) {
                     PostIt.Board.closeLightbox();
                 } else if (expandedGroupId) {
@@ -122,12 +122,12 @@ PostIt.Group = (function () {
         var bestTarget = null;
         var bestIoS = 0;
 
-        // 判斷是否為寬度加倍的橫式純圖片便利貼
+        // σêñµû╖µÿ»σÉªτé║σ»¼σ║ªσèáσÇìτÜäµ⌐½σ╝Åτ┤öσ£ûτëçΣ╛┐σê⌐Φ▓╝
         var dragIsLandscape = dragEl.classList.contains('landscape-image') && dragEl.classList.contains('image-only');
 
         document.querySelectorAll('.sticky-note').forEach(function (el) {
             if (el === dragEl) return;
-            // 大小不一致時禁止群組合併（一方橫式加倍、另一方正常寬度）
+            // σñºσ░ÅΣ╕ìΣ╕ÇΦç┤µÖéτªüµ¡óτ╛ñτ╡äσÉêΣ╜╡∩╝êΣ╕Çµû╣µ⌐½σ╝ÅσèáσÇìπÇüσÅªΣ╕Çµû╣µ¡úσ╕╕σ»¼σ║ª∩╝ë
             var elIsLandscape = el.classList.contains('landscape-image') && el.classList.contains('image-only');
             if (dragIsLandscape !== elIsLandscape) return;
             var elId = el.dataset.noteId;
@@ -328,7 +328,7 @@ PostIt.Group = (function () {
         expandedGroupId = groupId;
         expandedOriginalPos = {};
 
-        // 動態計算 z-index 基準值：確保 overlay 和展開的卡片永遠在所有便利貼之上
+        // σïòµàïΦ¿êτ«ù z-index σƒ║µ║ûσÇ╝∩╝Üτó║Σ┐¥ overlay σÆîσ▒òΘûïτÜäσìíτëçµ░╕Θüáσ£¿µëÇµ£ëΣ╛┐σê⌐Φ▓╝Σ╣ïΣ╕è
         var currentMaxZ = PostIt.Drag.getMaxZIndex();
         var overlayZ = Math.max(450000, currentMaxZ + 100);
         var expandedBaseZ = overlayZ + 1;
@@ -342,8 +342,8 @@ PostIt.Group = (function () {
             actionBar.style.pointerEvents = 'auto';
             actionBar.style.bottom = '40px';
             
-            // 更新按鈕文字上的數字
-            document.getElementById('btn-group-bar-delete').innerHTML = '<i class="fa-solid fa-trash"></i> 永久刪除 (' + members.length + ')';
+            // µ¢┤µû░µîëΘêòµûçσ¡ùΣ╕èτÜäµò╕σ¡ù
+            document.getElementById('btn-group-bar-delete').innerHTML = '<i class="fa-solid fa-trash"></i> µ░╕Σ╣àσê¬ΘÖñ (' + members.length + ')';
         }
 
         var board = document.getElementById('whiteboard');
@@ -429,7 +429,6 @@ PostIt.Group = (function () {
                 delete el._groupDragHandler;
             }
             el.classList.remove('group-expanded');
-            el.classList.remove('group-expanded-lifted');
             el.classList.add('group-collapsing');
 
             var orig = expandedOriginalPos[member.id];
@@ -466,7 +465,7 @@ PostIt.Group = (function () {
         var cachedBoard, cachedBoardRect;
         var offsetX = 0, offsetY = 0;
 
-        // 儲存展開後的正確位置與層級，而不是展開前的原始位置
+        // σä▓σ¡ÿσ▒òΘûïσ╛îτÜäµ¡úτó║Σ╜ìτ╜«Φêçσ▒ñτ┤Ü∩╝îΦÇîΣ╕ìµÿ»σ▒òΘûïσëìτÜäσÄƒσºïΣ╜ìτ╜«
         var fanPos = {
             left: el.style.left,
             top: el.style.top,
@@ -475,7 +474,7 @@ PostIt.Group = (function () {
         };
 
         function onDown(e) {
-            // 右鍵不走拖曳，讓 contextmenu 事件穿透到 onContextMenu 收起群組
+            // σÅ│Θì╡Σ╕ìΦ╡░µïûµ¢│∩╝îΦ«ô contextmenu Σ║ïΣ╗╢τ⌐┐ΘÇÅσê░ onContextMenu µö╢Φ╡╖τ╛ñτ╡ä
             if (e.button === 2) return;
             if (e.target.closest('.note-settings-trigger') || e.target.closest('.note-delete-btn')) return;
             e.preventDefault();
@@ -491,9 +490,8 @@ PostIt.Group = (function () {
             let currentTop = parseFloat(el.style.top) || 0;
             let visualTop = currentTop;
 
-            // 如果目前已經是升起狀態，因為 CSS 有 translateY(-50%)，拖曳時需補償這 50% 的高度
-            if (el.classList.contains('group-expanded-lifted')) {
-                visualTop -= el.offsetHeight * 0.5;
+            if (el.classList.contains('group-expanded') && el.matches(':hover')) {
+                visualTop -= el.offsetHeight * 0.7;
             }
 
             offsetX = e.clientX - (cachedBoardRect.left + currentLeft);
@@ -531,25 +529,22 @@ PostIt.Group = (function () {
             
             if (!isDragging) {
                 if (!el.classList.contains('group-expanded-lifted')) {
-                    // 第一下點擊：升起卡片
+                    // τ¼¼Σ╕ÇΣ╕ïΘ╗₧µôè∩╝ÜσìçΦ╡╖σìíτëç
                     document.querySelectorAll('.group-expanded-lifted').forEach(function(node) {
                         node.classList.remove('group-expanded-lifted');
                     });
                     el.classList.add('group-expanded-lifted');
                 } else {
-                    // 第二下點擊：觸發圖片的 click 事件，開啟燈箱
+                    // τ¼¼Σ║îΣ╕ïΘ╗₧µôè∩╝ÜΦº╕τÖ╝σ£ûτëçτÜä click Σ║ïΣ╗╢∩╝îΘûïσòƒτçêτ«▒
                     var imgEl = el.querySelector('.note-img');
                     if (imgEl) {
                         imgEl.click();
                     }
                 }
                 
-                // 確保位置維持在原本的展開位置，靠 CSS 的 translateY(-50%) 升起
                 el.style.transition = ''; 
                 el.style.top = fanPos.top;
-                el.style.left = fanPos.left;
                 el.style.zIndex = fanPos.zIndex;
-                el.style.transform = fanPos.transform;
                 return;
             }
 
@@ -576,7 +571,7 @@ PostIt.Group = (function () {
                 PostIt.Note.updatePosition(noteId, xPercent, yPercent, PostIt.Drag.getMaxZIndex() + 1);
                 el.classList.remove('group-expanded');
                 collapseGroup();
-                PostIt.Board.showToast('已從群組拆出');
+                PostIt.Board.showToast('σ╖▓σ╛₧τ╛ñτ╡äµïåσç║');
             } else {
                 el.style.transition = '';
                 el.style.left = fanPos.left;
@@ -588,7 +583,6 @@ PostIt.Group = (function () {
 
         return onDown;
     }
-
 
     // ================================================================
     // Right-click direct action (no menu)
