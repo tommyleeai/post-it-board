@@ -161,7 +161,11 @@
                 user.boardCount++;
                 user.boardNames.push({ id: boardDoc.id, name: boardData.name || '白板', icon: boardData.icon || '📋' });
 
-                // 讀取該白板的筆記
+                // V3 Yjs 同步系統會把最新的時間戳寫在 board 文件的 yjs_updatedAt
+                const boardUpdatedAt = boardData.yjs_updatedAt ? (boardData.yjs_updatedAt.toDate ? boardData.yjs_updatedAt.toDate() : new Date(boardData.yjs_updatedAt)) : null;
+                if (boardUpdatedAt && (!user.lastActive || boardUpdatedAt > user.lastActive)) user.lastActive = boardUpdatedAt;
+
+                // 讀取該白板的筆記（V3 遷移後這些文件不再更新，但仍用於統計數量）
                 const boardNotesSnap = await db.collection('boards').doc(boardDoc.id).collection('notes').get();
                 boardNotesSnap.forEach(noteDoc => {
                     const data = noteDoc.data();
