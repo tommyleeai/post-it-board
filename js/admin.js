@@ -159,10 +159,11 @@
 
                 const user = usersMap[ownerId];
                 user.boardCount++;
-                user.boardNames.push({ id: boardDoc.id, name: boardData.name || '白板', icon: boardData.icon || '📋' });
 
                 // V3 Yjs 同步系統會把最新的時間戳寫在 board 文件的 yjs_updatedAt
                 const boardUpdatedAt = boardData.yjs_updatedAt ? (boardData.yjs_updatedAt.toDate ? boardData.yjs_updatedAt.toDate() : new Date(boardData.yjs_updatedAt)) : null;
+
+                user.boardNames.push({ id: boardDoc.id, name: boardData.name || '白板', icon: boardData.icon || '📋', yjsUpdatedAt: boardUpdatedAt });
                 if (boardUpdatedAt && (!user.lastActive || boardUpdatedAt > user.lastActive)) user.lastActive = boardUpdatedAt;
 
                 // 讀取該白板的筆記（V3 遷移後這些文件不再更新，但仍用於統計數量）
@@ -325,44 +326,75 @@
 
     // ======== 渲染活動動態 ========
     function renderActivityFeed() {
-        const allNotes = [];
+        const allActivities = [];
+
         allUsersData.forEach(user => {
+            // Board 級別活動（V3 Yjs 同步，這才是真實的最近活動）
+            if (user.boardNames) {
+                user.boardNames.forEach(board => {
+                    if (board.yjsUpdatedAt) {
+                        allActivities.push({
+                            type: 'board',
+                            time: board.yjsUpdatedAt,
+                            userName: user.name,
+                            userPhoto: user.photo,
+                            boardName: board.name,
+                            boardIcon: board.icon
+                        });
+                    }
+                });
+            }
+
+            // Note 級別活動（舊版 V1/V2 或遷移前的 V3）
             user.notes.forEach(note => {
-                allNotes.push({ ...note, userName: user.name, userPhoto: user.photo, userUid: user.uid });
+                const t = note.updatedAt ? (note.updatedAt.toDate ? note.updatedAt.toDate() : new Date(note.updatedAt)) : null;
+                if (t) {
+                    allActivities.push({
+                        type: 'note',
+                        time: t,
+                        userName: user.name,
+                        userPhoto: user.photo,
+                        noteType: note.type,
+                        content: note.content
+                    });
+                }
             });
         });
 
-        // 按更新時間排序
-        allNotes.sort((a, b) => {
-            const ta = a.updatedAt ? (a.updatedAt.toDate ? a.updatedAt.toDate().getTime() : new Date(a.updatedAt).getTime()) : 0;
-            const tb = b.updatedAt ? (b.updatedAt.toDate ? b.updatedAt.toDate().getTime() : new Date(b.updatedAt).getTime()) : 0;
-            return tb - ta;
-        });
+        // 按時間排序（最新在前）
+        allActivities.sort((a, b) => b.time.getTime() - a.time.getTime());
 
         const feed = document.getElementById('activity-feed');
-        const recent = allNotes.slice(0, 20);
+        const recent = allActivities.slice(0, 20);
 
         if (recent.length === 0) {
             feed.innerHTML = '<div class="loading-cell">沒有活動紀錄</div>';
             return;
         }
 
-        feed.innerHTML = recent.map(note => {
-            const time = note.updatedAt ? (note.updatedAt.toDate ? note.updatedAt.toDate() : new Date(note.updatedAt)) : null;
-            const typeIcon = note.type === 'image' ? '🖼️' : note.type === 'url' ? '🔗' : '📝';
-            const preview = note.type === 'image' ? '[圖片]' : (note.content || '').substring(0, 60);
+        feed.innerHTML = recent.map(item => {
+            let icon, actionText, preview;
+            if (item.type === 'board') {
+                icon = item.boardIcon || '📋';
+                actionText = `更新了白板「${escapeHtml(item.boardName)}」`;
+                preview = '';
+            } else {
+                icon = item.noteType === 'image' ? '🖼️' : item.noteType === 'url' ? '🔗' : '📝';
+                actionText = '更新了貼紙';
+                preview = item.noteType === 'image' ? '[圖片]' : (item.content || '').substring(0, 60);
+            }
 
             return `
                 <div class="activity-item">
-                    ${note.userPhoto
-                        ? `<img src="${escapeHtml(note.userPhoto)}" class="activity-avatar" alt="">`
+                    ${item.userPhoto
+                        ? `<img src="${escapeHtml(item.userPhoto)}" class="activity-avatar" alt="">`
                         : '<i class="fa-solid fa-user-circle activity-avatar" style="font-size:32px;color:var(--admin-text-dim)"></i>'}
                     <div>
                         <div class="activity-text">
-                            <strong>${escapeHtml(note.userName)}</strong>
-                            <span class="activity-action"> ${typeIcon} 更新了貼紙</span>
+                            <strong>${escapeHtml(item.userName)}</strong>
+                            <span class="activity-action"> ${icon} ${actionText}</span>
                         </div>
-                        <div class="activity-time">${time ? formatTime(time) : ''}</div>
+                        <div class="activity-time">${formatTime(item.time)}</div>
                         ${preview ? `<div class="activity-preview">${escapeHtml(preview)}</div>` : ''}
                     </div>
                 </div>
