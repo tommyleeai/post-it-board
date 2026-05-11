@@ -4,13 +4,16 @@
 (function () {
     'use strict';
 
-    const ADMIN_EMAIL = 'tommylee@gmail.com';
+    // 管理員 Email 清單（fallback，優先從 Firestore config/admin 讀取）
+    const FALLBACK_ADMIN_EMAILS = ['tommylee@gmail.com'];
+    let adminEmails = [...FALLBACK_ADMIN_EMAILS];
 
     let db = null;
     let auth = null;
     let allUsersData = []; // [{uid, name, email, photo, notes:[], noteCount, imageCount, lastActive}]
     let sortField = 'notes';
     let sortDir = 'desc';
+    let totalBoardCount = 0; // 追蹤白板總數
 
     // ======== 初始化 ========
     function init() {
@@ -44,19 +47,31 @@
                     sortField = field;
                     sortDir = 'desc';
                 }
+                updateSortIcons();
                 renderUsersTable();
             });
         });
 
         // 監聽登入狀態
-        auth.onAuthStateChanged(user => {
-            if (user && user.email === ADMIN_EMAIL) {
-                showAdminApp();
-                loadAllData();
-            } else if (user) {
-                // 不是管理員
-                showAuthError('此帳號無管理員權限');
-                auth.signOut();
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                // 先嘗試從 Firestore 讀取管理員清單
+                try {
+                    const configDoc = await db.collection('config').doc('admin').get();
+                    if (configDoc.exists && configDoc.data().emails) {
+                        adminEmails = configDoc.data().emails;
+                    }
+                } catch (e) {
+                    console.warn('[Admin] 無法讀取 Firestore 管理員設定，使用 fallback:', e.message);
+                }
+
+                if (adminEmails.includes(user.email)) {
+                    showAdminApp();
+                    loadAllData();
+                } else {
+                    showAuthError('此帳號無管理員權限');
+                    auth.signOut();
+                }
             } else {
                 showAuthScreen();
             }
@@ -96,8 +111,9 @@
     // ======== 載入所有資料（支援多白板） ========
     async function loadAllData() {
         allUsersData = [];
+        totalBoardCount = 0;
         const tbody = document.getElementById('users-tbody');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="loading-cell">資料載入中，請稍候...</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="loading-cell"><i class="fa-solid fa-spinner fa-spin"></i> 正在讀取使用者資料...</td></tr>';
 
         try {
             const usersMap = {};
@@ -123,9 +139,14 @@
 
             // 2. 讀取 V3 根目錄的所有白板 (跨帳號協作版)
             const boardsSnap = await db.collection('boards').get();
-            for (const boardDoc of boardsSnap.docs) {
+            totalBoardCount = boardsSnap.size;
+            for (let i = 0; i < boardsSnap.docs.length; i++) {
+                const boardDoc = boardsSnap.docs[i];
                 const boardData = boardDoc.data();
                 const ownerId = boardData.ownerId;
+
+                // 更新進度
+                if (tbody) tbody.innerHTML = `<tr><td colspan="8" class="loading-cell"><i class="fa-solid fa-spinner fa-spin"></i> 正在讀取白板 ${i + 1}/${boardsSnap.size}...</td></tr>`;
                 
                 // 如果找不到 owner，或者 owner 已經被刪除，就先跳過歸屬
                 if (!ownerId || !usersMap[ownerId]) {
@@ -214,12 +235,26 @@
         const totalUsers = allUsersData.length;
         const totalNotes = allUsersData.reduce((sum, u) => sum + u.noteCount, 0);
         const totalImages = allUsersData.reduce((sum, u) => sum + u.imageCount, 0);
-        const totalDocs = totalUsers + totalNotes; // users docs + notes docs
+        const totalDocs = totalUsers + totalNotes + totalBoardCount; // users + notes + boards
 
         document.getElementById('stat-users').textContent = totalUsers;
         document.getElementById('stat-notes').textContent = totalNotes;
         document.getElementById('stat-images').textContent = totalImages;
         document.getElementById('stat-storage').textContent = totalDocs;
+    }
+
+    // ======== 更新排序箭頭 ========
+    function updateSortIcons() {
+        document.querySelectorAll('th.sortable').forEach(th => {
+            const icon = th.querySelector('i');
+            if (th.dataset.sort === sortField) {
+                icon.className = sortDir === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
+                th.classList.add('active-sort');
+            } else {
+                icon.className = 'fa-solid fa-sort';
+                th.classList.remove('active-sort');
+            }
+        });
     }
 
     // ======== 渲染使用者表格 ========
@@ -410,19 +445,24 @@
         if (!confirm(`確定要刪除 ${user.name} 的所有 ${user.noteCount} 張貼紙嗎？此操作無法還原！`)) return;
 
         try {
-            const batch = db.batch();
-            for (const note of user.notes) {
-                let ref;
+            // Firestore batch 上限 500 筆，分批處理
+            const BATCH_LIMIT = 450;
+            const refs = user.notes.map(note => {
                 if (note.isV3) {
-                    ref = db.collection('boards').doc(note.boardId).collection('notes').doc(note.id);
+                    return db.collection('boards').doc(note.boardId).collection('notes').doc(note.id);
                 } else if (note.isV2) {
-                    ref = db.collection('users').doc(uid).collection('boards').doc(note.boardId).collection('notes').doc(note.id);
+                    return db.collection('users').doc(uid).collection('boards').doc(note.boardId).collection('notes').doc(note.id);
                 } else {
-                    ref = db.collection('users').doc(uid).collection('postit_notes').doc(note.id);
+                    return db.collection('users').doc(uid).collection('postit_notes').doc(note.id);
                 }
-                batch.delete(ref);
+            });
+
+            for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
+                const batch = db.batch();
+                const chunk = refs.slice(i, i + BATCH_LIMIT);
+                chunk.forEach(ref => batch.delete(ref));
+                await batch.commit();
             }
-            await batch.commit();
             await loadAllData();
         } catch (err) {
             alert('刪除失敗：' + err.message);

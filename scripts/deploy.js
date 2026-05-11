@@ -10,6 +10,7 @@ const rootDir = path.join(__dirname, '..');
 const paths = {
     changelogJs: path.join(rootDir, 'js', 'changelog.js'),
     indexHtml: path.join(rootDir, 'index.html'),
+    adminHtml: path.join(rootDir, 'admin.html'),
     packageJson: path.join(rootDir, 'package.json'),
     changelogMd: path.join(rootDir, 'docs', 'CHANGELOG.md'),
     backups: path.join(rootDir, 'backups')
@@ -114,6 +115,15 @@ try {
 
     fs.writeFileSync(paths.indexHtml, indexHtml, 'utf8');
     log('已更新 index.html');
+
+    // E. Update admin.html
+    if (fs.existsSync(paths.adminHtml)) {
+        let adminHtml = fs.readFileSync(paths.adminHtml, 'utf8');
+        adminHtml = adminHtml.replace(/href="css\/([^"]+)\.css(\?v=[0-9.]+)?"/g, `href="css/$1.css?v=${newVer}"`);
+        adminHtml = adminHtml.replace(/src="js\/([^"]+)\.js(\?v=[0-9.]+)?"/g, `src="js/$1.js?v=${newVer}"`);
+        fs.writeFileSync(paths.adminHtml, adminHtml, 'utf8');
+        log('已更新 admin.html');
+    }
 
     // D. Update docs/CHANGELOG.md
     const today = new Date().toISOString().split('T')[0];

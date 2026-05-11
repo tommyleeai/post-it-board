@@ -1,7 +1,0 @@
-[
-  {
-    "origin": ["https://post.tommylee.ai", "http://localhost:5051"],
-    "method": ["GET"],
-    "maxAgeSeconds": 86400
-  }
-]

@@ -1,3 +1,7 @@
 node_modules/
 .env
 .DS_Store
+backups/
+*.log
+scratch.*
+uvicorn_log.txt

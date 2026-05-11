@@ -344,6 +344,17 @@ th.sortable i {
     opacity: 0.4;
 }
 
+/* === Sort Active State START === */
+th.sortable.active-sort {
+    color: var(--admin-accent);
+}
+
+th.sortable.active-sort i {
+    opacity: 1;
+    color: var(--admin-accent);
+}
+/* === Sort Active State END === */
+
 tbody td {
     padding: 14px 18px;
     font-size: 14px;
