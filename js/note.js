@@ -124,6 +124,20 @@ PostIt.Note = (function () {
         yNote.set('type', type);
         yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
     }
+
+    // -------- 批次更新貼紙屬性 --------
+    function updateNote(noteId, updates) {
+        const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
+        if (!yNotesMap || !noteId || !updates) return;
+
+        const yNote = yNotesMap.get(noteId);
+        if (!yNote) return;
+
+        for (const [key, value] of Object.entries(updates)) {
+            yNote.set(key, value);
+        }
+        yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
+    }
     // -------- 更新位置 --------
     // -------- 更新位置 --------
     async function updatePosition(noteId, x, y, zIndex) {
@@ -723,7 +737,7 @@ PostIt.Note = (function () {
     function setActiveNoteId(id) { activeNoteId = id; }
 
     return {
-        subscribe, cleanup, create, updateContent, updatePosition,
+        subscribe, cleanup, create, updateContent, updateNote, updatePosition,
         updateColor, updateStyle, archive, unarchive, deleteArchive, getArchivedNotes, remove, uploadImage, detectType,
         updateReminderLogic, updateReminderStatus, getNotesRef,
         updateStockAlert, clearStockAlert, updateStockAlertField,
