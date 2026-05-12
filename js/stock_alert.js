@@ -90,10 +90,24 @@ PostIt.StockAlert = (function () {
     }
 
     // --- 批次查詢報價 ---
+    let _lastErrorToast = 0; // 防止每分鐘重複彈錯誤 Toast
+    const ERROR_TOAST_COOLDOWN = 300000; // 5 分鐘只彈一次
+
+    function showErrorOnce(msg) {
+        const now = Date.now();
+        if (now - _lastErrorToast > ERROR_TOAST_COOLDOWN) {
+            _lastErrorToast = now;
+            if (typeof PostIt.Board !== 'undefined') {
+                PostIt.Board.showToast(msg, 'error', null, 8000);
+            }
+        }
+    }
+
     async function fetchQuotes(symbols) {
         const token = getApiToken();
         if (!token) {
             console.warn('[StockAlert] 未設定 API Token，無法查詢報價');
+            showErrorOnce('📈 股價監控失敗：未設定 API Token。請到設定頁面填入好物報報 API Token。');
             return {};
         }
 
@@ -102,12 +116,20 @@ PostIt.StockAlert = (function () {
             const resp = await fetch(url);
             if (!resp.ok) {
                 console.error('[StockAlert] API 回應錯誤:', resp.status);
+                if (resp.status === 401) {
+                    showErrorOnce('📈 股價監控失敗：API Token 無效，請確認 Token 是否正確。');
+                } else if (resp.status === 503) {
+                    showErrorOnce('📈 股價監控失敗：伺服器尚未設定 Finnhub API Key。');
+                } else {
+                    showErrorOnce(`📈 股價監控暫時無法使用（HTTP ${resp.status}），將自動重試。`);
+                }
                 return {};
             }
             const data = await resp.json();
             return data.quotes || {};
         } catch (e) {
             console.error('[StockAlert] 查詢報價失敗:', e);
+            showErrorOnce('📈 股價監控：無法連線到報價伺服器，請確認網路連線。');
             return {};
         }
     }
