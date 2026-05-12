@@ -162,17 +162,16 @@ PostIt.StockAlert = (function () {
             PostIt.Board.showToast(msg, 'info', null, 0); // 常駐
         }
 
-        // 聲音提示：借用 alarm 的 beep
-        if (typeof PostIt.Alarm !== 'undefined') {
-            // 用 alarm 系統的震動+音效
-            const noteEl = document.querySelector(`.sticky-note[data-note-id="${noteId}"]`);
-            if (noteEl) {
-                noteEl.classList.add('alarming');
-                // 震動 8 秒後自動停止，避免一直震個不停
-                setTimeout(() => {
-                    if (noteEl) noteEl.classList.remove('alarming');
-                }, 8000);
-            }
+        // 聲音提示：整合進真正的 Alarm 系統（無限震動與聲音，直到點擊解除或 5 分鐘後）
+        if (typeof PostIt.Alarm !== 'undefined' && PostIt.Alarm.triggerAlarm) {
+            PostIt.Alarm.triggerAlarm(noteId);
+            
+            // 5 分鐘 (300,000 ms) 後自動解除，避免永無止境響
+            setTimeout(() => {
+                if (typeof PostIt.Alarm !== 'undefined') {
+                    PostIt.Alarm.dismissAlarm(noteId);
+                }
+            }, 300000);
         }
 
         // TTS 語音播報

@@ -1,6 +1,6 @@
 {
   "name": "post-it-board",
-  "version": "2.4.61",
+  "version": "2.4.62",
   "description": "Post It — 你的數位白板",
   "scripts": {
     "dev": "npx http-server ./ -p 5051 -a localhost -c-1 --cors -o",

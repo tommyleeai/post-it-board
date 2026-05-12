@@ -1,4 +1,4 @@
-﻿// ============================================
+// ============================================
 // 時效性鬧鐘與提醒管理 (Alarm System)
 // ============================================
 PostIt.Alarm = (function () {
@@ -335,6 +335,6 @@ PostIt.Alarm = (function () {
         return activeNotes;
     }
 
-    return { initGlobalListeners, dismissAlarm, debug, cleanup };
+    return { initGlobalListeners, triggerAlarm, dismissAlarm, debug, cleanup };
 })();
 
