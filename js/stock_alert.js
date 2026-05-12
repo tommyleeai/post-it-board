@@ -28,7 +28,7 @@ PostIt.StockAlert = (function () {
         return localStorage.getItem(STORAGE_KEY_FREQ_MARKET) || '1min';
     }
     function getAfterHoursFreq() {
-        return localStorage.getItem(STORAGE_KEY_FREQ_AFTER) || '5min';
+        return localStorage.getItem(STORAGE_KEY_FREQ_AFTER) || 'none';
     }
     // 內建 token（與 deal_notifier 共用的 external API token）
     const DEFAULT_API_TOKEN = 'y9oBzyD2kDdXaQEKopp-ZQsan2uTXPes3PkFEnvdRfo';
