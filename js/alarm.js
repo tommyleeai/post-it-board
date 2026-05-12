@@ -101,9 +101,9 @@ PostIt.Alarm = (function () {
                 osc2.stop(t + 0.5);
             };
 
-            // 每 1.5 秒敲擊一次雙音叮咚
+            // 每 3 秒敲擊一次雙音叮咚
             playSingleBeep();
-            beepingInterval = setInterval(playSingleBeep, 1500);
+            beepingInterval = setInterval(playSingleBeep, 3000);
         } catch (e) {
             console.warn('[Alarm] 無法播放音效', e);
         }
