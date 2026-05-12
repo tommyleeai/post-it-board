@@ -677,6 +677,17 @@ PostIt.Board = (function () {
             try {
                 dealData = JSON.parse(String(note.content).trim());
             } catch(e) {}
+
+            // 格式化卡片出現時間
+            let dealTimeStr = '';
+            if (note.createdAt) {
+                const ct = note.createdAt.seconds ? new Date(note.createdAt.seconds * 1000) : (note.createdAt.toDate ? note.createdAt.toDate() : new Date(note.createdAt));
+                const mm = String(ct.getMonth() + 1).padStart(2, '0');
+                const dd = String(ct.getDate()).padStart(2, '0');
+                const hh = String(ct.getHours()).padStart(2, '0');
+                const mi = String(ct.getMinutes()).padStart(2, '0');
+                dealTimeStr = `${mm}/${dd} ${hh}:${mi}`;
+            }
             
             const contentEl = document.createElement('div');
             contentEl.className = 'note-content';
@@ -692,6 +703,7 @@ PostIt.Board = (function () {
                     </div>
                     ${dealData.promoCode ? `<div class="deal-promo" onclick="try{navigator.clipboard.writeText('${dealData.promoCode}'); window.PostIt.Board.showToast('已複製折扣碼！');}catch(e){}">Promo: <strong>${dealData.promoCode}</strong> <i class="fa-regular fa-copy"></i></div>` : ''}
                     ${dealData.url ? `<a href="${dealData.url}" target="_blank" class="deal-btn">前往 Amazon <i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : ''}
+                    ${dealTimeStr ? `<div class="deal-time"><i class="fa-regular fa-clock"></i> ${dealTimeStr}</div>` : ''}
                 </div>
             `;
             el.appendChild(contentEl);

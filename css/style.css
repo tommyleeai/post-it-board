@@ -3515,6 +3515,21 @@ body.pin-mode {
     box-shadow: 0 4px 10px rgba(255, 153, 0, 0.3);
 }
 
+/* === Deal Time Stamp START === */
+.deal-time {
+    font-size: 11px;
+    color: #999;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+}
+
+.deal-time i {
+    font-size: 10px;
+}
+/* === Deal Time Stamp END === */
+
 /* 針對 Super Deal 卡片隱藏圖釘卷角等不必要的元素及編輯器 */
 .super-deal-note .note-timestamp,
 .super-deal-note .note-edit-trigger,

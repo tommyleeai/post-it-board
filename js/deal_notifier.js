@@ -65,7 +65,7 @@ PostIt.DealNotifier = (function () {
         console.log('🎉 [DealNotifier] 發現超級好物:', deal);
 
         // 1. 語音廣播 (Web Speech API)
-        announceViaAudio(deal.title);
+        announceViaAudio();
 
         // 2. 建立專屬便利貼前，先尋找場上是否已有好物卡片，以繼承其座標
         // x: 5, y: 15 代表畫面左上角 (5% width, 15% height)，因為座標對應的是卡片的「左上角」，這樣往下長才不會破圖跑出畫面
@@ -122,13 +122,11 @@ PostIt.DealNotifier = (function () {
     /**
      * 合成激動語音
      */
-    function announceViaAudio(productName) {
+    function announceViaAudio() {
         if (!('speechSynthesis' in window)) return;
         
-        // 由於中英文夾雜可能會有口音問題，先喊開頭，再塞入短版標題
         const synth = window.speechSynthesis;
-        const shortName = productName.substring(0, 20); // 避免標題太長
-        const text = `警報！超級好物出現啦！馬上查看：${shortName}`;
+        const text = '警報！超級好物出現啦！';
         
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'zh-TW';
