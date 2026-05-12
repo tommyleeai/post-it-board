@@ -251,7 +251,10 @@ PostIt.Alarm = (function () {
 
         // 掃描所有 note，註冊/更新有 alertTime 的
         for (const [id, note] of Object.entries(cache)) {
-            if (!note.alertTime || note.reminderStatus === 'acknowledged') {
+            // 如果是股價提醒且已經在響鈴中，不自動解除（它的解除由點擊或 5 分鐘 timeout 負責）
+            const isStockAlertRinging = ringingNotes.has(id) && note.stockAlert && note.stockAlert.status === 'triggered';
+            
+            if (!isStockAlertRinging && (!note.alertTime || note.reminderStatus === 'acknowledged')) {
                 if (activeNotes[id]) delete activeNotes[id];
                 if (ringingNotes.has(id)) dismissAlarm(id);
                 continue;

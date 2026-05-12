@@ -3609,7 +3609,7 @@ body.pin-mode {
 .stock-price-badge {
     position: absolute;
     bottom: 8px;
-    right: 32px;
+    right: 42px;
     font-size: 10px;
     font-weight: 600;
     padding: 2px 6px;
