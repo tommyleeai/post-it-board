@@ -1503,11 +1503,12 @@ PostIt.Board = (function () {
                 noteEl.classList.remove('image-only');
             }
             
-            // 如果儲存的內容跟原始內容 (note.content) 相比有發生改變（包含我們主動把他清理掉 URL 的情況）
-            if (newContent !== (note?.content || '')) {
-                // 偵測是否為純股票代碼 (例如 TSLA、tsla 或 $AAPL)
-                const trimmedContent = newContent.trim();
-                const stockMatch = trimmedContent.match(/^\$?([a-zA-Z]{1,5})$/);
+            // 偵測是否為純股票代碼 (例如 TSLA、tsla 或 $AAPL)
+            const trimmedContent = newContent.trim();
+            const stockMatch = trimmedContent.match(/^\$?([a-zA-Z]{1,5})$/);
+            
+            // 如果儲存的內容跟原始內容 (note.content) 相比有發生改變，或者符合股票代碼但還沒轉換
+            if (newContent !== (note?.content || '') || (stockMatch && note?.type !== 'stock_card')) {
                 
                 if (stockMatch) {
                     const symbol = stockMatch[1].toUpperCase();
