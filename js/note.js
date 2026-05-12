@@ -445,6 +445,50 @@ PostIt.Note = (function () {
             yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
         }
     }
+
+    // -------- 股價提醒 --------
+    function updateStockAlert(noteId, alertData) {
+        const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
+        if (!yNotesMap) return;
+        const yNote = yNotesMap.get(noteId);
+        if (!yNote) return;
+
+        yNote.set('stockAlert', {
+            symbol: alertData.symbol || '',
+            targetPrice: alertData.targetPrice || 0,
+            condition: alertData.condition || '>=',
+            status: alertData.status || 'watching',
+            basePrice: alertData.basePrice || null,
+            lastPrice: alertData.lastPrice || null,
+            lastChecked: alertData.lastChecked || null,
+            triggeredAt: alertData.triggeredAt || null,
+            reason: alertData.reason || ''
+        });
+        yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
+    }
+
+    function clearStockAlert(noteId) {
+        const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
+        if (!yNotesMap) return;
+        const yNote = yNotesMap.get(noteId);
+        if (yNote) {
+            yNote.set('stockAlert', null);
+            yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
+        }
+    }
+
+    function updateStockAlertField(noteId, field, value) {
+        const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
+        if (!yNotesMap) return;
+        const yNote = yNotesMap.get(noteId);
+        if (!yNote) return;
+        const existing = yNote.get('stockAlert');
+        if (existing) {
+            const updated = { ...existing, [field]: value };
+            yNote.set('stockAlert', updated);
+        }
+    }
+
     // -------- 群組系統 --------
     const MAX_GROUP_SIZE = 10;
 
@@ -682,6 +726,7 @@ PostIt.Note = (function () {
         subscribe, cleanup, create, updateContent, updatePosition,
         updateColor, updateStyle, archive, unarchive, deleteArchive, getArchivedNotes, remove, uploadImage, detectType,
         updateReminderLogic, updateReminderStatus, getNotesRef,
+        updateStockAlert, clearStockAlert, updateStockAlertField,
         mergeToGroup, removeFromGroup, disbandGroup, removeGroup, getGroupNotes, MAX_GROUP_SIZE,
         getCache, getCount, getNote, getActiveNoteId, setActiveNoteId
     };

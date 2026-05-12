@@ -1090,6 +1090,21 @@ PostIt.Board = (function () {
                                     showToast('⚠️ 行程衝突警告：\n' + res.conflictWarning, 'error', null, 10000);
                                 }
                             }
+                            // 股價提醒
+                            if (res && res.hasStockAlert && res.stockSymbol) {
+                                PostIt.Note.updateStockAlert(note.id, {
+                                    symbol: res.stockSymbol,
+                                    targetPrice: res.stockTargetPrice || 0,
+                                    condition: res.stockCondition || '>=',
+                                    status: 'watching',
+                                    reason: res.stockAlertReason || ''
+                                });
+                                showToast(`📈 已設定監控 ${res.stockSymbol}，目標 ${res.stockCondition} $${res.stockTargetPrice}`, 'success', null, 5000);
+                                // 立即啟動輪詢
+                                if (typeof PostIt.StockAlert !== 'undefined') {
+                                    PostIt.StockAlert.startPolling();
+                                }
+                            }
                         });
                     }
                 }
@@ -1294,6 +1309,20 @@ PostIt.Board = (function () {
                         }
                     } else if (aiResult && aiResult.hasIntent === false && !aiResult.error) {
                         PostIt.Note.updateReminderLogic(noteId, null);
+                    }
+                    // 股價提醒
+                    if (aiResult && aiResult.hasStockAlert && aiResult.stockSymbol) {
+                        PostIt.Note.updateStockAlert(noteId, {
+                            symbol: aiResult.stockSymbol,
+                            targetPrice: aiResult.stockTargetPrice || 0,
+                            condition: aiResult.stockCondition || '>=',
+                            status: 'watching',
+                            reason: aiResult.stockAlertReason || ''
+                        });
+                        showToast(`📈 已設定監控 ${aiResult.stockSymbol}，目標 ${aiResult.stockCondition} $${aiResult.stockTargetPrice}`, 'success', null, 5000);
+                        if (typeof PostIt.StockAlert !== 'undefined') {
+                            PostIt.StockAlert.startPolling();
+                        }
                     }
                 }
             }

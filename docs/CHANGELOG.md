@@ -4,6 +4,11 @@
 
 專案遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 的版本控制原則。
 
+
+## [2.4.55] - 2026-05-12
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   \
 ## [2.4.54] - 2026-05-12
 
 ### 🔧 優化與修正 (Improved & Fixed)

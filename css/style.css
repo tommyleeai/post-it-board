@@ -3605,3 +3605,48 @@ body.pin-mode {
     margin-left: 0;
 }
 /* === Multi-Account Collaboration END === */
+
+/* === Stock Price Badge START === */
+.stock-price-badge {
+    position: absolute;
+    bottom: 4px;
+    right: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 5;
+    font-family: 'Inter', 'SF Mono', monospace;
+    letter-spacing: 0.3px;
+    backdrop-filter: blur(4px);
+    transition: all 0.3s ease;
+}
+
+.stock-price-badge.stock-up {
+    background: rgba(16, 185, 129, 0.85);
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+}
+
+.stock-price-badge.stock-down {
+    background: rgba(239, 68, 68, 0.85);
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+}
+
+.stock-price-badge .stock-symbol {
+    opacity: 0.8;
+    margin-right: 2px;
+}
+
+.stock-price-badge .stock-price {
+    font-weight: 700;
+}
+
+.stock-price-badge .stock-arrow {
+    font-size: 8px;
+    margin-left: 2px;
+}
+/* === Stock Price Badge END === */
