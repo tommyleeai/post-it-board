@@ -49,6 +49,11 @@
 
 
 
+
+## [2.4.54] - 2026-05-12
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   Hotfix and minor updates for v2.4.54
 ## [2.4.53] - 2026-05-12
 
 ### 🔧 優化與修正 (Improved & Fixed)

@@ -7,15 +7,12 @@ PostIt.YjsSync = (function () {
     'use strict';
 
     let Y = null;
-    let WebrtcProvider = null;
     let IndexeddbPersistence = null;
 
     let currentDoc = null;
-    let currentProvider = null;
     let currentPersistence = null;
     let yNotesMap = null;
     let onNotesUpdatedCallback = null;
-    let onAwarenessUpdatedCallback = null;
     let backupTimeout = null;
 
     async function loadModules() {
@@ -24,8 +21,6 @@ PostIt.YjsSync = (function () {
             console.log('[Yjs] 正在從 CDN 載入 Yjs 模組...');
             const yjsMod = await import('https://esm.sh/yjs@13.6.14');
             Y = yjsMod;
-            const webrtcMod = await import('https://esm.sh/y-webrtc@10.3.0');
-            WebrtcProvider = webrtcMod.WebrtcProvider;
             const idbMod = await import('https://esm.sh/y-indexeddb@9.0.12');
             IndexeddbPersistence = idbMod.IndexeddbPersistence;
             console.log('[Yjs] 模組載入完成');
@@ -43,44 +38,13 @@ PostIt.YjsSync = (function () {
 
         cleanup();
         onNotesUpdatedCallback = onUpdate;
-        onAwarenessUpdatedCallback = onAwarenessUpdate;
 
         currentDoc = new Y.Doc();
         yNotesMap = currentDoc.getMap('notes');
 
         // IndexedDB 本地快取
         currentPersistence = new IndexeddbPersistence(`postit_board_${boardId}`, currentDoc);
-        
-        // P2P WebRTC 房間
-        const roomName = `postit-room-v3-${boardId}`;
-        currentProvider = new WebrtcProvider(roomName, currentDoc, {
-            // 由於公共伺服器不穩定，暫時清空 signaling 以關閉 WebRTC 連線，改為完全依賴 Firestore 備用同步
-            signaling: []
-        });
 
-        // 設定 Awareness (在線狀態)
-        const awareness = currentProvider.awareness;
-        const user = window.PostIt.Auth.getUser();
-        if (user) {
-            awareness.setLocalStateField('user', {
-                uid: user.uid,
-                name: user.displayName || '匿名使用者',
-                photoURL: user.photoURL || 'https://ui-avatars.com/api/?name=User'
-            });
-        }
-
-        awareness.on('change', () => {
-            const states = Array.from(awareness.getStates().values());
-            const onlineUsers = states.map(state => state.user).filter(Boolean);
-            if (onAwarenessUpdatedCallback) {
-                onAwarenessUpdatedCallback(onlineUsers);
-            }
-        });
-
-        // 監聽連線狀態
-        currentProvider.on('synced', synced => {
-            console.log(`[Yjs] WebRTC 同步狀態: ${synced.synced ? '已同步' : '連線中'}`);
-        });
 
         // 本地 DB 載入完成後，設定 Firestore 即時同步並取得是否需遷移
         currentPersistence.whenSynced.then(async () => {
@@ -283,10 +247,8 @@ PostIt.YjsSync = (function () {
     }
 
     function cleanup() {
-        if (currentProvider) currentProvider.destroy();
         if (currentDoc) currentDoc.destroy();
         currentDoc = null;
-        currentProvider = null;
         currentPersistence = null;
         yNotesMap = null;
         clearTimeout(backupTimeout);
