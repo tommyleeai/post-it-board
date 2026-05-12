@@ -3650,3 +3650,50 @@ body.pin-mode {
     margin-left: 2px;
 }
 /* === Stock Price Badge END === */
+
+/* === Timer Progress Bar START === */
+.timer-progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2.5px;
+    background: transparent;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 6;
+    border-radius: 0 0 12px 12px;
+}
+
+.timer-progress-bar .timer-progress-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 0 2px 2px 0;
+    transition: width 1s linear, background 2s ease;
+    /* 預設：沉穩靛藍漸層 */
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.6), rgba(139, 92, 246, 0.8));
+}
+
+/* 進度 > 70%（快到了）→ 暖橘色 */
+.timer-progress-bar .timer-progress-fill.timer-warn {
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.6), rgba(249, 115, 22, 0.85));
+}
+
+/* 進度 > 90%（即將觸發）→ 橘紅色微發光 */
+.timer-progress-bar .timer-progress-fill.timer-critical {
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.6), rgba(220, 38, 38, 0.9));
+    box-shadow: 0 0 4px rgba(239, 68, 68, 0.3);
+}
+
+/* 已觸發（100%）→ 脈動動畫 */
+.timer-progress-bar .timer-progress-fill.timer-done {
+    width: 100% !important;
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.5), rgba(220, 38, 38, 0.8));
+    animation: timer-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes timer-pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+/* === Timer Progress Bar END === */

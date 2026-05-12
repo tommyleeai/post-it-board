@@ -1144,15 +1144,90 @@ PostIt.Board = (function () {
             badgeEl.style.color = 'rgba(231, 76, 60, 0.95)';
             badgeEl.style.background = 'rgba(255,255,255,0.85)';
             badgeEl.onclick = null;
+
+            // --- 倒數進度條 ---
+            renderTimerProgressBar(el, note);
         } else {
             if (badgeEl) badgeEl.remove();
+            // 移除進度條
+            const bar = el.querySelector('.timer-progress-bar');
+            if (bar) bar.remove();
         }
 
         // 當狀態變成已確認，主動消除抖動
         if (note.reminderStatus === 'acknowledged') {
             el.classList.remove('alarming');
+            const bar = el.querySelector('.timer-progress-bar');
+            if (bar) bar.remove();
         }
     }
+
+    // ======== 倒數進度條 ========
+    function parseLocalTime(timeStr) {
+        const s = String(timeStr);
+        const p = s.replace('T', '-').replace(/:/g, '-').split('-');
+        if (p.length >= 5) {
+            return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]), parseInt(p[3]), parseInt(p[4]), parseInt(p[5]||0));
+        }
+        return new Date(s);
+    }
+
+    function renderTimerProgressBar(el, note) {
+        let barEl = el.querySelector('.timer-progress-bar');
+        if (!barEl) {
+            barEl = document.createElement('div');
+            barEl.className = 'timer-progress-bar';
+            barEl.innerHTML = '<div class="timer-progress-fill"></div>';
+            el.appendChild(barEl);
+        }
+        // 儲存 alertTime 供定時器使用
+        barEl.dataset.alertTime = note.alertTime || '';
+        barEl.dataset.createdAt = (note.updatedAt && note.updatedAt.seconds)
+            ? String(note.updatedAt.seconds * 1000)
+            : String(Date.now());
+        updateTimerProgressBar(barEl);
+    }
+
+    function updateTimerProgressBar(barEl) {
+        const fill = barEl.querySelector('.timer-progress-fill');
+        if (!fill) return;
+
+        const alertTime = parseLocalTime(barEl.dataset.alertTime).getTime();
+        const createdAt = parseInt(barEl.dataset.createdAt) || Date.now();
+        const now = Date.now();
+
+        if (isNaN(alertTime)) { fill.style.width = '0%'; return; }
+
+        const total = alertTime - createdAt;
+        const elapsed = now - createdAt;
+
+        if (total <= 0) {
+            // 已超過觸發時間
+            fill.style.width = '100%';
+            fill.className = 'timer-progress-fill timer-done';
+            return;
+        }
+
+        const pct = Math.min(Math.max((elapsed / total) * 100, 0), 100);
+        fill.style.width = pct.toFixed(1) + '%';
+
+        // 根據進度切換顏色
+        fill.classList.remove('timer-warn', 'timer-critical', 'timer-done');
+        if (pct >= 100) {
+            fill.classList.add('timer-done');
+        } else if (pct >= 90) {
+            fill.classList.add('timer-critical');
+        } else if (pct >= 70) {
+            fill.classList.add('timer-warn');
+        }
+    }
+
+    // 全域 1 秒定時器：更新所有進度條
+    setInterval(() => {
+        document.querySelectorAll('.timer-progress-bar').forEach(bar => {
+            updateTimerProgressBar(bar);
+        });
+    }, 1000);
 
     // ======== 渲染不同類型的內容 ========
     function renderContentText(note, parsedImageUrl, extractedYtUrl) {
