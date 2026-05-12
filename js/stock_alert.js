@@ -84,8 +84,19 @@ PostIt.StockAlert = (function () {
         const cache = PostIt.Note.getCache();
         const alerts = [];
         for (const [id, note] of Object.entries(cache)) {
+            let symbolToWatch = null;
             if (note.stockAlert && note.stockAlert.status === 'watching' && note.stockAlert.symbol) {
-                alerts.push({ noteId: id, ...note.stockAlert });
+                symbolToWatch = note.stockAlert.symbol;
+            } else if (note.type === 'stock_card' && note.stockCardData && note.stockCardData.symbol) {
+                symbolToWatch = note.stockCardData.symbol;
+            }
+
+            if (symbolToWatch) {
+                alerts.push({ 
+                    noteId: id, 
+                    symbol: symbolToWatch,
+                    ...note.stockAlert // 如果有 alert 就帶上，沒有就是 undefined
+                });
             }
         }
         return alerts;
@@ -133,6 +144,50 @@ PostIt.StockAlert = (function () {
             console.error('[StockAlert] 查詢報價失敗:', e);
             showErrorOnce('📈 股價監控：無法連線到報價伺服器，請確認網路連線。');
             return {};
+        }
+    }
+
+    async function fetchCardData(noteId, symbol) {
+        const token = getApiToken();
+        if (!token) return;
+
+        try {
+            // 由於我們也需要即時報價，可以同時拿
+            const [profileResp, chartResp, quoteResp] = await Promise.all([
+                fetch(`${API_BASE}/api/stock/profile?symbol=${symbol}&token=${encodeURIComponent(token)}`),
+                fetch(`${API_BASE}/api/stock/chart?symbol=${symbol}&token=${encodeURIComponent(token)}`),
+                fetch(`${API_BASE}/api/stock/quote?symbol=${symbol}&token=${encodeURIComponent(token)}`)
+            ]);
+
+            if (profileResp.ok && chartResp.ok && quoteResp.ok) {
+                const profile = await profileResp.json();
+                const chart = await chartResp.json();
+                const quote = await quoteResp.json();
+
+                if (profile.success) {
+                    const cardData = {
+                        symbol: profile.symbol,
+                        name: profile.name,
+                        logo: profile.logo,
+                        marketCap: profile.marketCap,
+                        peRatio: profile.peRatio,
+                        high52: profile.high52,
+                        low52: profile.low52,
+                        recommendation: profile.recommendation,
+                        prices: chart.success ? chart.prices : [],
+                        currentPrice: quote.success ? quote.price : null,
+                        priceChange: quote.success ? quote.change : null,
+                        priceChangePercent: quote.success ? quote.changePercent : null
+                    };
+                    
+                    // 將結果存入該便利貼
+                    if (typeof PostIt.Note !== 'undefined') {
+                        PostIt.Note.updateNote(noteId, { stockCardData: cardData });
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('[StockAlert] 獲取股票卡片資料失敗:', e);
         }
     }
 
@@ -202,18 +257,32 @@ PostIt.StockAlert = (function () {
 
             const currentPrice = quote.price;
 
-            // 更新最新報價和查詢時間
-            if (PostIt.Note && PostIt.Note.updateStockAlertField) {
-                PostIt.Note.updateStockAlertField(alert.noteId, 'lastPrice', currentPrice);
-                PostIt.Note.updateStockAlertField(alert.noteId, 'lastChecked', now);
+            // 如果有 stockCardData，更新即時報價
+            if (PostIt.Note && PostIt.Note.updateNote) {
+                const note = PostIt.Note.getNote(alert.noteId);
+                if (note && note.type === 'stock_card' && note.stockCardData) {
+                    const newData = { ...note.stockCardData };
+                    newData.currentPrice = currentPrice;
+                    newData.priceChange = quote.change;
+                    newData.priceChangePercent = quote.changePercent;
+                    PostIt.Note.updateNote(alert.noteId, { stockCardData: newData });
+                }
             }
 
-            // 更新卡片上的即時報價 badge
-            updatePriceBadge(alert.noteId, alert, currentPrice);
+            // 原有的股價達標檢查 (只有設定了 alert 的才有 condition)
+            if (alert.condition) {
+                if (PostIt.Note && PostIt.Note.updateStockAlertField) {
+                    PostIt.Note.updateStockAlertField(alert.noteId, 'lastPrice', currentPrice);
+                    PostIt.Note.updateStockAlertField(alert.noteId, 'lastChecked', now);
+                }
 
-            // 檢查是否達標
-            if (checkCondition(alert, currentPrice)) {
-                triggerStockNotification(alert.noteId, alert, currentPrice);
+                // 更新卡片上的即時報價 badge (文字便利貼才會加)
+                updatePriceBadge(alert.noteId, alert, currentPrice);
+
+                // 檢查是否達標
+                if (checkCondition(alert, currentPrice)) {
+                    triggerStockNotification(alert.noteId, alert, currentPrice);
+                }
             }
         }
     }
@@ -330,7 +399,7 @@ PostIt.StockAlert = (function () {
         startPolling, stopPolling,
         setMarketFreq, setAfterHoursFreq, setApiToken,
         getMarketFreq, getAfterHoursFreq, getApiToken,
-        getActiveAlerts, isMarketOpen,
+        getActiveAlerts, isMarketOpen, fetchCardData,
         FREQ_OPTIONS
     };
 })();

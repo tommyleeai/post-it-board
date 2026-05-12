@@ -1258,6 +1258,144 @@ PostIt.Board = (function () {
         }
 
         switch (note.type) {
+            case 'stock_card':
+                // 從 cache 或 note 取出資料 (預設顯示載入中或基礎代碼)
+                const sd = note.stockCardData || {};
+                const symbol = sd.symbol || escapeHtml(text) || '???';
+                const name = sd.name || 'Loading...';
+                const currentPrice = sd.currentPrice ? `$${sd.currentPrice.toFixed(2)}` : '--';
+                
+                // 計算漲跌
+                const diff = sd.priceChange || 0;
+                const pct = sd.priceChangePercent || 0;
+                const isUp = diff >= 0;
+                const trendClass = isUp ? 'up' : 'down';
+                const trendIcon = isUp ? '<i class="fa-solid fa-arrow-trend-up"></i>' : '<i class="fa-solid fa-arrow-trend-down"></i>';
+                const diffStr = diff > 0 ? `+` : ``; // 若小於0已經自帶負號
+                const changeHtml = sd.currentPrice ? 
+                    `<div class="stock-card-price-change ${trendClass}">${trendIcon} ${diffStr}$${diff.toFixed(2)} (${diffStr}${pct.toFixed(2)}%)</div>` : '';
+
+                // Recommendation Badge
+                let recHtml = '';
+                if (sd.recommendation) {
+                    let recIcon = '';
+                    if (sd.recommendation.includes('buy')) recIcon = '<i class="fa-solid fa-fire"></i> ';
+                    else if (sd.recommendation.includes('sell')) recIcon = '<i class="fa-solid fa-arrow-down"></i> ';
+                    else recIcon = '<i class="fa-solid fa-minus"></i> ';
+                    
+                    let recClass = 'hold';
+                    if (sd.recommendation.includes('buy')) recClass = 'buy';
+                    else if (sd.recommendation.includes('sell')) recClass = 'sell';
+                    
+                    recHtml = `<div class="stock-card-recommendation ${recClass}">${recIcon}${sd.recommendation}</div>`;
+                }
+
+                // 產生 Sparkline SVG 路徑
+                let svgPath = '';
+                let svgArea = '';
+                if (sd.prices && sd.prices.length > 1) {
+                    const prices = sd.prices;
+                    const min = Math.min(...prices);
+                    const max = Math.max(...prices);
+                    const range = max - min || 1;
+                    const width = 280;
+                    const height = 80; // 繪圖區高度
+                    
+                    // 為了美觀，上下留點邊界，讓最高最低點不要貼死
+                    const padding = 10;
+                    const drawHeight = height - padding * 2;
+                    
+                    const step = width / (prices.length - 1);
+                    
+                    let points = [];
+                    prices.forEach((p, i) => {
+                        const x = i * step;
+                        // 價格越大，y越小(越靠近上面)
+                        const normalized = (p - min) / range;
+                        const y = padding + drawHeight - (normalized * drawHeight);
+                        points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+                    });
+                    
+                    const pathStr = `M${points.join(' L')}`;
+                    svgPath = `<path class="stock-card-sparkline-path" d="${pathStr}"></path>`;
+                    
+                    // Area (封閉路徑)
+                    const areaStr = `${pathStr} L${width},${height} L0,${height} Z`;
+                    svgArea = `<path class="stock-card-sparkline-area" d="${areaStr}"></path>`;
+                }
+
+                // 取出的最後一個價格位置用來放呼吸燈
+                let pulseDotTop = '0px';
+                if (sd.prices && sd.prices.length > 0) {
+                    const lastP = sd.prices[sd.prices.length - 1];
+                    const min = Math.min(...sd.prices);
+                    const max = Math.max(...sd.prices);
+                    const range = max - min || 1;
+                    const normalized = (lastP - min) / range;
+                    const y = 10 + 60 - (normalized * 60); // padding:10, drawHeight:60
+                    pulseDotTop = `${y.toFixed(1)}px`;
+                }
+
+                const logoHtml = sd.logo ? `<img src="${escapeHtml(sd.logo)}" class="stock-card-logo" alt="${symbol}">` : `<div class="stock-card-logo"></div>`;
+                const watermarkHtml = sd.logo ? `<img src="${escapeHtml(sd.logo)}" class="stock-card-watermark" alt="watermark">` : '';
+
+                // 組裝 HTML
+                return `
+                    ${watermarkHtml}
+                    ${recHtml}
+                    <div class="stock-card-header">
+                        <div class="stock-card-logo-container">
+                            ${logoHtml}
+                            <div class="stock-card-symbol-info">
+                                <div class="stock-card-symbol">${symbol}</div>
+                                <div class="stock-card-company-name">${escapeHtml(name)}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stock-card-price-section">
+                        <div class="stock-card-current-price">${currentPrice}</div>
+                        ${changeHtml}
+                    </div>
+
+                    <div class="stock-card-chart-container">
+                        <svg class="stock-card-sparkline ${trendClass}" viewBox="0 0 280 80" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="gradient-up" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#10b981" stop-opacity="0.3"></stop>
+                                    <stop offset="100%" stop-color="#10b981" stop-opacity="0"></stop>
+                                </linearGradient>
+                                <linearGradient id="gradient-down" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#ef4444" stop-opacity="0.3"></stop>
+                                    <stop offset="100%" stop-color="#ef4444" stop-opacity="0"></stop>
+                                </linearGradient>
+                            </defs>
+                            ${svgArea}
+                            ${svgPath}
+                        </svg>
+                        <div class="stock-card-pulse-dot" style="top: ${pulseDotTop};"></div>
+                    </div>
+
+                    <div class="stock-card-metrics-grid">
+                        <div class="stock-card-metric-item">
+                            <span class="stock-card-metric-label">Market Cap</span>
+                            <span class="stock-card-metric-value">${sd.marketCap ? (sd.marketCap / 1000).toFixed(2) + 'B' : '--'}</span>
+                        </div>
+                        <div class="stock-card-metric-item">
+                            <span class="stock-card-metric-label">P/E Ratio</span>
+                            <span class="stock-card-metric-value">${sd.peRatio ? sd.peRatio.toFixed(1) : '--'}</span>
+                        </div>
+                        <div class="stock-card-metric-item">
+                            <span class="stock-card-metric-label">52W High</span>
+                            <span class="stock-card-metric-value">${sd.high52 ? '$' + sd.high52.toFixed(2) : '--'}</span>
+                        </div>
+                        <div class="stock-card-metric-item">
+                            <span class="stock-card-metric-label">52W Low</span>
+                            <span class="stock-card-metric-value">${sd.low52 ? '$' + sd.low52.toFixed(2) : '--'}</span>
+                        </div>
+                    </div>
+                `;
+
             case 'url':
                 // 嘗試顯示漂亮的連結
                 try {
@@ -1367,7 +1505,25 @@ PostIt.Board = (function () {
             
             // 如果儲存的內容跟原始內容 (note.content) 相比有發生改變（包含我們主動把他清理掉 URL 的情況）
             if (newContent !== (note?.content || '')) {
-                PostIt.Note.updateContent(noteId, newContent);
+                // 偵測是否為純股票代碼 (例如 TSLA 或 $AAPL)
+                const trimmedContent = newContent.trim();
+                const stockMatch = trimmedContent.match(/^\$?([A-Z]{1,5})$/);
+                
+                if (stockMatch) {
+                    // 自動轉換為股票卡片
+                    PostIt.Note.updateNote(noteId, { content: trimmedContent, type: 'stock_card' });
+                    // 通知 StockAlert 抓取 profile & chart 資料
+                    if (typeof PostIt.StockAlert !== 'undefined' && PostIt.StockAlert.fetchCardData) {
+                        PostIt.StockAlert.fetchCardData(noteId, stockMatch[1]);
+                    }
+                } else {
+                    // 一般更新
+                    PostIt.Note.updateContent(noteId, newContent);
+                    // 若原本是 stock_card 但現在不是了，要把它還原成普通文字
+                    if (note?.type === 'stock_card') {
+                        PostIt.Note.updateNote(noteId, { type: 'text' });
+                    }
+                }
                 
                 // AI 背景語意解析
                 if (typeof PostIt.AI !== 'undefined') {
@@ -1849,6 +2005,14 @@ PostIt.Board = (function () {
     function applyNoteStyle(el, note) {
         const style = PostIt.Settings.getEffective(note);
         const contentEl = el.querySelector('.note-content');
+        
+        // Stock Card 專屬樣式判定
+        if (note.type === 'stock_card') {
+            el.classList.add('stock-card-note');
+        } else {
+            el.classList.remove('stock-card-note');
+        }
+
         if (!contentEl) return;
 
         contentEl.style.fontFamily = `'${style.fontFamily}', cursive`;

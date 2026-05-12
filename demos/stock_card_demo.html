@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Card Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --green: #10b981;
+            --red: #ef4444;
+            --bg-color: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            background-color: #f3f4f6;
+            background-image: radial-gradient(#d1d5db 1px, transparent 1px);
+            background-size: 20px 20px;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .stock-card {
+            width: 320px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.4);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .stock-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12), 0 5px 15px rgba(0, 0, 0, 0.06);
+        }
+
+        /* 背景浮水印 */
+        .watermark {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            width: 150px;
+            height: 150px;
+            opacity: 0.03;
+            pointer-events: none;
+            filter: grayscale(100%);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .logo-symbol-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .company-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            padding: 2px;
+        }
+
+        .symbol-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .symbol {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+        }
+
+        .company-name {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 160px;
+        }
+
+        .price-section {
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .current-price {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1;
+            letter-spacing: -1px;
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .currency {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .price-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-top: 8px;
+        }
+
+        .price-change.up {
+            color: var(--green);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .price-change.down {
+            color: var(--red);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 80px;
+            margin: 16px 0;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* SVG Chart Styles */
+        .sparkline {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .sparkline-path {
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .sparkline-area {
+            opacity: 0.1;
+        }
+
+        .sparkline.up .sparkline-path { stroke: var(--green); }
+        .sparkline.up .sparkline-area { fill: url(#gradient-up); }
+        .sparkline.down .sparkline-path { stroke: var(--red); }
+        .sparkline.down .sparkline-area { fill: url(#gradient-down); }
+
+        .pulse-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            right: -4px;
+            transform: translateY(-50%);
+            z-index: 3;
+        }
+        
+        .sparkline.up ~ .pulse-dot { background: var(--green); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); animation: pulse-green 2s infinite; }
+        .sparkline.down ~ .pulse-dot { background: var(--red); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); animation: pulse-red 2s infinite; }
+
+        @keyframes pulse-green {
+            0% { transform: translateY(-50%) scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: translateY(-50%) scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: translateY(-50%) scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        @keyframes pulse-red {
+            0% { transform: translateY(-50%) scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: translateY(-50%) scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { transform: translateY(-50%) scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .metric-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .recommendation {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            z-index: 3;
+        }
+        .recommendation.buy { color: #fff; background: var(--green); }
+        .recommendation.hold { color: #fff; background: #f59e0b; }
+        .recommendation.sell { color: #fff; background: var(--red); }
+
+        /* Dark mode variant (for the demo, we can just show a button to toggle, or put two side by side) */
+        .dark-card {
+            background: rgba(30, 41, 59, 0.95);
+            border-color: rgba(255,255,255,0.1);
+        }
+        .dark-card .symbol, .dark-card .current-price, .dark-card .metric-value {
+            color: #f8fafc;
+        }
+        .dark-card .company-name, .dark-card .currency, .dark-card .metric-label {
+            color: #94a3b8;
+        }
+        .dark-card .company-logo {
+            background: #1e293b;
+            border-color: #334155;
+        }
+
+        .cards-container {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="cards-container">
+        <!-- Light Card (TSLA - Up) -->
+        <div class="stock-card">
+            <img src="https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/TSLA.svg" class="watermark" alt="watermark">
+            
+            <div class="recommendation buy"><i class="fa-solid fa-fire"></i> STRONG BUY</div>
+
+            <div class="header">
+                <div class="logo-symbol-container">
+                    <img src="https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/TSLA.svg" class="company-logo" alt="TSLA">
+                    <div class="symbol-info">
+                        <div class="symbol">TSLA</div>
+                        <div class="company-name">Tesla, Inc.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="price-section">
+                <div class="current-price"><span class="currency">$</span>433.45</div>
+                <div class="price-change up">
+                    <i class="fa-solid fa-arrow-trend-up"></i>
+                    +$12.50 (2.97%)
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <svg class="sparkline up" viewBox="0 0 280 80" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="gradient-up" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#10b981" stop-opacity="0.3"></stop>
+                            <stop offset="100%" stop-color="#10b981" stop-opacity="0"></stop>
+                        </linearGradient>
+                    </defs>
+                    <path class="sparkline-area" d="M0,80 L0,70 L20,65 L40,68 L60,50 L80,55 L100,40 L120,45 L140,20 L160,30 L180,10 L200,25 L220,15 L240,5 L260,15 L280,0 L280,80 Z"></path>
+                    <path class="sparkline-path" d="M0,70 L20,65 L40,68 L60,50 L80,55 L100,40 L120,45 L140,20 L160,30 L180,10 L200,25 L220,15 L240,5 L260,15 L280,0"></path>
+                </svg>
+                <div class="pulse-dot" style="top: 0px;"></div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <span class="metric-label">Market Cap</span>
+                    <span class="metric-value">1.35T</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">P/E Ratio</span>
+                    <span class="metric-value">75.4</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">52W High</span>
+                    <span class="metric-value">$447.80</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">52W Low</span>
+                    <span class="metric-value">$167.50</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dark Card (AAPL - Down) -->
+        <div class="stock-card dark-card">
+            <img src="https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/AAPL.svg" class="watermark" alt="watermark">
+            
+            <div class="recommendation hold"><i class="fa-solid fa-minus"></i> HOLD</div>
+
+            <div class="header">
+                <div class="logo-symbol-container">
+                    <img src="https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/AAPL.svg" class="company-logo" alt="AAPL">
+                    <div class="symbol-info">
+                        <div class="symbol">AAPL</div>
+                        <div class="company-name">Apple Inc.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="price-section">
+                <div class="current-price"><span class="currency">$</span>168.22</div>
+                <div class="price-change down">
+                    <i class="fa-solid fa-arrow-trend-down"></i>
+                    -$3.15 (1.84%)
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <svg class="sparkline down" viewBox="0 0 280 80" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="gradient-down" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#ef4444" stop-opacity="0.3"></stop>
+                            <stop offset="100%" stop-color="#ef4444" stop-opacity="0"></stop>
+                        </linearGradient>
+                    </defs>
+                    <path class="sparkline-area" d="M0,80 L0,10 L20,15 L40,5 L60,25 L80,20 L100,40 L120,35 L140,50 L160,45 L180,60 L200,55 L220,75 L240,65 L260,80 L280,75 L280,80 Z"></path>
+                    <path class="sparkline-path" d="M0,10 L20,15 L40,5 L60,25 L80,20 L100,40 L120,35 L140,50 L160,45 L180,60 L200,55 L220,75 L240,65 L260,80 L280,75"></path>
+                </svg>
+                <div class="pulse-dot" style="top: 75px;"></div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <span class="metric-label">Market Cap</span>
+                    <span class="metric-value">2.61T</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">P/E Ratio</span>
+                    <span class="metric-value">26.3</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">52W High</span>
+                    <span class="metric-value">$199.62</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">52W Low</span>
+                    <span class="metric-value">$164.08</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

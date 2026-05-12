@@ -3696,3 +3696,260 @@ body.pin-mode {
     50% { opacity: 1; }
 }
 /* === Timer Progress Bar END === */
+
+/* === Stock Card UI START === */
+.sticky-note.stock-card-note {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.4) !important;
+    padding: 20px !important;
+    overflow: hidden;
+    width: 320px; /* 固定寬度，或是讓內容撐開 */
+    min-height: 250px;
+}
+
+.sticky-note.stock-card-note::before,
+.sticky-note.stock-card-note::after {
+    display: none !important; /* 隱藏原本便利貼的陰影與捲角 */
+}
+
+.sticky-note.stock-card-note .note-tape {
+    display: none !important; /* 隱藏原本的膠帶 */
+}
+
+/* 確保內容區域佔滿 */
+.sticky-note.stock-card-note .note-content {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    cursor: default;
+    font-family: 'Inter', sans-serif;
+}
+
+.stock-card-watermark {
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 150px;
+    height: 150px;
+    opacity: 0.03;
+    pointer-events: none;
+    filter: grayscale(100%);
+    z-index: 1;
+}
+
+.stock-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 2;
+}
+
+.stock-card-logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.stock-card-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    padding: 2px;
+}
+
+.stock-card-symbol-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stock-card-symbol {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1f2937;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+}
+
+.stock-card-company-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+}
+
+.stock-card-price-section {
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 2;
+}
+
+.stock-card-current-price {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1f2937;
+    line-height: 1;
+    letter-spacing: -1px;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.stock-card-currency {
+    font-size: 16px;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.stock-card-price-change {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin-top: 8px;
+}
+
+.stock-card-price-change.up {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.stock-card-price-change.down {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.stock-card-chart-container {
+    width: 100%;
+    height: 80px;
+    margin: 16px 0;
+    position: relative;
+    z-index: 2;
+}
+
+.stock-card-sparkline {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.stock-card-sparkline-path {
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.stock-card-sparkline-area {
+    opacity: 0.1;
+}
+
+.stock-card-sparkline.up .stock-card-sparkline-path { stroke: #10b981; }
+.stock-card-sparkline.up .stock-card-sparkline-area { fill: url(#gradient-up); }
+.stock-card-sparkline.down .stock-card-sparkline-path { stroke: #ef4444; }
+.stock-card-sparkline.down .stock-card-sparkline-area { fill: url(#gradient-down); }
+
+.stock-card-pulse-dot {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    right: -4px;
+    transform: translateY(-50%);
+    z-index: 3;
+}
+
+.stock-card-sparkline.up ~ .stock-card-pulse-dot { background: #10b981; animation: pulse-green 2s infinite; }
+.stock-card-sparkline.down ~ .stock-card-pulse-dot { background: #ef4444; animation: pulse-red 2s infinite; }
+
+@keyframes pulse-green {
+    0% { transform: translateY(-50%) scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: translateY(-50%) scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    100% { transform: translateY(-50%) scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+@keyframes pulse-red {
+    0% { transform: translateY(-50%) scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { transform: translateY(-50%) scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    100% { transform: translateY(-50%) scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.stock-card-metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+    position: relative;
+    z-index: 2;
+}
+
+.stock-card-metric-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.stock-card-metric-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stock-card-metric-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.stock-card-recommendation {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    z-index: 3;
+}
+.stock-card-recommendation.buy { color: #fff; background: #10b981; }
+.stock-card-recommendation.hold { color: #fff; background: #f59e0b; }
+.stock-card-recommendation.sell { color: #fff; background: #ef4444; }
+
+/* 針對黑暗模式（白板深色主題或自訂深色卡片）的適配，若未來需要可擴充 */
+.sticky-note.stock-card-note.dark-card {
+    background: rgba(30, 41, 59, 0.95) !important;
+    border-color: rgba(255,255,255,0.1) !important;
+}
+.sticky-note.stock-card-note.dark-card .stock-card-symbol, 
+.sticky-note.stock-card-note.dark-card .stock-card-current-price, 
+.sticky-note.stock-card-note.dark-card .stock-card-metric-value {
+    color: #f8fafc;
+}
+.sticky-note.stock-card-note.dark-card .stock-card-company-name, 
+.sticky-note.stock-card-note.dark-card .stock-card-currency, 
+.sticky-note.stock-card-note.dark-card .stock-card-metric-label {
+    color: #94a3b8;
+}
+.sticky-note.stock-card-note.dark-card .stock-card-logo {
+    background: #1e293b;
+    border-color: #334155;
+}
+/* === Stock Card UI END === */

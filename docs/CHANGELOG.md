@@ -15,6 +15,11 @@
 
 
 
+
+## [2.4.66] - 2026-05-12
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   更新 style、board_v2、stock_alert 模組
 ## [2.4.65] - 2026-05-12
 
 ### 🔧 優化與修正 (Improved & Fixed)
