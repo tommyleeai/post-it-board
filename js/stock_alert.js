@@ -7,7 +7,9 @@ PostIt.StockAlert = (function () {
     'use strict';
 
     // --- 設定 ---
-    const API_BASE = 'https://deals.tommylee.ai';
+    const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://127.0.0.1:8000'
+        : 'https://deals.tommylee.ai';
     const STORAGE_KEY_FREQ_MARKET = 'stockAlert_freq_market';   // 開盤輪詢頻率
     const STORAGE_KEY_FREQ_AFTER = 'stockAlert_freq_after';     // 盤後輪詢頻率
     const STORAGE_KEY_TOKEN = 'stockAlert_apiToken';            // API Token
@@ -30,10 +32,12 @@ PostIt.StockAlert = (function () {
     function getAfterHoursFreq() {
         return localStorage.getItem(STORAGE_KEY_FREQ_AFTER) || '5min';
     }
+    // 內建 token（與 deal_notifier 共用的 external API token）
+    const DEFAULT_API_TOKEN = 'y9oBzyD2kDdXaQEKopp-ZQsan2uTXPes3PkFEnvdRfo';
+
     function getApiToken() {
-        // 優先讀 stockAlert 專屬 token，否則沿用 deal_notifier 的 token
-        return localStorage.getItem(STORAGE_KEY_TOKEN) ||
-               localStorage.getItem('superDeal_apiToken') || '';
+        // 優先讀使用者自訂 token，否則用內建預設
+        return localStorage.getItem(STORAGE_KEY_TOKEN) || DEFAULT_API_TOKEN;
     }
     function setMarketFreq(freq) {
         localStorage.setItem(STORAGE_KEY_FREQ_MARKET, freq);
