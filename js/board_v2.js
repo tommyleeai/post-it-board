@@ -1505,16 +1505,17 @@ PostIt.Board = (function () {
             
             // 如果儲存的內容跟原始內容 (note.content) 相比有發生改變（包含我們主動把他清理掉 URL 的情況）
             if (newContent !== (note?.content || '')) {
-                // 偵測是否為純股票代碼 (例如 TSLA 或 $AAPL)
+                // 偵測是否為純股票代碼 (例如 TSLA、tsla 或 $AAPL)
                 const trimmedContent = newContent.trim();
-                const stockMatch = trimmedContent.match(/^\$?([A-Z]{1,5})$/);
+                const stockMatch = trimmedContent.match(/^\$?([a-zA-Z]{1,5})$/);
                 
                 if (stockMatch) {
+                    const symbol = stockMatch[1].toUpperCase();
                     // 自動轉換為股票卡片
-                    PostIt.Note.updateNote(noteId, { content: trimmedContent, type: 'stock_card' });
+                    PostIt.Note.updateNote(noteId, { content: symbol, type: 'stock_card' });
                     // 通知 StockAlert 抓取 profile & chart 資料
                     if (typeof PostIt.StockAlert !== 'undefined' && PostIt.StockAlert.fetchCardData) {
-                        PostIt.StockAlert.fetchCardData(noteId, stockMatch[1]);
+                        PostIt.StockAlert.fetchCardData(noteId, symbol);
                     }
                 } else {
                     // 一般更新
