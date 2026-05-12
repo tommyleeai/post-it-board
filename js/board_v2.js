@@ -644,8 +644,8 @@ PostIt.Board = (function () {
         el.style.left = x + 'px';
         el.style.top = y + 'px';
 
-        // 旋轉
-        const rotation = note.rotation || 0;
+        // 旋轉 (股票卡片強制為 0，不可歪斜)
+        const rotation = (note.type === 'stock_card') ? 0 : (note.rotation || 0);
         el.style.setProperty('--note-rotation', rotation + 'deg');
         el.style.transform = `rotate(${rotation}deg)`;
 
@@ -1340,7 +1340,7 @@ PostIt.Board = (function () {
                 }
 
                 const logoHtml = sd.logo ? `<img src="${escapeHtml(sd.logo)}" class="stock-card-logo" alt="${symbol}">` : `<div class="stock-card-logo"></div>`;
-                const watermarkHtml = sd.logo ? `<img src="${escapeHtml(sd.logo)}" class="stock-card-watermark" alt="watermark">` : '';
+                const watermarkHtml = sd.logo ? `<div style="position:absolute; top:0; left:0; width:100%; height:100%; overflow:hidden; border-radius:16px; pointer-events:none; z-index:0;"><img src="${escapeHtml(sd.logo)}" class="stock-card-watermark" alt="watermark"></div>` : '';
 
                 // 組裝 HTML
                 return `
@@ -1515,8 +1515,8 @@ PostIt.Board = (function () {
                 
                 if (stockMatch) {
                     const symbol = stockMatch[1].toUpperCase();
-                    // 自動轉換為股票卡片
-                    PostIt.Note.updateNote(noteId, { content: symbol, type: 'stock_card' });
+                    // 自動轉換為股票卡片 (強制扶正)
+                    PostIt.Note.updateNote(noteId, { content: symbol, type: 'stock_card', rotation: 0 });
                     // 通知 StockAlert 抓取 profile & chart 資料
                     if (typeof PostIt.StockAlert !== 'undefined' && PostIt.StockAlert.fetchCardData) {
                         PostIt.StockAlert.fetchCardData(noteId, symbol);

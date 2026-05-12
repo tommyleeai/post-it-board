@@ -3705,7 +3705,7 @@ body.pin-mode {
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.4) !important;
     padding: 20px !important;
-    overflow: hidden;
+    overflow: visible !important;
     width: 320px; /* 固定寬度，或是讓內容撐開 */
     min-height: 250px;
 }
