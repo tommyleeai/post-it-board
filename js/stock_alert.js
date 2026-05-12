@@ -7,7 +7,7 @@ PostIt.StockAlert = (function () {
     'use strict';
 
     // --- 設定 ---
-    const API_BASE = 'https://deals.tommylee.ai';
+    const API_BASE = 'https://smart.tdeals.cc';
     const STORAGE_KEY_FREQ_MARKET = 'stockAlert_freq_market';   // 開盤輪詢頻率
     const STORAGE_KEY_FREQ_AFTER = 'stockAlert_freq_after';     // 盤後輪詢頻率
     const STORAGE_KEY_TOKEN = 'stockAlert_apiToken';            // API Token

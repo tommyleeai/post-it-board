@@ -3,7 +3,7 @@ window.PostIt = window.PostIt || {};
 PostIt.DealNotifier = (function () {
     'use strict';
 
-    const API_URL = 'https://deals.tommylee.ai/api/external/deal_radar?token=y9oBzyD2kDdXaQEKopp-ZQsan2uTXPes3PkFEnvdRfo';
+    const API_URL = 'https://smart.tdeals.cc/api/external/deal_radar?token=y9oBzyD2kDdXaQEKopp-ZQsan2uTXPes3PkFEnvdRfo';
     const POLL_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
     const STORAGE_KEY = 'postit_last_super_deal_id';
     let timer = null;
