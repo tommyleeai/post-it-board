@@ -72,7 +72,24 @@ if (finalParts.length !== 3 || finalParts.some(isNaN)) {
 }
 
 if (!message) {
-    message = `Hotfix and minor updates for v${newVer}`;
+    // 自動偵測修改的檔案來產生有意義的更新描述
+    try {
+        const diffFiles = execSync('git diff --name-only HEAD', { cwd: rootDir, encoding: 'utf8' }).trim();
+        if (diffFiles) {
+            const files = diffFiles.split('\n')
+                .filter(f => !f.startsWith('backups/') && !f.includes('changelog') && !f.includes('package.json'))
+                .map(f => path.basename(f, path.extname(f)));
+            const unique = [...new Set(files)].slice(0, 3);
+            if (unique.length > 0) {
+                message = `更新 ${unique.join('、')} 模組`;
+            }
+        }
+    } catch (e) { /* ignore */ }
+    if (!message) {
+        message = `v${newVer} 維護更新`;
+    }
+    log(`⚠️ 未指定更新訊息，已自動產生：「${message}」`);
+    log(`   建議使用: node scripts/deploy.js [版本] "詳細的更新描述"`);
 }
 
 log(`即將更新至版本: ${newVer}`);
