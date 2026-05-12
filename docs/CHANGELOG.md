@@ -53,31 +53,40 @@
 ## [2.4.54] - 2026-05-12
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.4.54
+*   **移除 y-webrtc 依賴**：完全移除 WebRTC P2P 連線模組（已無作用），消除 macOS Safari 彈出「存取裝置上其他應用程式和服務」的權限提示
+
 ## [2.4.53] - 2026-05-12
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   \
+*   **鬧鐘系統遷移至 Yjs V3**：移除舊版 Firestore `onSnapshot` 監聽器，改為從 Yjs `notesCache` 記憶體讀取鬧鐘資料，每秒同步一次
+*   **舊版圖片遷移修正**：`board_v2.js` 中的圖片 URL 遷移改用 Yjs 寫入，不再依賴已棄用的 Firestore `notes` 子集合
+
 ## [2.4.52] - 2026-05-12
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   \
+*   **好物雷達卡片新增時間戳記**：Super Deal 卡片底部顯示建立時間（MM/DD HH:mm 格式），附帶時鐘圖示
+*   **語音播報精簡化**：好物雷達語音通知移除商品名稱朗讀（避免中英文夾雜口音問題），僅播報「警報！超級好物出現啦！」
+
 ## [2.4.51] - 2026-05-11
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   \
+*   **Admin 活動動態重構**：活動動態改為優先顯示 Yjs V3 的 `yjs_updatedAt` 白板級別活動，取代已過時的舊版 Note 級別紀錄
+*   **白板資訊擴充**：在白板清單中加入 Yjs 最後同步時間，提供更精確的使用者活躍度參考
+
 ## [2.4.50] - 2026-05-11
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   \
+*   **Admin 最後活躍時間修正**：使用者的「最後活躍時間」改為讀取 V3 Yjs 的 `yjs_updatedAt` 時間戳，解決遷移後活動時間停留在舊版資料的問題
+
 ## [2.4.49] - 2026-05-11
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   \
+*   **時間格式擴充**：Admin 後台的相對時間顯示新增「週」和「月」單位，超過 7 天不再直接跳到完整日期
+
 ## [2.4.48] - 2026-05-11
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   \
+*   **Admin 後台維護更新**：後台介面穩定性修正與快取版本同步
 ## [2.4.47] - 2026-05-07
 
 ### 🔧 優化與修正 (Improved & Fixed)
@@ -89,55 +98,55 @@
 ## [2.4.45] - 2026-05-07
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.4.45
+*   **群組拖曳功能完整還原**：恢復 `createFanDragHandler` 中的 `pointermove` 拖曳邏輯與脫離群組機制，支援從展開群組中拖出單張便利貼
 ## [2.4.44] - 2026-05-06
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.4.44
+*   **Yjs 同步改為即時監聽**：將 Firestore 雲端同步從單次拉取改為 `onSnapshot` 即時監聽，確保多分頁/多裝置在 WebRTC 斷線時仍能同步
 ## [2.4.43] - 2026-05-06
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.4.43
+*   **群組收合時清除升起狀態**：修復收合群組後，升起的卡片殘留 `group-expanded-lifted` 樣式的問題
 ## [2.4.42] - 2026-05-06
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.4.42
+*   **升起卡片 z-index 調降**：將 `group-expanded-lifted` 的 z-index 從 999999 降至 899999，避免覆蓋系統級 UI 元素
 ## [2.4.41] - 2026-05-05
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.4.41
+*   **群組展開互動簡化重構**：移除 `createFanDragHandler` 中的拖曳邏輯，改為純點擊互動（升起/開啟燈箱），修復升起卡片時 hover 放大效果衝突
 ## [2.4.40] - 2026-05-05
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.4.40
+*   **群組拖曳升起補償修正**：修正升起狀態的便利貼拖曳時，因 CSS `translateY(-50%)` 造成的位移偏差，改為補償卡片高度的 50%
 ## [2.4.39] - 2026-05-05
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.4.39
+*   **還原群組拖曳功能**：還原 v2.4.38 中被移除的群組展開拖曳邏輯（CSS/JS 雙向恢復），解決群組內卡片無法操作的退化問題
 ## [2.4.38] - 2026-05-05
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.4.38
+*   **群組展開互動精簡**：暫時移除群組展開時的拖曳邏輯，降低 UI 複雜度（後續在 v2.4.39 還原）
 ## [2.4.37] - 2026-05-05
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.4.37
+*   **群組展開拖曳雙擊互動**：新增 `createFanDragHandler` 的雙擊機制（第一下升起、第二下開燈箱），並使用展開後的 fanPos 取代舊版 expandedOriginalPos 避免跳位
 ## [2.4.36] - 2026-05-05
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.4.36
+*   **還原群組展開拖曳**：還原 v2.4.35 中加入的 `drag.js` 群組展開隔離邏輯（因影響其他功能而回退）
 ## [2.4.35] - 2026-05-05
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.4.35
+*   **圖片複製 Toast 位置跟隨游標**：右鍵複製圖片時，Toast 提示改為顯示在滑鼠位置旁（而非固定底部），更直覺
 ## [2.4.34] - 2026-05-05
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.4.34
+*   **全域右鍵選單攔截**：攔截白板上所有非文字輸入區域的右鍵預設選單，讓自訂右鍵互動（如群組展開/收合、圖片複製）正常運作
 ## [2.4.33] - 2026-05-05
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   Hotfix and minor updates for v2.4.33
+*   **圖片複製 CORS 修正**：修復因 Firebase Storage CORS 設定不完整導致的圖片複製失敗問題
 ## [2.4.32] - 2026-05-05
 
 ### 🔧 優化與修正 (Improved & Fixed)
