@@ -168,6 +168,10 @@ PostIt.StockAlert = (function () {
             const noteEl = document.querySelector(`.sticky-note[data-note-id="${noteId}"]`);
             if (noteEl) {
                 noteEl.classList.add('alarming');
+                // 震動 8 秒後自動停止，避免一直震個不停
+                setTimeout(() => {
+                    if (noteEl) noteEl.classList.remove('alarming');
+                }, 8000);
             }
         }
 
