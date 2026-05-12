@@ -1241,7 +1241,12 @@ PostIt.Board = (function () {
             // 針對舊版未攜帶 imageUrl 的相片，悄悄執行資料庫結構遷移
             if (migratedUrl && !note.imageUrl) {
                 try {
-                    await PostIt.Note.getNotesRef().doc(noteId).update({ imageUrl: migratedUrl });
+                    // V3: 透過 Yjs 寫入 imageUrl
+                    const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
+                    if (yNotesMap) {
+                        const yNote = yNotesMap.get(noteId);
+                        if (yNote) yNote.set('imageUrl', migratedUrl);
+                    }
                     // 此後 note.imageUrl 已存在，就不再依賴 content 欄位儲存 URL
                 } catch (e) {
                     console.error('舊版相片遷移失敗:', e);

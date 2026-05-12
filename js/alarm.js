@@ -1,4 +1,4 @@
-// ============================================
+﻿// ============================================
 // 時效性鬧鐘與提醒管理 (Alarm System)
 // ============================================
 PostIt.Alarm = (function () {
@@ -128,21 +128,12 @@ PostIt.Alarm = (function () {
             noteEl.style.transform = '';
             noteEl.classList.add('alarming');
         } else {
-            // 便利貼不在當前白板畫面上，彈出全域 Toast 提示並提供切換按鈕
-            const noteData = globalNotesCache[noteId];
+            // 便利貼不在當前畫面上，彈出 Toast
+            const noteData = PostIt.Note ? PostIt.Note.getNote(noteId) : null;
             if (noteData && typeof PostIt.Board !== 'undefined') {
                 const txt = String(noteData.content || '提醒').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 const snippet = txt.length > 15 ? txt.substring(0, 15) + '...' : txt;
-                PostIt.Board.showToast(`⏱️ 【白板: ${noteData.boardName}】時間到！\n${snippet}`, 'info', {
-                    label: '前往',
-                    onClick: () => {
-                        if (typeof PostIt.BoardModel !== 'undefined') {
-                            PostIt.BoardModel.setActive(noteData.boardId);
-                            // 重整或依靠 onSwitch 更新畫面 (這裡最簡單是重整確保乾淨)
-                            window.location.reload();
-                        }
-                    }
-                }, 0); // duration=0 代表常駐直到點擊或按鍵
+                PostIt.Board.showToast(`⏱️ 時間到！\n${snippet}`, 'info', null, 0);
             }
         }
         
@@ -218,7 +209,7 @@ PostIt.Alarm = (function () {
                     if (noteData.eventTime) {
                         var alertMs = parseLocalTime(noteData.alertTime);
                         var eventMs = parseLocalTime(noteData.eventTime);
-                        var diffMs = eventMs - alertMs; // alertTime 與 eventTime 的差距
+                        var diffMs = eventMs - alertMs;
                         var nextAlertMs = parseLocalTime(nextAlert);
                         var nd = new Date(nextAlertMs + diffMs);
                         var yyyy = nd.getFullYear();
@@ -229,15 +220,15 @@ PostIt.Alarm = (function () {
                         var ss = String(nd.getSeconds()).padStart(2, '0');
                         nextEvent = yyyy + '-' + mm + '-' + dd + 'T' + hh + ':' + mi + ':' + ss;
                     }
-                    // 更新 Firestore 為下一次觸發，保持 pending 狀態
-                    var ref = PostIt.Note.getNotesRef ? PostIt.Note.getNotesRef() : null;
-                    if (ref) {
-                        ref.doc(noteId).update({
-                            alertTime: nextAlert,
-                            eventTime: nextEvent,
-                            reminderStatus: 'pending'
-                        }).catch(function(e) { console.error('[Alarm] 更新重複提醒失敗:', e); });
-                    }
+                    // V3: 透過 Yjs 寫入下一次觸發時間
+                    PostIt.Note.updateReminderLogic(noteId, {
+                        alertTime: nextAlert,
+                        eventTime: nextEvent,
+                        reason: noteData.aiReason || '',
+                        repeatRule: noteData.repeatRule,
+                        needsClarification: false,
+                        clarificationQuestion: ''
+                    });
                     console.log('[Alarm] 重複提醒已排程下一次:', nextAlert);
                     if (typeof PostIt.Board !== 'undefined') {
                         PostIt.Board.showToast('⏰ 下次提醒：' + nextAlert.replace('T', ' '), 'info');
@@ -252,8 +243,45 @@ PostIt.Alarm = (function () {
         }
     }
 
-    // 主巡迴邏輯 (每秒檢查一次，完全避免 setInterval 漂移或漏掉)
+    // V3: 從 Yjs notesCache 同步鬧鐘資料（取代已廢棄的 Firestore onSnapshot）
+    function syncFromCache() {
+        if (!PostIt.Note || typeof PostIt.Note.getCache !== 'function') return;
+        const cache = PostIt.Note.getCache();
+        const currentIds = new Set(Object.keys(cache));
+
+        // 掃描所有 note，註冊/更新有 alertTime 的
+        for (const [id, note] of Object.entries(cache)) {
+            if (!note.alertTime || note.reminderStatus === 'acknowledged') {
+                if (activeNotes[id]) delete activeNotes[id];
+                if (ringingNotes.has(id)) dismissAlarm(id);
+                continue;
+            }
+            const targetTimeMs = parseLocalTime(note.alertTime);
+            activeNotes[id] = targetTimeMs;
+
+            // 即將到期（60分鐘內），加上 urgent-note class
+            const noteEl = document.querySelector(`.sticky-note[data-note-id="${id}"]`);
+            if (noteEl) {
+                const msLeft = targetTimeMs - Date.now();
+                const isUrgent = msLeft > 0 && msLeft <= 60 * 60 * 1000;
+                noteEl.classList.toggle('urgent-note', isUrgent);
+            }
+        }
+
+        // 清理已被刪除的 note
+        for (const id of Object.keys(activeNotes)) {
+            if (!currentIds.has(id)) {
+                delete activeNotes[id];
+                if (ringingNotes.has(id)) dismissAlarm(id);
+            }
+        }
+    }
+
+    // 主巡迴邏輯 (每秒檢查一次)
     setInterval(() => {
+        // V3: 每秒從 Yjs 記憶體同步鬧鐘資料
+        syncFromCache();
+
         const nowMs = Date.now();
         for (const [id, targetTimeMs] of Object.entries(activeNotes)) {
             if (nowMs >= targetTimeMs && !ringingNotes.has(id)) {
@@ -270,108 +298,29 @@ PostIt.Alarm = (function () {
         }
     }, 1000);
 
-    let globalNotesCache = {}; // { noteId: { boardId, boardName, title, ...noteData } }
-    let boardUnsubscribes = {}; // { boardId: unsubscribeFn }
-
-    // 初始化全域監聽器（由 board.js 的 renderSidebar 呼叫）
-    function initGlobalListeners(boardsCache) {
-        if (!PostIt.Auth || !PostIt.Firebase) return;
-        const db = PostIt.Firebase.getDb();
-        const uid = PostIt.Auth.getUid();
-        if (!db || !uid) return;
-
-        const currentBoardIds = new Set(Object.keys(boardsCache));
-
-        // 1. 清理已經被刪除的白板監聽器與記憶的鬧鐘
-        for (const boardId in boardUnsubscribes) {
-            if (!currentBoardIds.has(boardId)) {
-                boardUnsubscribes[boardId](); // 取消監聽
-                delete boardUnsubscribes[boardId];
-                
-                for (const noteId in globalNotesCache) {
-                    if (globalNotesCache[noteId].boardId === boardId) {
-                        delete globalNotesCache[noteId];
-                        delete activeNotes[noteId];
-                        if (ringingNotes.has(noteId)) dismissAlarm(noteId);
-                    }
-                }
-            }
-        }
-
-        // 2. 為存在且尚未監聽的白板建立監聽器
-        for (const [boardId, boardData] of Object.entries(boardsCache)) {
-            if (!boardUnsubscribes[boardId]) {
-                const ref = db.collection('users').doc(uid).collection('boards').doc(boardId).collection('notes');
-                // 監聽該白板所有的筆記（數量上限50非常小，不會造成效能問題）
-                boardUnsubscribes[boardId] = ref.onSnapshot(snap => {
-                    const existingIdsThisBoard = new Set();
-                    
-                    snap.forEach(doc => {
-                        existingIdsThisBoard.add(doc.id);
-                        const note = doc.data();
-                        note.id = doc.id;
-                        
-                        globalNotesCache[doc.id] = {
-                            ...note,
-                            boardId: boardId,
-                            boardName: boardData.name
-                        };
-
-                        if (!note.alertTime || note.reminderStatus === 'acknowledged') {
-                             if (activeNotes[doc.id]) delete activeNotes[doc.id];
-                             if (ringingNotes.has(doc.id)) dismissAlarm(doc.id);
-                             return;
-                        }
-
-                        const targetTimeMs = parseLocalTime(note.alertTime);
-                        activeNotes[doc.id] = targetTimeMs;
-                        
-                        if (Date.now() >= targetTimeMs && !ringingNotes.has(doc.id)) {
-                            triggerAlarm(doc.id);
-                        }
-
-                        // 如果在當前畫面上，且即將到期（60分鐘內），加上 urgent-note class
-                        const noteEl = document.querySelector(`.sticky-note[data-note-id="${doc.id}"]`);
-                        if (noteEl) {
-                            const msLeft = targetTimeMs - Date.now();
-                            const isUrgent = msLeft > 0 && msLeft <= 60 * 60 * 1000;
-                            noteEl.classList.toggle('urgent-note', isUrgent);
-                        }
-                    });
-
-                    // 清理在該白板但已經被刪除的筆記
-                    for (const noteId in globalNotesCache) {
-                        if (globalNotesCache[noteId].boardId === boardId && !existingIdsThisBoard.has(noteId)) {
-                            delete globalNotesCache[noteId];
-                            delete activeNotes[noteId];
-                            if (ringingNotes.has(noteId)) dismissAlarm(noteId);
-                        }
-                    }
-                });
-            }
-        }
+    // 初始化（保留原介面供 board_v2.js 呼叫，但不再需要 Firestore 監聽）
+    function initGlobalListeners(/* boardsCache - 不再需要 */) {
+        // V3: 鬧鐘資料完全由 setInterval + syncFromCache() 驅動
+        // 此函數保留介面以避免呼叫端報錯
+        console.log('[Alarm] V3 模式：鬧鐘已由 Yjs 記憶體驅動，無需 Firestore 監聽');
     }
 
-    // 登出時清空所有監聽器
+    // 登出時清空
     function cleanup() {
-        for (const boardId in boardUnsubscribes) {
-            boardUnsubscribes[boardId]();
-        }
-        boardUnsubscribes = {};
-        globalNotesCache = {};
         activeNotes = {};
-        for(const id of ringingNotes) dismissAlarm(id);
+        for (const id of ringingNotes) dismissAlarm(id);
         ringingNotes.clear();
         stopBeep();
     }
+
     // 供除錯用：查看目前運行中的計時器
     function debug() {
         const count = Object.keys(activeNotes).length;
         console.log(`[Alarm] 目前共有 ${count} 個計時器在背景運行中。`);
         
         const tableData = Object.keys(activeNotes).map(id => {
-            const noteEl = document.querySelector(`.sticky-note[data-note-id="${id}"]`);
-            const content = noteEl ? noteEl.querySelector('.note-content').innerText.replace(/\n/g, ' ') : '找不到卡片內容';
+            const note = PostIt.Note ? PostIt.Note.getNote(id) : null;
+            const content = note ? String(note.content || '').replace(/\n/g, ' ') : '找不到卡片內容';
             const alertTime = new Date(activeNotes[id]).toLocaleString();
             return {
                 '卡片內容': content.length > 15 ? content.substring(0, 15) + '...' : content,
@@ -388,3 +337,4 @@ PostIt.Alarm = (function () {
 
     return { initGlobalListeners, dismissAlarm, debug, cleanup };
 })();
+
