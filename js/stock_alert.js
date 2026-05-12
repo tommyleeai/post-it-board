@@ -369,6 +369,21 @@ PostIt.StockAlert = (function () {
         if (getActiveAlerts().length > 0) {
             startPolling();
         }
+
+        // 開機自動刷新所有股票卡片 (不管有無設定監控)，確保每次開啟網頁都是最新資料
+        setTimeout(() => {
+            if (typeof PostIt.Note !== 'undefined') {
+                const notes = PostIt.Note.getCache();
+                Object.values(notes).forEach(n => {
+                    if (n.type === 'stock_card') {
+                        const symbol = (n.stockCardData && n.stockCardData.symbol) || String(n.content).trim().toUpperCase();
+                        if (symbol && fetchCardData) {
+                            fetchCardData(n.id, symbol);
+                        }
+                    }
+                });
+            }
+        }, 3000); // 延遲 3 秒等待 Yjs 初始化完畢
     }
 
     // --- 除錯 ---

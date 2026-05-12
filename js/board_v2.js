@@ -31,6 +31,9 @@ PostIt.Board = (function () {
         // 初始化群組系統
         if (typeof PostIt.Group !== 'undefined') PostIt.Group.init();
 
+        // 初始化股價監控引擎
+        if (typeof PostIt.StockAlert !== 'undefined') PostIt.StockAlert.init();
+
         // 初始化登入模組
         PostIt.Auth.init(onAuthStateChanged);
 
