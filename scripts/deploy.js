@@ -71,8 +71,9 @@ if (finalParts.length !== 3 || finalParts.some(isNaN)) {
     error(`目標版本 "${newVer}" 不符合 X.Y.Z 格式（例如 2.0.15）。請修正後重試。`);
 }
 
-if (!message) {
+if (!message || message.trim() === '' || message.trim() === '\\' || message.length < 2) {
     // 自動偵測修改的檔案來產生有意義的更新描述
+    message = '';
     try {
         const diffFiles = execSync('git diff --name-only HEAD', { cwd: rootDir, encoding: 'utf8' }).trim();
         if (diffFiles) {
@@ -88,7 +89,7 @@ if (!message) {
     if (!message) {
         message = `v${newVer} 維護更新`;
     }
-    log(`⚠️ 未指定更新訊息，已自動產生：「${message}」`);
+    log(`⚠️ 未指定或無效的更新訊息，已自動產生：「${message}」`);
     log(`   建議使用: node scripts/deploy.js [版本] "詳細的更新描述"`);
 }
 

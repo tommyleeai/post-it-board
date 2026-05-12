@@ -153,16 +153,16 @@ PostIt.StockAlert = (function () {
 
         try {
             // 由於我們也需要即時報價，可以同時拿
-            const [profileResp, chartResp, quoteResp] = await Promise.all([
+            const [profileResp, chartResp, quotesDict] = await Promise.all([
                 fetch(`${API_BASE}/api/stock/profile?symbol=${symbol}&token=${encodeURIComponent(token)}`),
                 fetch(`${API_BASE}/api/stock/chart?symbol=${symbol}&token=${encodeURIComponent(token)}`),
-                fetch(`${API_BASE}/api/stock/quote?symbol=${symbol}&token=${encodeURIComponent(token)}`)
+                fetchQuotes([symbol])
             ]);
 
-            if (profileResp.ok && chartResp.ok && quoteResp.ok) {
+            if (profileResp.ok && chartResp.ok) {
                 const profile = await profileResp.json();
                 const chart = await chartResp.json();
-                const quote = await quoteResp.json();
+                const quote = (quotesDict && quotesDict[symbol.toUpperCase()]) ? quotesDict[symbol.toUpperCase()] : null;
 
                 if (profile.success) {
                     const cardData = {
@@ -175,9 +175,9 @@ PostIt.StockAlert = (function () {
                         low52: profile.low52,
                         recommendation: profile.recommendation,
                         prices: chart.success ? chart.prices : [],
-                        currentPrice: quote.success ? quote.price : null,
-                        priceChange: quote.success ? quote.change : null,
-                        priceChangePercent: quote.success ? quote.changePercent : null
+                        currentPrice: quote ? quote.price : null,
+                        priceChange: quote ? quote.change : null,
+                        priceChangePercent: quote ? quote.changePercent : null
                     };
                     
                     // 將結果存入該便利貼
