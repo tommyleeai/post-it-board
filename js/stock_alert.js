@@ -159,9 +159,9 @@ PostIt.StockAlert = (function () {
                 fetchQuotes([symbol])
             ]);
 
-            if (profileResp.ok && chartResp.ok) {
+            if (profileResp.ok) {
                 const profile = await profileResp.json();
-                const chart = await chartResp.json();
+                const chart = chartResp.ok ? await chartResp.json() : { success: true, prices: [] };
                 const quote = (quotesDict && quotesDict[symbol.toUpperCase()]) ? quotesDict[symbol.toUpperCase()] : null;
 
                 if (profile.success) {

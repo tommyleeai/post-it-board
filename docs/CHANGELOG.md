@@ -20,6 +20,11 @@
 
 
 
+
+## [2.4.71] - 2026-05-12
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   容錯處理：Finnhub Chart API 403 降級，允許僅載入 Profile 與報價
 ## [2.4.70] - 2026-05-12
 
 ### 🔧 優化與修正 (Improved & Fixed)
