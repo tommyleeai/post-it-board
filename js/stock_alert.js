@@ -409,12 +409,160 @@ PostIt.StockAlert = (function () {
         stopPolling();
     }
 
+    // --- 監控面板 (Dashboard) UI 邏輯 ---
+    let dashboardEl = null;
+
+    function initDashboardEvents() {
+        dashboardEl = document.getElementById('stock-alert-dashboard');
+        const btnOpen = document.getElementById('btn-stock-alerts');
+        const btnClose = document.getElementById('btn-close-dashboard');
+        const overlay = document.getElementById('settings-overlay');
+
+        if (btnOpen) {
+            btnOpen.addEventListener('click', showDashboard);
+        }
+        if (btnClose) {
+            btnClose.addEventListener('click', hideDashboard);
+        }
+        if (overlay) {
+            // 注意：設定面板也用這個 overlay，我們只在點擊 overlay 時嘗試關閉本 dashboard
+            overlay.addEventListener('click', () => {
+                if (dashboardEl && !dashboardEl.classList.contains('hidden')) {
+                    hideDashboard();
+                }
+            });
+        }
+    }
+
+    function showDashboard() {
+        if (!dashboardEl) initDashboardEvents();
+        if (!dashboardEl) return;
+        
+        renderAlertDashboard();
+        dashboardEl.classList.remove('hidden');
+        
+        const overlay = document.getElementById('settings-overlay');
+        if (overlay) overlay.classList.remove('hidden');
+    }
+
+    function hideDashboard() {
+        if (!dashboardEl) return;
+        dashboardEl.classList.add('hidden');
+        
+        const overlay = document.getElementById('settings-overlay');
+        if (overlay) overlay.classList.add('hidden');
+    }
+
+    function renderAlertDashboard() {
+        if (!dashboardEl) return;
+        
+        const listEl = document.getElementById('alert-dashboard-list');
+        const countEl = document.getElementById('alert-dashboard-count');
+        if (!listEl || !countEl) return;
+
+        // 取得所有帶有警報的股票 (過濾掉只是 stock_card 但沒有警報設定的)
+        const allNotes = typeof PostIt.Note !== 'undefined' ? PostIt.Note.getCache() : {};
+        const activeAlerts = [];
+        
+        for (const [id, note] of Object.entries(allNotes)) {
+            if (note.stockAlert && note.stockAlert.status === 'watching' && note.stockAlert.symbol) {
+                activeAlerts.push({
+                    noteId: id,
+                    symbol: note.stockAlert.symbol,
+                    targetPrice: note.stockAlert.targetPrice,
+                    condition: note.stockAlert.condition,
+                    options: note.stockAlert.options || { toast: true, sound: true, tts: true }
+                });
+            }
+        }
+
+        countEl.textContent = activeAlerts.length;
+
+        if (activeAlerts.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center; padding: 20px; color: #9ca3af;">目前沒有設定任何監控喔！<br><span style="font-size:12px;opacity:0.7;">點擊白板右下角「＋」新增股票卡片來設定。</span></div>';
+            return;
+        }
+
+        let html = '';
+        activeAlerts.forEach(alert => {
+            const upClass = alert.condition === '>=' ? 'up' : 'down';
+            const condStr = alert.condition === '>=' ? '📈 漲破' : '📉 跌破';
+            
+            const optToast = alert.options.toast !== false ? '<i class="fa-solid fa-message active" title="啟用彈出通知"></i>' : '<i class="fa-solid fa-message" title="停用彈出通知"></i>';
+            const optSound = alert.options.sound !== false ? '<i class="fa-solid fa-volume-high active" title="啟用鈴聲"></i>' : '<i class="fa-solid fa-volume-xmark" title="停用鈴聲"></i>';
+            const optTts = alert.options.tts !== false ? '<i class="fa-solid fa-microphone active" title="啟用語音"></i>' : '<i class="fa-solid fa-microphone-slash" title="停用語音"></i>';
+
+            html += `
+                <div class="alert-item">
+                    <div class="alert-item-header">
+                        <span class="alert-item-symbol">${alert.symbol}</span>
+                        <span class="alert-item-target ${upClass}">${condStr} $${alert.targetPrice}</span>
+                    </div>
+                    <div style="display:flex; justify-content: space-between; align-items: center;">
+                        <div class="alert-item-options">
+                            ${optToast}
+                            ${optSound}
+                            ${optTts}
+                        </div>
+                        <div class="alert-item-actions">
+                            <button class="btn-alert-locate" onclick="PostIt.StockAlert.locateAlert('${alert.noteId}')"><i class="fa-solid fa-location-crosshairs"></i> 定位</button>
+                            <button class="btn-alert-remove" onclick="PostIt.StockAlert.removeAlertFromDashboard('${alert.noteId}')"><i class="fa-solid fa-trash"></i> 移除</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        listEl.innerHTML = html;
+    }
+
+    function locateAlert(noteId) {
+        hideDashboard();
+        
+        // 取得貼紙元素
+        const noteEl = document.querySelector(`.sticky-note[data-note-id="${noteId}"]`);
+        if (noteEl) {
+            // 加上 Highlight 特效
+            noteEl.classList.add('highlight-glow');
+            setTimeout(() => {
+                noteEl.classList.remove('highlight-glow');
+            }, 3000);
+            
+            // 將它推到最上層
+            if (window.PostIt && PostIt.Drag && PostIt.Drag.bringToFront) {
+                PostIt.Drag.bringToFront(noteEl, noteId);
+            }
+        }
+    }
+
+    function removeAlertFromDashboard(noteId) {
+        if (!window.PostIt || !window.PostIt.Note) return;
+        
+        // 呼叫原本的更新，將設定清空
+        PostIt.Note.updateStockAlert(noteId, null);
+        if (window.PostIt.Board) {
+            PostIt.Board.showToast('🗑️ 警報已移除', 'info');
+        }
+        
+        // 強制重繪白板上的這張卡片
+        setTimeout(() => {
+            const note = PostIt.Note.getCache()[noteId];
+            if (note && window.PostIt.Board && window.PostIt.Board.updateNoteElement) {
+                window.PostIt.Board.updateNoteElement(noteId, note);
+            }
+        }, 50);
+
+        // 重新渲染 Dashboard
+        renderAlertDashboard();
+    }
+
     return {
         init, cleanup, debug, poll,
         startPolling, stopPolling,
         setMarketFreq, setAfterHoursFreq, setApiToken,
         getMarketFreq, getAfterHoursFreq, getApiToken,
         getActiveAlerts, isMarketOpen, fetchCardData,
+        showDashboard, locateAlert, removeAlertFromDashboard,
         FREQ_OPTIONS
     };
 })();

@@ -4130,3 +4130,154 @@ body.pin-mode {
 .sc-btn-save:hover { background: #059669; }
 
 /* === Stock Card 3D Flip Focus Mode END === */
+
+/* === Stock Alert Dashboard START === */
+.stock-alert-dashboard {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    max-width: 90vw;
+    background: #1e1e1e;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 100000;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #333;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.stock-alert-dashboard.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -45%);
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #333;
+}
+
+.dashboard-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e5e7eb;
+}
+
+.dashboard-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.dashboard-summary {
+    font-size: 14px;
+    color: #9ca3af;
+    text-align: center;
+    background: #2d2d2d;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.alert-dashboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.alert-item {
+    background: #2d2d2d;
+    border: 1px solid #404040;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.alert-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.alert-item-symbol {
+    font-weight: bold;
+    font-size: 16px;
+    color: #fff;
+}
+
+.alert-item-target {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.alert-item-target.up { color: #10b981; }
+.alert-item-target.down { color: #ef4444; }
+
+.alert-item-options {
+    display: flex;
+    gap: 10px;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.alert-item-options i {
+    opacity: 0.5;
+}
+
+.alert-item-options i.active {
+    color: #10b981;
+    opacity: 1;
+}
+
+.alert-item-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.btn-alert-locate {
+    flex: 1;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-alert-locate:hover {
+    background: rgba(59, 130, 246, 0.2);
+}
+
+.btn-alert-remove {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-alert-remove:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+/* === Stock Alert Dashboard END === */
