@@ -58,7 +58,12 @@
 ## [2.5.19] - 2026-05-13
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   更新 board_v2、stock_alert、yjs_sync 模組
+*   **修復多分頁同步核心缺陷**：完整審計並修復 4 項即時同步引擎的重大問題
+    *   `updateNoteElement` 新增 `stock_card` 過濾 — 防止同步更新時用 innerHTML 摧毀股票卡片 DOM 結構、事件綁定和 Focus Mode
+    *   `stock_alert.js` poll 報價更新改為純 DOM 差量操作 — 不再寫入 Yjs，消除每分鐘每張股票卡片觸發「Yjs → Firestore → 全分頁重繪」的同步風暴
+    *   `yjs_sync.js` onSnapshot 新增 `metadata.hasPendingWrites` 自我回音過濾 — 本地寫入的樂觀更新不再被自己的監聽器重複 apply，避免不必要的重繪
+    *   `yjs_sync.js` observeDeep 回調加入 `requestAnimationFrame` 防抖 — 同一幀內多次 Yjs 變更只觸發一次 renderNotes，大幅降低高頻操作的 DOM 重繪次數
+    *   cleanup 新增 `cancelAnimationFrame` 清理 — 防止切換白板後殘留的渲染回調觸發到新白板
 ## [2.5.18] - 2026-05-13
 
 ### 🔧 優化與修正 (Improved & Fixed)
