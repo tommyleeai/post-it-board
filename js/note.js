@@ -461,13 +461,20 @@ PostIt.Note = (function () {
     }
 
     // -------- 股價提醒 --------
-    function updateStockAlert(noteId, alertData) {
+    function addStockAlert(noteId, alertData) {
         const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
         if (!yNotesMap) return;
         const yNote = yNotesMap.get(noteId);
         if (!yNote) return;
 
-        yNote.set('stockAlert', {
+        let alerts = yNote.get('stockAlerts') || [];
+        // 向後相容舊版單一警報
+        if (alerts.length === 0 && yNote.get('stockAlert')) {
+            alerts = [yNote.get('stockAlert')];
+        }
+
+        const newAlert = {
+            id: 'alert_' + Date.now().toString(36),
             symbol: alertData.symbol || '',
             targetPrice: alertData.targetPrice || 0,
             condition: alertData.condition || '>=',
@@ -476,31 +483,81 @@ PostIt.Note = (function () {
             lastPrice: alertData.lastPrice || null,
             lastChecked: alertData.lastChecked || null,
             triggeredAt: alertData.triggeredAt || null,
-            reason: alertData.reason || ''
-        });
+            reason: alertData.reason || '',
+            options: alertData.options || { toast: true, sound: true, tts: true }
+        };
+
+        yNote.set('stockAlerts', [...alerts, newAlert]);
         yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
     }
 
+    function removeStockAlert(noteId, alertId) {
+        const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
+        if (!yNotesMap) return;
+        const yNote = yNotesMap.get(noteId);
+        if (!yNote) return;
+
+        let alerts = yNote.get('stockAlerts') || [];
+        if (alerts.length === 0 && yNote.get('stockAlert')) {
+            alerts = [yNote.get('stockAlert')];
+            // 由於舊版可能沒有 id，給它一個臨時判斷機制，但這邊統一靠 id 刪除
+            if (alertId === 'legacy') {
+                yNote.set('stockAlert', null);
+                yNote.set('stockAlerts', []);
+                yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
+                return;
+            }
+        }
+
+        const filtered = alerts.filter(a => a.id !== alertId);
+        yNote.set('stockAlerts', filtered);
+        yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
+    }
+
+    function updateStockAlertStatus(noteId, alertId, status, fields = {}) {
+        const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
+        if (!yNotesMap) return;
+        const yNote = yNotesMap.get(noteId);
+        if (!yNote) return;
+
+        let alerts = yNote.get('stockAlerts') || [];
+        let isLegacy = false;
+        if (alerts.length === 0 && yNote.get('stockAlert')) {
+            alerts = [yNote.get('stockAlert')];
+            isLegacy = true;
+        }
+
+        let updated = false;
+        const newAlerts = alerts.map(a => {
+            if (a.id === alertId || (isLegacy && alertId === 'legacy')) {
+                updated = true;
+                return { ...a, status, ...fields };
+            }
+            return a;
+        });
+
+        if (updated) {
+            yNote.set('stockAlerts', newAlerts);
+            if (isLegacy) yNote.set('stockAlert', null); // 順勢清掉舊的
+            yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
+        }
+    }
+
+    // 保留原本的函式供少數可能沒清乾淨的舊扣呼叫，不拋錯
+    function updateStockAlert(noteId, alertData) {
+        addStockAlert(noteId, alertData);
+    }
     function clearStockAlert(noteId) {
         const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
         if (!yNotesMap) return;
         const yNote = yNotesMap.get(noteId);
         if (yNote) {
             yNote.set('stockAlert', null);
-            yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
+            yNote.set('stockAlerts', []);
         }
     }
-
     function updateStockAlertField(noteId, field, value) {
-        const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
-        if (!yNotesMap) return;
-        const yNote = yNotesMap.get(noteId);
-        if (!yNote) return;
-        const existing = yNote.get('stockAlert');
-        if (existing) {
-            const updated = { ...existing, [field]: value };
-            yNote.set('stockAlert', updated);
-        }
+        // legacy method, do nothing or handle gracefully.
     }
 
     // -------- 群組系統 --------
@@ -741,6 +798,7 @@ PostIt.Note = (function () {
         updateColor, updateStyle, archive, unarchive, deleteArchive, getArchivedNotes, remove, uploadImage, detectType,
         updateReminderLogic, updateReminderStatus, getNotesRef,
         updateStockAlert, clearStockAlert, updateStockAlertField,
+        addStockAlert, removeStockAlert, updateStockAlertStatus,
         mergeToGroup, removeFromGroup, disbandGroup, removeGroup, getGroupNotes, MAX_GROUP_SIZE,
         getCache, getCount, getNote, getActiveNoteId, setActiveNoteId
     };
