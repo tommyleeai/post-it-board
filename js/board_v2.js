@@ -1434,7 +1434,19 @@ PostIt.Board = (function () {
                             </div>
                         </div>
 
-                        <div class="sc-action-row" style="margin-top:20px;">
+                        <div class="sc-switches">
+                            <label class="sc-switch-item">
+                                <input type="checkbox" id="sc-opt-toast-${note.id}" ${alertData.options?.toast !== false ? 'checked' : ''}> 顯示彈出通知 (Toast)
+                            </label>
+                            <label class="sc-switch-item">
+                                <input type="checkbox" id="sc-opt-sound-${note.id}" ${alertData.options?.sound !== false ? 'checked' : ''}> 觸發警報鈴聲 🔊
+                            </label>
+                            <label class="sc-switch-item">
+                                <input type="checkbox" id="sc-opt-tts-${note.id}" ${alertData.options?.tts !== false ? 'checked' : ''}> AI 語音播報 (TTS)
+                            </label>
+                        </div>
+
+                        <div class="sc-action-row" style="margin-top:auto;">
                             <button class="sc-btn sc-btn-cancel" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.removeAlert('${note.id}')">🗑️ 移除</button>
                             <button class="sc-btn sc-btn-save" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.saveAlert('${note.id}')">💾 儲存並監控</button>
                         </div>
@@ -2903,13 +2915,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            const toastEl = document.getElementById(`sc-opt-toast-${noteId}`);
+            const soundEl = document.getElementById(`sc-opt-sound-${noteId}`);
+            const ttsEl = document.getElementById(`sc-opt-tts-${noteId}`);
+            const options = {
+                toast: toastEl ? toastEl.checked : true,
+                sound: soundEl ? soundEl.checked : true,
+                tts: ttsEl ? ttsEl.checked : true
+            };
+
             // 更新到 Yjs
             PostIt.Note.updateStockAlert(noteId, {
                 symbol: symbol,
                 targetPrice: targetPrice,
                 condition: condition,
                 status: 'watching',
-                reason: '使用者手動設定'
+                reason: '使用者手動設定',
+                options: options
             });
 
             PostIt.Board.showToast(`📈 已設定監控 ${symbol}，目標 ${condition} $${targetPrice}`, 'success');
