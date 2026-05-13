@@ -58,6 +58,11 @@
 
 
 
+
+## [2.5.23] - 2026-05-13
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   修復背景圖消失根因：auth.js saveProfile 改為 await，消除與 Settings.load 的 Firestore 延遲補償快取競爭危害
 ## [2.5.22] - 2026-05-13
 
 ### 🔧 優化與修正 (Improved & Fixed)

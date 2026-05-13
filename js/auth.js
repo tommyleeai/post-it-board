@@ -14,13 +14,16 @@ PostIt.Auth = (function () {
         if (!auth) return;
 
         // 監聽登入狀態變化
-        auth.onAuthStateChanged((user) => {
+        auth.onAuthStateChanged(async (user) => {
             currentUser = user;
 
             // 登入時儲存 profile（讓 admin 可以看到使用者資訊）
-            // 使用 sessionStorage 避免每次 F5 重整都觸發寫入，進而干擾 Settings 的伺服器讀取
+            // 使用 sessionStorage 避免每次 F5 重整都觸發寫入
+            // ⚠️ 必須 await 等待完成，否則 saveProfile 的 Firestore 寫入會污染
+            //    Settings.load() 的延遲補償快取 (Latency-compensated snapshot)，
+            //    導致 get() 拿到不含 settings 欄位的快照 → boardBgImage 掉回空字串
             if (user && !sessionStorage.getItem('profileSaved')) {
-                saveProfile(user);
+                await saveProfile(user);
                 sessionStorage.setItem('profileSaved', 'true');
             }
 
