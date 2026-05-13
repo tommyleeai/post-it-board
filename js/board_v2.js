@@ -1342,62 +1342,101 @@ PostIt.Board = (function () {
                 const logoHtml = sd.logo ? `<img src="${escapeHtml(sd.logo)}" class="stock-card-logo" alt="${symbol}">` : `<div class="stock-card-logo"></div>`;
                 const watermarkHtml = sd.logo ? `<div style="position:absolute; top:0; left:0; width:100%; height:100%; overflow:hidden; border-radius:16px; pointer-events:none; z-index:0;"><img src="${escapeHtml(sd.logo)}" class="stock-card-watermark" alt="watermark"></div>` : '';
 
-                // 組裝 HTML
-                return `
-                    ${watermarkHtml}
-                    ${recHtml}
-                    <div class="stock-card-header">
-                        <div class="stock-card-logo-container">
-                            ${logoHtml}
-                            <div class="stock-card-symbol-info">
-                                <div class="stock-card-symbol">${symbol}</div>
-                                <div class="stock-card-company-name">${escapeHtml(name)}</div>
+                const alertData = note.stockAlert || {};
+                const targetPrice = alertData.targetPrice || '';
+                const condition = alertData.condition || (currentPrice ? '>=' : '');
+                
+                // 正面 HTML
+                const frontHtml = `
+                    <div class="stock-card-front">
+                        ${watermarkHtml}
+                        ${recHtml}
+                        <div class="stock-card-header">
+                            <div class="stock-card-logo-container">
+                                ${logoHtml}
+                                <div class="stock-card-symbol-info">
+                                    <div class="stock-card-symbol">${symbol}</div>
+                                    <div class="stock-card-company-name">${escapeHtml(name)}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stock-card-price-section">
+                            <div class="stock-card-current-price">${currentPrice}</div>
+                            ${changeHtml}
+                        </div>
+
+                        <div class="stock-card-chart-container">
+                            <svg class="stock-card-sparkline ${trendClass}" viewBox="0 0 280 80" preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="gradient-up" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#10b981" stop-opacity="0.3"></stop>
+                                        <stop offset="100%" stop-color="#10b981" stop-opacity="0"></stop>
+                                    </linearGradient>
+                                    <linearGradient id="gradient-down" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#ef4444" stop-opacity="0.3"></stop>
+                                        <stop offset="100%" stop-color="#ef4444" stop-opacity="0"></stop>
+                                    </linearGradient>
+                                </defs>
+                                ${svgArea}
+                                ${svgPath}
+                            </svg>
+                            <div class="stock-card-pulse-dot" style="top: ${pulseDotTop};"></div>
+                            <button class="stock-card-set-alert-btn" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.openFocusMode('${note.id}', event)">🔔 設定警報</button>
+                        </div>
+
+                        <div class="stock-card-metrics-grid">
+                            <div class="stock-card-metric-item">
+                                <span class="stock-card-metric-label">Market Cap</span>
+                                <span class="stock-card-metric-value">${sd.marketCap ? (sd.marketCap / 1000).toFixed(2) + 'B' : '--'}</span>
+                            </div>
+                            <div class="stock-card-metric-item">
+                                <span class="stock-card-metric-label">P/E Ratio</span>
+                                <span class="stock-card-metric-value">${sd.peRatio ? sd.peRatio.toFixed(1) : '--'}</span>
+                            </div>
+                            <div class="stock-card-metric-item">
+                                <span class="stock-card-metric-label">52W High</span>
+                                <span class="stock-card-metric-value">${sd.high52 ? '$' + sd.high52.toFixed(2) : '--'}</span>
+                            </div>
+                            <div class="stock-card-metric-item">
+                                <span class="stock-card-metric-label">52W Low</span>
+                                <span class="stock-card-metric-value">${sd.low52 ? '$' + sd.low52.toFixed(2) : '--'}</span>
                             </div>
                         </div>
                     </div>
+                `;
 
-                    <div class="stock-card-price-section">
-                        <div class="stock-card-current-price">${currentPrice}</div>
-                        ${changeHtml}
-                    </div>
+                // 背面 HTML
+                const backHtml = `
+                    <div class="stock-card-back">
+                        <div class="sc-back-header">
+                            <div class="sc-back-title">🔔 設定股價警報</div>
+                            <button class="sc-close-btn" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.closeFocusMode()">✕</button>
+                        </div>
 
-                    <div class="stock-card-chart-container">
-                        <svg class="stock-card-sparkline ${trendClass}" viewBox="0 0 280 80" preserveAspectRatio="none">
-                            <defs>
-                                <linearGradient id="gradient-up" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stop-color="#10b981" stop-opacity="0.3"></stop>
-                                    <stop offset="100%" stop-color="#10b981" stop-opacity="0"></stop>
-                                </linearGradient>
-                                <linearGradient id="gradient-down" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stop-color="#ef4444" stop-opacity="0.3"></stop>
-                                    <stop offset="100%" stop-color="#ef4444" stop-opacity="0"></stop>
-                                </linearGradient>
-                            </defs>
-                            ${svgArea}
-                            ${svgPath}
-                        </svg>
-                        <div class="stock-card-pulse-dot" style="top: ${pulseDotTop};"></div>
-                    </div>
+                        <div class="sc-setting-group">
+                            <span class="sc-setting-label">目標價格 (Target Price)</span>
+                            <div class="sc-price-wrapper">
+                                <span>$</span>
+                                <input type="number" class="sc-price-input" id="sc-target-price-${note.id}" value="${targetPrice}" step="0.01" oninput="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.handlePriceInput('${note.id}', this.value, ${sd.currentPrice || 0})">
+                            </div>
+                        </div>
 
-                    <div class="stock-card-metrics-grid">
-                        <div class="stock-card-metric-item">
-                            <span class="stock-card-metric-label">Market Cap</span>
-                            <span class="stock-card-metric-value">${sd.marketCap ? (sd.marketCap / 1000).toFixed(2) + 'B' : '--'}</span>
+                        <div class="sc-setting-group">
+                            <div class="sc-toggle-row">
+                                <button class="sc-cond-btn up ${condition === '>=' ? 'active' : ''}" id="sc-cond-up-${note.id}" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.setCondition('${note.id}', '>=')">📈 漲破 (>=)</button>
+                                <button class="sc-cond-btn down ${condition === '<=' ? 'active' : ''}" id="sc-cond-down-${note.id}" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.setCondition('${note.id}', '<=')">📉 跌破 (<=)</button>
+                            </div>
                         </div>
-                        <div class="stock-card-metric-item">
-                            <span class="stock-card-metric-label">P/E Ratio</span>
-                            <span class="stock-card-metric-value">${sd.peRatio ? sd.peRatio.toFixed(1) : '--'}</span>
-                        </div>
-                        <div class="stock-card-metric-item">
-                            <span class="stock-card-metric-label">52W High</span>
-                            <span class="stock-card-metric-value">${sd.high52 ? '$' + sd.high52.toFixed(2) : '--'}</span>
-                        </div>
-                        <div class="stock-card-metric-item">
-                            <span class="stock-card-metric-label">52W Low</span>
-                            <span class="stock-card-metric-value">${sd.low52 ? '$' + sd.low52.toFixed(2) : '--'}</span>
+
+                        <div class="sc-action-row" style="margin-top:20px;">
+                            <button class="sc-btn sc-btn-cancel" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.removeAlert('${note.id}')">🗑️ 移除</button>
+                            <button class="sc-btn sc-btn-save" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.saveAlert('${note.id}')">💾 儲存並監控</button>
                         </div>
                     </div>
                 `;
+
+                return frontHtml + backHtml;
 
             case 'url':
                 // 嘗試顯示漂亮的連結
@@ -2755,4 +2794,135 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // ==========================================
+    // 股票卡片 3D 翻轉與 Focus Mode 互動邏輯
+    // ==========================================
+    window.PostIt.StockCardUI = {
+        _activeNoteId: null,
+
+        openFocusMode(noteId, e) {
+            if (e) {
+                e.stopPropagation();
+            }
+            
+            const overlay = document.getElementById('focus-overlay');
+            const noteEl = document.querySelector(`.sticky-note[data-id="${noteId}"]`);
+            if (!overlay || !noteEl) return;
+
+            this._activeNoteId = noteId;
+            
+            // 1. 顯示遮罩
+            overlay.classList.add('active');
+            
+            // 2. 進入 Focus 模式
+            noteEl.classList.add('focus-mode');
+            
+            // 3. 延遲執行翻轉
+            setTimeout(() => {
+                noteEl.classList.add('is-flipped');
+            }, 100);
+        },
+
+        closeFocusMode() {
+            if (!this._activeNoteId) return;
+            
+            const noteId = this._activeNoteId;
+            const overlay = document.getElementById('focus-overlay');
+            const noteEl = document.querySelector(`.sticky-note[data-id="${noteId}"]`);
+            
+            if (noteEl) {
+                // 1. 翻轉回正面
+                noteEl.classList.remove('is-flipped');
+                
+                // 2. 延遲解除 Focus 模式
+                setTimeout(() => {
+                    noteEl.classList.remove('focus-mode');
+                    if (overlay) overlay.classList.remove('active');
+                    this._activeNoteId = null;
+                }, 300);
+            } else {
+                if (overlay) overlay.classList.remove('active');
+                this._activeNoteId = null;
+            }
+        },
+
+        handlePriceInput(noteId, valStr, currentPrice) {
+            const val = parseFloat(valStr);
+            if (isNaN(val)) return;
+            
+            const upBtn = document.getElementById(`sc-cond-up-${noteId}`);
+            const downBtn = document.getElementById(`sc-cond-down-${noteId}`);
+            if (!upBtn || !downBtn) return;
+
+            if (val >= currentPrice) {
+                this.setCondition(noteId, '>=');
+            } else {
+                this.setCondition(noteId, '<=');
+            }
+        },
+
+        setCondition(noteId, type) {
+            const upBtn = document.getElementById(`sc-cond-up-${noteId}`);
+            const downBtn = document.getElementById(`sc-cond-down-${noteId}`);
+            if (!upBtn || !downBtn) return;
+
+            if (type === '>=') {
+                upBtn.classList.add('active');
+                downBtn.classList.remove('active');
+            } else {
+                downBtn.classList.add('active');
+                upBtn.classList.remove('active');
+            }
+        },
+
+        saveAlert(noteId) {
+            const inputEl = document.getElementById(`sc-target-price-${noteId}`);
+            const upBtn = document.getElementById(`sc-cond-up-${noteId}`);
+            
+            if (!inputEl) return;
+            
+            const targetPrice = parseFloat(inputEl.value) || 0;
+            const condition = (upBtn && upBtn.classList.contains('active')) ? '>=' : '<=';
+            const symbolEl = document.querySelector(`.sticky-note[data-id="${noteId}"] .stock-card-symbol`);
+            const symbol = symbolEl ? symbolEl.textContent : '';
+
+            if (!symbol || targetPrice <= 0) {
+                PostIt.Board.showToast('⚠️ 價格無效', 'error');
+                return;
+            }
+
+            // 更新到 Yjs
+            PostIt.Note.updateStockAlert(noteId, {
+                symbol: symbol,
+                targetPrice: targetPrice,
+                condition: condition,
+                status: 'watching',
+                reason: '使用者手動設定'
+            });
+
+            PostIt.Board.showToast(`📈 已設定監控 ${symbol}，目標 ${condition} $${targetPrice}`, 'success');
+            
+            if (typeof PostIt.StockAlert !== 'undefined') {
+                PostIt.StockAlert.startPolling();
+            }
+
+            this.closeFocusMode();
+        },
+
+        removeAlert(noteId) {
+            // 清除設定
+            PostIt.Note.updateStockAlert(noteId, null);
+            PostIt.Board.showToast('🗑️ 警報已移除', 'info');
+            this.closeFocusMode();
+            
+            // 重新渲染卡片 (因為移除了 alert，我們需要它重新讀取)
+            setTimeout(() => {
+                const note = PostIt.Note.getCache()[noteId];
+                if (note && window.PostIt.Board.updateNoteElement) {
+                    window.PostIt.Board.updateNoteElement(noteId, note);
+                }
+            }, 300);
+        }
+    };
 });

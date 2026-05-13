@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Card 3D Flip & Pop-out Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* === 基礎佈局 === */
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background: #e0e5ec url('https://www.transparenttextures.com/patterns/cork-board.png');
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* 模擬白板群組堆疊 */
+        .card-group {
+            position: relative;
+            width: 320px;
+            height: 250px;
+        }
+
+        /* 假裝底下的幾張卡片 */
+        .dummy-card {
+            position: absolute;
+            width: 320px;
+            height: 250px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+        .dummy-card:nth-child(1) { transform: rotate(-5deg) translate(-10px, 10px); z-index: 1; }
+        .dummy-card:nth-child(2) { transform: rotate(3deg) translate(5px, 5px); z-index: 2; }
+
+        /* 群組 Hover 展開效果 (示意) */
+        .card-group:hover .dummy-card:nth-child(1) { transform: rotate(-10deg) translate(-30px, 20px); }
+        .card-group:hover .dummy-card:nth-child(2) { transform: rotate(8deg) translate(20px, 10px); }
+        .card-group:hover .flip-container { transform: translateY(-10px); }
+
+        /* === 全域遮罩 (Focus Mode) === */
+        #focus-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            z-index: 999;
+        }
+        #focus-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* === 3D 翻轉容器 === */
+        .flip-container {
+            position: absolute;
+            width: 320px;
+            height: 250px;
+            z-index: 3;
+            perspective: 1000px; /* 3D 深度 */
+            transition: transform 0.3s ease;
+        }
+
+        /* 當進入 Focus 模式時，拉到最上層並置中放大 */
+        .flip-container.focus-mode {
+            position: fixed;
+            top: 50% !important;
+            left: 50% !important;
+            /* 將卡片位移到正中央並放大，加上 translate 修正自身的長寬一半 */
+            transform: translate(-50%, -50%) scale(1.1) !important;
+            z-index: 1000;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* 卡片本體：負責 3D 旋轉 */
+        .flipper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        /* 當翻轉 class 加上時，轉 180 度 */
+        .flip-container.is-flipped .flipper {
+            transform: rotateY(180deg);
+        }
+
+        /* 正面與背面的共用設定 */
+        .front, .back {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden; /* 轉到背面時隱藏 */
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.4);
+            box-sizing: border-box;
+            padding: 20px;
+        }
+
+        /* === 正面 (股票卡片) === */
+        .front {
+            z-index: 2;
+            transform: rotateY(0deg);
+        }
+        
+        .stock-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .symbol { font-size: 24px; font-weight: 800; color: #1f2937; margin:0;}
+        .company { font-size: 12px; color: #6b7280; }
+        .price { font-size: 32px; font-weight: 800; color: #111827; margin: 10px 0 5px 0;}
+        .change { color: #ef4444; font-size: 14px; font-weight: 600; background: #fee2e2; padding: 2px 8px; border-radius: 6px; display: inline-block;}
+        
+        /* 圖表區塊 */
+        .chart-area {
+            margin-top: 15px;
+            height: 60px;
+            background: #f9fafb;
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px dashed #d1d5db;
+        }
+
+        /* 設定按鈕 (Hover 顯示) */
+        .set-alert-btn {
+            position: absolute;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+            pointer-events: none;
+        }
+        .chart-area:hover .set-alert-btn {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .set-alert-btn:hover { background: #059669; transform: scale(1.05); }
+
+        .metrics { display: flex; justify-content: space-between; margin-top: 15px; font-size: 11px;}
+        .metric-col { display: flex; flex-direction: column; }
+        .metric-label { color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;}
+        .metric-val { color: #374151; font-weight: 700; font-size: 13px; margin-top:2px;}
+
+        /* === 背面 (設定面板) === */
+        .back {
+            transform: rotateY(180deg);
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e; /* 背面用深色系做出區隔與科技感 */
+            color: #fff;
+            border: 1px solid #333;
+        }
+        .back-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .back-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 5px;}
+        .close-btn { background: none; border: none; color: #9ca3af; font-size: 18px; cursor: pointer; padding: 0;}
+        .close-btn:hover { color: #fff; }
+
+        /* 設定項目 */
+        .setting-group { margin-bottom: 12px; }
+        .setting-label { font-size: 11px; color: #9ca3af; margin-bottom: 5px; display: block;}
+        
+        .price-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .price-input-wrapper span { position: absolute; left: 12px; font-weight: 700; color: #10b981; font-size: 18px;}
+        .price-input {
+            width: 100%;
+            background: #2d2d2d;
+            border: 1px solid #404040;
+            color: #fff;
+            font-size: 20px;
+            font-weight: 700;
+            padding: 8px 10px 8px 30px;
+            border-radius: 8px;
+            outline: none;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        .price-input:focus { border-color: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); }
+
+        .toggle-row { display: flex; gap: 8px; }
+        .condition-btn {
+            flex: 1;
+            background: #2d2d2d;
+            border: 1px solid #404040;
+            color: #9ca3af;
+            padding: 6px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .condition-btn.active.up { background: rgba(16, 185, 129, 0.2); border-color: #10b981; color: #10b981; }
+        .condition-btn.active.down { background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: #ef4444; }
+
+        .switches { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .switch-item { display: flex; align-items: center; font-size: 12px; color: #d1d5db; gap: 8px;}
+        input[type="checkbox"] { accent-color: #10b981; cursor: pointer; width: 14px; height: 14px;}
+
+        /* 底部按鈕 */
+        .action-row {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+        }
+        .btn-cancel { background: transparent; color: #ef4444; }
+        .btn-cancel:hover { background: rgba(239, 68, 68, 0.1); }
+        .btn-save { background: #10b981; color: #fff; flex: 1; margin-left: 10px;}
+        .btn-save:hover { background: #059669; }
+
+    </style>
+</head>
+<body>
+
+    <!-- 全域遮罩 -->
+    <div id="focus-overlay" onclick="closeSettings()"></div>
+
+    <!-- 群組牌堆 -->
+    <div class="card-group">
+        <div class="dummy-card"></div>
+        <div class="dummy-card"></div>
+
+        <!-- 股票卡片 (最上層) -->
+        <div class="flip-container" id="stock-card">
+            <div class="flipper">
+                
+                <!-- 正面 -->
+                <div class="front">
+                    <div class="stock-header">
+                        <div>
+                            <h2 class="symbol">TSLA</h2>
+                            <div class="company">Tesla Inc</div>
+                        </div>
+                        <div style="background:#10b981; color:#fff; font-size:10px; padding:3px 8px; border-radius:12px; font-weight:800;">STRONG BUY</div>
+                    </div>
+                    <div class="price">$433.45</div>
+                    <div class="change">📉 $-11.55 (-2.60%)</div>
+                    
+                    <div class="chart-area">
+                        <span style="color:#9ca3af; font-size:11px;">[ 走勢圖區域 ]</span>
+                        <button class="set-alert-btn" onclick="openSettings(event)">🔔 設定警報</button>
+                    </div>
+
+                    <div class="metrics">
+                        <div class="metric-col">
+                            <span class="metric-label">Market Cap</span>
+                            <span class="metric-val">1671.30B</span>
+                        </div>
+                        <div class="metric-col">
+                            <span class="metric-label">P/E Ratio</span>
+                            <span class="metric-val">432.8</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 背面 -->
+                <div class="back">
+                    <div class="back-header">
+                        <div class="back-title">🔔 設定股價警報</div>
+                        <button class="close-btn" onclick="closeSettings()">✕</button>
+                    </div>
+
+                    <div class="setting-group">
+                        <span class="setting-label">目標價格 (Target Price)</span>
+                        <div class="price-input-wrapper">
+                            <span>$</span>
+                            <input type="number" class="price-input" id="targetPrice" value="434.00" step="0.01">
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <div class="toggle-row">
+                            <button class="condition-btn up active" onclick="setCondition(this, 'up')">📈 漲破 (>=)</button>
+                            <button class="condition-btn down" onclick="setCondition(this, 'down')">📉 跌破 (<=)</button>
+                        </div>
+                    </div>
+
+                    <div class="switches">
+                        <label class="switch-item">
+                            <input type="checkbox" checked> 顯示彈出通知 (Toast)
+                        </label>
+                        <label class="switch-item">
+                            <input type="checkbox" checked> 觸發警報鈴聲 🔊
+                        </label>
+                        <label class="switch-item">
+                            <input type="checkbox" checked> AI 語音播報 (TTS)
+                        </label>
+                    </div>
+
+                    <div class="action-row">
+                        <button class="btn btn-cancel" onclick="closeSettings()">🗑️ 移除</button>
+                        <button class="btn btn-save" onclick="closeSettings()">💾 儲存並監控</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const card = document.getElementById('stock-card');
+        const overlay = document.getElementById('focus-overlay');
+        const priceInput = document.getElementById('targetPrice');
+        const currentPrice = 433.45;
+
+        // 開啟設定 (翻轉到背面)
+        function openSettings(e) {
+            e.stopPropagation(); // 避免觸發背後的點擊事件
+            
+            // 紀錄卡片原本在畫面上的絕對位置 (用來計算飛到中央的動畫)
+            // 在這個 demo 中，我們用一個簡單的 class 來處理 absolute -> fixed 的轉換
+            
+            // 1. 顯示遮罩
+            overlay.classList.add('active');
+            
+            // 2. 進入 Focus 模式 (置中放大)
+            card.classList.add('focus-mode');
+            
+            // 3. 延遲一點點執行翻轉，讓飛出來的動作先開始
+            setTimeout(() => {
+                card.classList.add('is-flipped');
+            }, 100);
+        }
+
+        // 關閉設定 (翻轉回正面)
+        function closeSettings() {
+            // 1. 翻轉回正面
+            card.classList.remove('is-flipped');
+            
+            // 2. 等待翻轉快完成時，解除 Focus 模式，飛回原位
+            setTimeout(() => {
+                card.classList.remove('focus-mode');
+                overlay.classList.remove('active');
+            }, 300); // 配合 CSS transition 速度
+        }
+
+        // 切換條件按鈕 (漲破/跌破)
+        function setCondition(btn, type) {
+            document.querySelectorAll('.condition-btn').forEach(b => b.classList.remove('active', 'up', 'down'));
+            btn.classList.add('active', type);
+        }
+
+        // 簡單的互動邏輯：當使用者輸入數字時，自動判斷是大於還是小於現價
+        priceInput.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            if(isNaN(val)) return;
+            
+            const upBtn = document.querySelector('.condition-btn.up');
+            const downBtn = document.querySelector('.condition-btn.down');
+            
+            if(val >= currentPrice) {
+                setCondition(upBtn, 'up');
+            } else {
+                setCondition(downBtn, 'down');
+            }
+        });
+    </script>
+</body>
+</html>
