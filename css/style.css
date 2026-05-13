@@ -3988,6 +3988,7 @@ body.pin-mode {
     position: relative;
     /* 取代原本的 padding，交給內部的 front/back 去 padding */
     padding: 0 !important;
+    overflow: visible !important; /* 必須為 visible，否則會覆寫 preserve-3d 導致扁平化 */
 }
 
 /* 確保 .note-text-content 也維持 3D 空間，否則子元素會被扁平化 */
@@ -3995,6 +3996,7 @@ body.pin-mode {
     transform-style: preserve-3d;
     width: 100%;
     height: 100%;
+    overflow: visible !important; /* 必須為 visible，否則會覆寫 preserve-3d 導致扁平化 */
 }
 
 /* 當翻轉 class 加上時，轉 180 度 */
