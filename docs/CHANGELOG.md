@@ -60,6 +60,11 @@
 
 
 
+
+## [2.5.25] - 2026-05-13
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   修正 Echo 修復的 bug：改用 Yjs 內建 origin 參數取代手動 flag，避免異常時 flag 卡住導致 Tab B 無法同步到 Tab A
 ## [2.5.24] - 2026-05-13
 
 ### 🔧 優化與修正 (Improved & Fixed)
