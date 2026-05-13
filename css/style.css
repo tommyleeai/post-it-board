@@ -4056,6 +4056,7 @@ body.pin-mode {
     position: relative;
 }
 
+/* === Stock Card Active Alert Button START === */
 /* 監控中底部左下角浮動按鈕 (Hover 顯示，避開右下角原生設定) */
 .stock-card-active-alert-btn {
     position: absolute;
@@ -4087,6 +4088,7 @@ body.pin-mode {
 .stock-card-front:hover .stock-card-active-alert-btn {
     bottom: 10px;
 }
+/* === Stock Card Active Alert Button END === */
 
 /* 設定按鈕 (Hover 顯示) */
 .stock-card-set-alert-btn {
