@@ -36,20 +36,27 @@ PostIt.Settings = (function () {
     let accountSettings = null; // 當前帳號設定（從 Firestore 載入）
 
     // -------- 載入帳號設定 --------
+    // ⚠️ 重要前置條件：auth.js 的 saveProfile() 必須在本函式被呼叫前完成（需 await）。
+    //    若 saveProfile 的 Firestore .set() 與本函式的 .get() 同時進行，
+    //    Firebase SDK 會回傳被污染的「延遲補償快取」，導致 settings 欄位消失。
+    //    詳見：docs/bug_report_background_persistence.md（2026-04-12 記錄）
     async function load() {
         const uid = PostIt.Auth.getUid();
         if (!uid) return;
 
         try {
             const db = PostIt.Firebase.getDb();
-            // 移除 source: 'server' 強制讀取，改用預設行為 (Cache-first/Server-sync)，
-            // 因為 auth.js 的 saveProfile 是使用 merge: true，不會覆蓋本地快取的 settings，
-            // 這樣能避免網路連線不穩或剛開機瞬間被視為 offline 而導致載入失敗掉回 DEFAULTS。
             const doc = await db.collection('users').doc(uid).get();
             if (doc.exists && doc.data().settings) {
                 accountSettings = { ...DEFAULTS, ...doc.data().settings };
             } else {
                 accountSettings = { ...DEFAULTS };
+                // 防護性警告：如果文件存在但沒有 settings，很可能是 Race Condition 又復發了
+                if (doc.exists && !doc.data().settings) {
+                    console.warn('[Settings] ⚠️ Firestore 文件存在但缺少 settings 欄位！',
+                        '可能是 auth.js saveProfile 的 await 被移除，導致延遲補償快取競爭。',
+                        '請檢查 auth.js onAuthStateChanged 中的 saveProfile 是否有 await。');
+                }
             }
             console.log('[Settings] 帳號設定已載入:', accountSettings);
         } catch (error) {

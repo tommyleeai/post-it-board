@@ -55,4 +55,22 @@
    修改 `applyBoardBgImage` 函式，利用 `new Image()` 物件進行後台下載。在圖片的 `.onload` 事件尚未觸發前，維持現有畫面不破壞；一旦載入完畢，才一瞬間將 `background-image` 反應到畫布上。這賦予了「背景瞬換」的順滑感，徹底根除白畫面導致的焦慮感與誤判。
 
 ---
+
+## ⚠️ 退化事件紀錄 (Regression Log)
+
+### 2026-05-13：同一根因復發（v2.5.20 ~ v2.5.22 → v2.5.23 修復）
+
+**退化原因**：在後續版本迭代中，`auth.js` 的 `saveProfile(user)` 前面的 `await` 被意外移除，導致第 3 層根因（Firestore 延遲補償快取競爭危害）完整復發。
+
+**誤判經過**：AI 助手連續嘗試了 3 個錯誤方向的修復（修改 `applyBoardBgImage` 的預載機制），浪費了 v2.5.20、v2.5.21、v2.5.22 三個版本，最終才回頭比對本報告，確認根因仍是 `auth.js` 的 Race Condition。
+
+**修復**：`auth.js` 第 26 行：`saveProfile(user)` → `await saveProfile(user)`
+
+### 防護措施（已實施）
+
+1. **auth.js 註解警告**：在 `await saveProfile(user)` 上方加入 4 行完整的根因說明，任何人若移除 `await` 必會看到警示。
+2. **settings_v2.js 防護性斷言**：`load()` 函式加入前置條件註解 + 執行時期偵測，若 Firestore 文件存在但缺少 `settings` 欄位，立即輸出 `console.warn` 指向本報告。
+3. **本報告新增退化紀錄**：確保未來的 AI 助手或開發者能讀到完整歷史。
+
+---
 *記錄者：Antigravity*
