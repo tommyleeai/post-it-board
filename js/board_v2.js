@@ -2167,6 +2167,13 @@ PostIt.Board = (function () {
         // Stock Card 專屬樣式判定
         if (note.type === 'stock_card') {
             el.classList.add('stock-card-note');
+            if (contentEl) {
+                // Stock Card 必須使用預設字體，不可套用手寫字型
+                contentEl.style.fontFamily = "'Inter', sans-serif";
+                contentEl.style.color = ''; // 讓 CSS 來決定字體顏色 (因應 Dark mode 等)
+                contentEl.style.fontSize = ''; // 使用預設大小
+            }
+            return; // 直接返回，不要執行後續的文字便利貼樣式設定
         } else {
             el.classList.remove('stock-card-note');
         }

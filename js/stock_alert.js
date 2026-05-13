@@ -102,11 +102,12 @@ PostIt.StockAlert = (function () {
             });
 
             // 讓沒有設定警報的純股票卡牌也能持續更新報價
-            if (!hasAnyRealAlert && note.type === 'stock_card' && note.stockCardData && note.stockCardData.symbol) {
+            const pureSymbol = (note.stockCardData && note.stockCardData.symbol) || (note.type === 'stock_card' ? String(note.content).trim().toUpperCase() : null);
+            if (!hasAnyRealAlert && note.type === 'stock_card' && pureSymbol) {
                 alerts.push({ 
                     noteId: id, 
                     alertId: 'quote_only',
-                    symbol: note.stockCardData.symbol
+                    symbol: pureSymbol
                     // 無 condition，所以純粹抓報價
                 });
             }
@@ -396,11 +397,16 @@ PostIt.StockAlert = (function () {
         setTimeout(() => {
             if (typeof PostIt.Note !== 'undefined') {
                 const notes = PostIt.Note.getCache();
+                let delay = 0; // 錯開請求時間，避免瞬間打爆 API Rate Limit 導致卡片讀不出資料
                 Object.values(notes).forEach(n => {
                     if (n.type === 'stock_card') {
                         const symbol = (n.stockCardData && n.stockCardData.symbol) || String(n.content).trim().toUpperCase();
                         if (symbol && fetchCardData) {
-                            fetchCardData(n.id, symbol);
+                            // 只有在資料嚴重缺漏時，才去重新拉 profile 與 chart API，不然一般只需靠 poll() 更新股價即可
+                            if (!n.stockCardData || !n.stockCardData.prices || n.stockCardData.prices.length === 0) {
+                                setTimeout(() => fetchCardData(n.id, symbol), delay);
+                                delay += 800; // 每張卡片錯開 0.8 秒
+                            }
                         }
                     }
                 });
