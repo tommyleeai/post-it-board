@@ -582,12 +582,12 @@ PostIt.Board = (function () {
     function _getLayoutData(note, currentMode) {
         if (note.layouts) {
             // 1. 優先：當前模式
-            if (note.layouts[currentMode] && typeof note.layouts[currentMode].x === 'number') {
+            if (note.layouts[currentMode] && !isNaN(parseFloat(note.layouts[currentMode].x))) {
                 return note.layouts[currentMode];
             }
             // 2. 降級：任何有 x 座標的模式
             for (const mode of ['desktop', 'mobile', 'tablet']) {
-                if (mode !== currentMode && note.layouts[mode] && typeof note.layouts[mode].x === 'number') {
+                if (mode !== currentMode && note.layouts[mode] && !isNaN(parseFloat(note.layouts[mode].x))) {
                     return note.layouts[mode];
                 }
             }
@@ -976,12 +976,17 @@ PostIt.Board = (function () {
             // 降級策略：優先讀取當前模式 → 任何可用模式 → root note（舊版相容）
             const layoutData = _getLayoutData(note, mode);
             
-            let xVal = typeof layoutData.x === 'number' ? layoutData.x : parseFloat(note.x || 0);
-            let yVal = typeof layoutData.y === 'number' ? layoutData.y : parseFloat(note.y || 0);
+            // 確保座標為有效數字，避免因 JSON.stringify 漏失 undefined 或 NaN 導致回彈 (0,0)
+            let xVal = parseFloat(layoutData.x);
+            let yVal = parseFloat(layoutData.y);
             
-            // 如果解析結果是 NaN，則給個預設值
-            if (isNaN(xVal)) xVal = 50;
-            if (isNaN(yVal)) yVal = 50;
+            // 如果 layoutData 的解析結果是 NaN，退回檢查 root 屬性
+            if (isNaN(xVal)) xVal = parseFloat(note.x);
+            if (isNaN(yVal)) yVal = parseFloat(note.y);
+
+            // 最終防線：如果連 root 也無效，則置中而非丟到左上角，並避免出現 (0,0)
+            if (isNaN(xVal) || xVal === null || xVal === undefined) xVal = 50;
+            if (isNaN(yVal) || yVal === null || yVal === undefined) yVal = 50;
             
             // 自動修正：如果讀到舊版絕對座標（大於150），即時轉換為百分比並回寫 Yjs
             if (Math.abs(xVal) > 150 || Math.abs(yVal) > 150) {

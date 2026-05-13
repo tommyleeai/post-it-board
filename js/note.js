@@ -150,9 +150,24 @@ PostIt.Note = (function () {
         const mode = PostIt.getDeviceMode();
         
         let yLayouts = yNote.get('layouts');
-        if (!yLayouts || !yLayouts.set) {
+        if (!yLayouts || !(typeof yLayouts.set === 'function')) {
             const Y = PostIt.YjsSync.getY();
-            yLayouts = new Y.Map();
+            const newLayouts = new Y.Map();
+            
+            // 安全遷移：如果舊的 layouts 是普通物件，將其現有內容深拷貝至新的 Y.Map
+            if (yLayouts && typeof yLayouts === 'object') {
+                for (const [k, v] of Object.entries(yLayouts)) {
+                    if (v && typeof v === 'object') {
+                        const innerMap = new Y.Map();
+                        for (const [mk, mv] of Object.entries(v)) {
+                            innerMap.set(mk, mv);
+                        }
+                        newLayouts.set(k, innerMap);
+                    }
+                }
+            }
+            
+            yLayouts = newLayouts;
             yNote.set('layouts', yLayouts);
         }
         
