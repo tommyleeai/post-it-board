@@ -559,8 +559,7 @@ PostIt.StockAlert = (function () {
         // 取得貼紙元素
         const noteEl = document.querySelector(`.sticky-note[data-note-id="${noteId}"]`);
         if (noteEl) {
-            // 平滑滾動畫面將目標卡片置中 (如果畫布支援原生的 scrolling)
-            noteEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            // 原先的 scrollIntoView 在無捲軸的 fixed 畫布中無效，改為純視覺特效與層級提升
 
             // 加上 Highlight 特效
             noteEl.classList.add('highlight-glow');
@@ -569,8 +568,20 @@ PostIt.StockAlert = (function () {
             }, 3000);
             
             // 將它推到最上層
-            if (window.PostIt && PostIt.Drag && PostIt.Drag.bringToFront) {
-                PostIt.Drag.bringToFront(noteEl, noteId);
+            if (window.PostIt && PostIt.Drag && typeof PostIt.Drag.getMaxZIndex === 'function') {
+                const maxZ = PostIt.Drag.getMaxZIndex() + 1;
+                noteEl.style.zIndex = maxZ;
+                PostIt.Drag.setMaxZIndex(maxZ);
+                
+                // 同步至資料庫，確保其他使用者也能看到層級變更
+                if (PostIt.Note && typeof PostIt.Note.updatePosition === 'function') {
+                    // 使用原本紀錄在元素上的 dataset (如果有的話) 或者擷取目前的 style
+                    const x = parseFloat(noteEl.style.left);
+                    const y = parseFloat(noteEl.style.top);
+                    if (!isNaN(x) && !isNaN(y)) {
+                        PostIt.Note.updatePosition(noteId, x, y, maxZ);
+                    }
+                }
             }
         }
     }

@@ -50,6 +50,11 @@
 
 
 
+
+## [2.5.15] - 2026-05-13
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   更新 style、stock_alert 模組
 ## [2.5.14] - 2026-05-13
 
 ### 🔧 優化與修正 (Improved & Fixed)
