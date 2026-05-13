@@ -14,6 +14,7 @@ PostIt.YjsSync = (function () {
     let yNotesMap = null;
     let onNotesUpdatedCallback = null;
     let backupTimeout = null;
+    let unsubscribeFirestore = null;
 
     async function loadModules() {
         if (Y) return;
@@ -90,14 +91,16 @@ PostIt.YjsSync = (function () {
         
         // 建立即時監聽，取代原本的單次拉取
         // 當 WebRTC 斷線時，透過 Firestore 確保多個分頁/裝置依然能保持同步
-        db.collection('boards').doc(boardId).onSnapshot(docSnap => {
+        unsubscribeFirestore = db.collection('boards').doc(boardId).onSnapshot(docSnap => {
             if (docSnap.exists) {
                 const data = docSnap.data();
                 if (data.yjs_state) {
                     try {
                         const bytes = data.yjs_state.toUint8Array();
                         // 合併雲端的更新到本地
-                        Y.applyUpdate(currentDoc, bytes);
+                        if (currentDoc) {
+                            Y.applyUpdate(currentDoc, bytes);
+                        }
                     } catch(e) {
                         console.error('[Yjs] Cloud sync apply failed', e);
                     }
@@ -249,9 +252,18 @@ PostIt.YjsSync = (function () {
     }
 
     function cleanup() {
+        if (unsubscribeFirestore) {
+            unsubscribeFirestore();
+            unsubscribeFirestore = null;
+        }
+        if (currentPersistence) {
+            if (typeof currentPersistence.destroy === 'function') {
+                currentPersistence.destroy();
+            }
+            currentPersistence = null;
+        }
         if (currentDoc) currentDoc.destroy();
         currentDoc = null;
-        currentPersistence = null;
         yNotesMap = null;
         clearTimeout(backupTimeout);
     }

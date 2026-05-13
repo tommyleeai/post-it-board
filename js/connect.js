@@ -15,6 +15,7 @@ PostIt.Connect = (function () {
     let cursorEl = null;
     let fabPin = null;
     let cursorPos = { x: 0, y: 0 }; // viewport 座標
+    let unsubscribeConnections = null;
 
     // -------- 初始化（頁面載入時呼叫）--------
     function init() {
@@ -54,6 +55,10 @@ PostIt.Connect = (function () {
 
     // -------- 登入後呼叫：訂閱 Firestore 連線資料 --------
     function start() {
+        if (unsubscribeConnections) {
+            unsubscribeConnections();
+            unsubscribeConnections = null;
+        }
         loadConnections();
     }
 
@@ -370,7 +375,7 @@ PostIt.Connect = (function () {
         const metaRef = (typeof PostIt.BoardModel !== 'undefined')
             ? PostIt.BoardModel.getActiveMetaRef()
             : PostIt.Firebase.getDb().collection('users').doc(uid).collection('postit_meta');
-        metaRef.doc('connections')
+        unsubscribeConnections = metaRef.doc('connections')
             .onSnapshot(doc => {
                 pairs = doc.exists ? (doc.data().pairs || []) : [];
             });
