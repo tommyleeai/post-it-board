@@ -1383,9 +1383,33 @@ PostIt.Board = (function () {
                 const watermarkHtml = sd.logo ? `<div style="position:absolute; top:0; left:0; width:100%; height:100%; overflow:hidden; border-radius:16px; pointer-events:none; z-index:0;"><img src="${escapeHtml(sd.logo)}" class="stock-card-watermark" alt="watermark"></div>` : '';
 
                 const alertData = note.stockAlert || {};
+                const isWatching = alertData.status === 'watching';
                 const targetPrice = alertData.targetPrice || '';
                 const condition = alertData.condition || (currentPrice ? '>=' : '');
                 
+                // Active Alert Button (Slide up from bottom on hover)
+                let alertBtnHtml = '';
+                if (isWatching) {
+                    const condIcon = condition === '>=' ? '📈' : '📉';
+                    const condText = condition === '>=' ? '漲破' : '跌破';
+                    const btnClass = condition === '>=' ? 'alert-up' : 'alert-down';
+                    
+                    const hasToast = alertData.options?.toast !== false;
+                    const hasSound = alertData.options?.sound !== false;
+                    const hasTts = alertData.options?.tts !== false;
+                    
+                    // 小齒輪、小喇叭、對話泡泡 (Toast = 彈出通知/對話泡泡)
+                    let optIcons = '<i class="fa-solid fa-gear" style="margin-right:6px;" title="修改設定"></i>';
+                    if (hasSound || hasTts) optIcons += '<i class="fa-solid fa-volume-high" style="margin-right:6px;" title="鈴聲/語音"></i>';
+                    if (hasToast) optIcons += '<i class="fa-solid fa-message" title="彈出通知"></i>';
+
+                    alertBtnHtml = `
+                    <button class="stock-card-active-alert-btn ${btnClass}" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.openFocusMode('${note.id}', event)">
+                        <span style="display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-bell"></i> 監控中: ${condIcon} ${condText} $${targetPrice}</span>
+                        <span style="opacity:0.9; font-size:0.9em; font-weight:normal;">${optIcons}</span>
+                    </button>`;
+                }
+
                 // 正面 HTML
                 const frontHtml = `
                     <div class="stock-card-front">
@@ -1422,7 +1446,7 @@ PostIt.Board = (function () {
                                 ${svgPath}
                             </svg>
                             <div class="stock-card-pulse-dot" style="top: ${pulseDotTop};"></div>
-                            <button class="stock-card-set-alert-btn" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.openFocusMode('${note.id}', event)">🔔 設定警報</button>
+                            ${!isWatching ? `<button class="stock-card-set-alert-btn" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.openFocusMode('${note.id}', event)">🔔 設定警報</button>` : ''}
                         </div>
 
                         <div class="stock-card-metrics-grid">
@@ -1443,6 +1467,7 @@ PostIt.Board = (function () {
                                 <span class="stock-card-metric-value">${sd.low52 ? '$' + sd.low52.toFixed(2) : '--'}</span>
                             </div>
                         </div>
+                        ${alertBtnHtml}
                     </div>
                 `;
 

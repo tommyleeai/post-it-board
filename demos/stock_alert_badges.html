@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Stock Alert UI Demos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #121212;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            padding: 50px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .demo-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .demo-title {
+            font-size: 1.1em;
+            color: #bbb;
+            font-weight: 500;
+        }
+        .demo-desc {
+            font-size: 0.85em;
+            color: #888;
+            max-width: 280px;
+            text-align: center;
+            line-height: 1.5;
+        }
+        /* Base Stock Card Mock */
+        .stock-card {
+            width: 280px;
+            background: #1e1e1e;
+            border-radius: 16px;
+            padding: 16px;
+            box-sizing: border-box;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #333;
+            /* Mock the sticky note look slightly */
+            border-bottom-right-radius: 4px;
+        }
+        .header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .logo { width: 36px; height: 36px; background: #333; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size:12px; color:#aaa; }
+        .symbol { font-weight: bold; font-size: 1.2em; letter-spacing: 0.5px; }
+        .name { font-size: 0.75em; color: #888; }
+        .price { font-size: 2.2em; font-weight: bold; margin-bottom: 4px; }
+        .change { color: #10b981; font-size: 0.9em; margin-bottom: 15px; font-weight: 500; }
+        .change.down { color: #ef4444; }
+        .chart { 
+            width: 100%; 
+            height: 60px; 
+            background: linear-gradient(180deg, rgba(16,185,129,0.15) 0%, transparent 100%); 
+            border-bottom: 2px solid #10b981; 
+            margin-bottom: 15px; 
+            position: relative; 
+            border-radius: 4px;
+        }
+        .chart.down {
+            background: linear-gradient(180deg, rgba(239,68,68,0.15) 0%, transparent 100%); 
+            border-bottom: 2px solid #ef4444; 
+        }
+        .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.8em; }
+        .metric-item { display: flex; flex-direction: column; gap: 4px; }
+        .metric-label { color: #888; }
+        .metric-value { font-weight: 600; color: #eee; }
+        
+        .btn-set-alert {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.2s;
+            font-weight: 500;
+        }
+        .btn-set-alert:hover { background: rgba(255,255,255,0.15); }
+
+        /* ============================
+           Design 1: Pill Badge
+           ============================ */
+        .design-1 .badge-pill {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* ============================
+           Design 2: Alert Strip
+           ============================ */
+        .design-2 .alert-strip {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.15), transparent);
+            border-left: 3px solid #3b82f6;
+            margin: 15px -16px -16px -16px; /* Bleed out to edges */
+            padding: 12px 16px;
+            font-size: 0.85em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .design-2 .alert-strip .target { font-weight: 600; color: #e2e8f0; }
+        .design-2 .alert-strip .icons { color: #94a3b8; font-size: 0.9em; display: flex; gap: 8px; }
+
+        /* ============================
+           Design 3: Replaced Button
+           ============================ */
+        .design-3 .btn-active-alert {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #10b981;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        .design-3 .btn-active-alert:hover {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(5, 150, 105, 0.2) 100%);
+        }
+        .design-3 .btn-active-alert span.icons { opacity: 0.8; font-size: 0.9em; font-weight: normal; color: #a7f3d0; }
+
+        /* ============================
+           Design 4: Chart Overlay (Target Line)
+           ============================ */
+        .design-4 .target-line {
+            position: absolute;
+            top: 35%; /* Mock target position */
+            left: 0;
+            right: 0;
+            border-top: 1px dashed rgba(59, 130, 246, 0.6);
+            z-index: 1;
+        }
+        .design-4 .target-label {
+            position: absolute;
+            right: 4px;
+            top: 35%;
+            font-size: 0.7em;
+            background: #3b82f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #fff;
+            transform: translateY(-50%);
+            font-weight: bold;
+            z-index: 2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Design 1 -->
+    <div class="demo-section">
+        <div class="demo-title">方案 1：右上角徽章 (Pill Badge)</div>
+        <div class="demo-desc">佔用空間小，直接融合在卡牌標題列旁邊。</div>
+        <div class="stock-card design-1">
+            <div class="badge-pill">
+                <i class="fa-solid fa-bell"></i> >= $200
+            </div>
+            <div class="header">
+                <div class="logo">🍎</div>
+                <div>
+                    <div class="symbol">AAPL</div>
+                    <div class="name">Apple Inc.</div>
+                </div>
+            </div>
+            <div class="price">$195.40</div>
+            <div class="change"><i class="fa-solid fa-arrow-trend-up"></i> +$2.10 (+1.08%)</div>
+            <div class="chart"></div>
+            <div class="metrics">
+                <div class="metric-item"><span class="metric-label">P/E Ratio</span><span class="metric-value">28.5</span></div>
+                <div class="metric-item"><span class="metric-label">52W High</span><span class="metric-value">$199.62</span></div>
+            </div>
+            <button class="btn-set-alert">⚙️ 修改警報</button>
+        </div>
+    </div>
+
+    <!-- Design 2 -->
+    <div class="demo-section">
+        <div class="demo-title">方案 2：底部警報列 (Alert Strip)</div>
+        <div class="demo-desc">取代卡牌最底部的留白，視覺上像是一條專屬的狀態列，並顯示設定的通知管道。</div>
+        <div class="stock-card design-2">
+            <div class="header">
+                <div class="logo">⚡</div>
+                <div>
+                    <div class="symbol">TSLA</div>
+                    <div class="name">Tesla Inc.</div>
+                </div>
+            </div>
+            <div class="price">$175.22</div>
+            <div class="change down"><i class="fa-solid fa-arrow-trend-down"></i> -$1.20 (-0.68%)</div>
+            <div class="chart down"></div>
+            <div class="metrics">
+                <div class="metric-item"><span class="metric-label">P/E Ratio</span><span class="metric-value">45.2</span></div>
+                <div class="metric-item"><span class="metric-label">52W Low</span><span class="metric-value">$160.50</span></div>
+            </div>
+            <div class="alert-strip">
+                <div>
+                    <i class="fa-solid fa-bell" style="color: #3b82f6; margin-right: 5px;"></i> 
+                    <span class="target">📉 跌破 $170.00</span>
+                </div>
+                <div class="icons">
+                    <i class="fa-solid fa-message" title="Toast"></i>
+                    <i class="fa-solid fa-volume-high" title="Sound"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Design 3 -->
+    <div class="demo-section">
+        <div class="demo-title">方案 3：按鈕狀態變換 (Button Morph)</div>
+        <div class="demo-desc">將原本的「設定警報」按鈕直接變成綠色/紅色的監控狀態，點擊一樣可以修改。</div>
+        <div class="stock-card design-3">
+            <div class="header">
+                <div class="logo">🖥️</div>
+                <div>
+                    <div class="symbol">NVDA</div>
+                    <div class="name">NVIDIA Corp.</div>
+                </div>
+            </div>
+            <div class="price">$850.10</div>
+            <div class="change"><i class="fa-solid fa-arrow-trend-up"></i> +$15.20 (+1.82%)</div>
+            <div class="chart"></div>
+            <div class="metrics">
+                <div class="metric-item"><span class="metric-label">P/E Ratio</span><span class="metric-value">75.1</span></div>
+                <div class="metric-item"><span class="metric-label">52W High</span><span class="metric-value">$974.00</span></div>
+            </div>
+            <button class="btn-active-alert">
+                <span><i class="fa-solid fa-eye"></i> 監控中: >= $900</span>
+                <span class="icons"><i class="fa-solid fa-volume-high"></i> <i class="fa-solid fa-message"></i></span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Design 4 -->
+    <div class="demo-section">
+        <div class="demo-title">方案 4：圖表目標線 (Chart Overlay)</div>
+        <div class="demo-desc">最直覺的作法，直接在走勢圖上畫出一條虛線代表目標價。</div>
+        <div class="stock-card design-4">
+            <div class="header">
+                <div class="logo">🪟</div>
+                <div>
+                    <div class="symbol">MSFT</div>
+                    <div class="name">Microsoft</div>
+                </div>
+            </div>
+            <div class="price">$420.55</div>
+            <div class="change"><i class="fa-solid fa-arrow-trend-up"></i> +$5.10 (+1.23%)</div>
+            <div class="chart">
+                <div class="target-line"></div>
+                <div class="target-label">🔔 目標: $430</div>
+            </div>
+            <div class="metrics">
+                <div class="metric-item"><span class="metric-label">P/E Ratio</span><span class="metric-value">36.5</span></div>
+                <div class="metric-item"><span class="metric-label">52W High</span><span class="metric-value">$430.82</span></div>
+            </div>
+            <button class="btn-set-alert">⚙️ 修改警報</button>
+        </div>
+    </div>
+
+</body>
+</html>
