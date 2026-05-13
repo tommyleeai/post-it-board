@@ -877,6 +877,11 @@ PostIt.Board = (function () {
                 return;
             }
 
+            // 如果卡片正在 Focus 模式 (例如 3D 翻轉設定中)，禁止單擊進入編輯
+            if (el.classList.contains('focus-mode') || el.classList.contains('focus-mode-returning')) {
+                return;
+            }
+
             // 超級好物卡片禁止進入編輯模式（避免破壞版面把內容變成 raw JSON）
             if (note.type === 'super_deal') {
                 return;
