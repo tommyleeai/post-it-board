@@ -576,6 +576,26 @@ PostIt.Board = (function () {
         }
     }
 
+    // ======== 跨裝置座標降級策略 ========
+    // 優先讀取當前裝置模式的座標，若不存在則嘗試其他模式，最後降級到 root note
+    // 解決：Tab A (desktop) 寫入座標後，Tab B (mobile/DevTools模擬) 讀不到而跳 (0,0)
+    function _getLayoutData(note, currentMode) {
+        if (note.layouts) {
+            // 1. 優先：當前模式
+            if (note.layouts[currentMode] && typeof note.layouts[currentMode].x === 'number') {
+                return note.layouts[currentMode];
+            }
+            // 2. 降級：任何有 x 座標的模式
+            for (const mode of ['desktop', 'mobile', 'tablet']) {
+                if (mode !== currentMode && note.layouts[mode] && typeof note.layouts[mode].x === 'number') {
+                    return note.layouts[mode];
+                }
+            }
+        }
+        // 3. 最終降級：root note（舊版相容）
+        return note;
+    }
+
     // ======== 渲染貼紙 ========
     let _isFirstRender = true;
     function renderNotes(notes) {
@@ -669,7 +689,8 @@ PostIt.Board = (function () {
 
         // 位置（百分比轉像素）— 跨裝置獨立座標
         const mode = (window.PostIt && PostIt.getDeviceMode) ? PostIt.getDeviceMode() : 'desktop';
-        const layoutData = (note.layouts && note.layouts[mode]) ? note.layouts[mode] : note; // 降級相容舊版
+        // 降級策略：優先讀取當前模式 → 任何可用模式 → root note（舊版相容）
+        const layoutData = _getLayoutData(note, mode);
         
         const boardRect = boardEl.getBoundingClientRect();
         const xVal = typeof layoutData.x === 'number' ? layoutData.x : (note.x || 0);
@@ -952,7 +973,8 @@ PostIt.Board = (function () {
         const isExpandedGroupItem = (typeof PostIt.Group !== 'undefined' && typeof PostIt.Group.getExpandedGroupId === 'function' && PostIt.Group.getExpandedGroupId() && PostIt.Group.getExpandedGroupId() === note.groupId);
         if (!el.classList.contains('dragging') && !isExpandedGroupItem) {
             const mode = (window.PostIt && PostIt.getDeviceMode) ? PostIt.getDeviceMode() : 'desktop';
-            const layoutData = (note.layouts && note.layouts[mode]) ? note.layouts[mode] : note; // 降級相容舊版
+            // 降級策略：優先讀取當前模式 → 任何可用模式 → root note（舊版相容）
+            const layoutData = _getLayoutData(note, mode);
             
             let xVal = typeof layoutData.x === 'number' ? layoutData.x : parseFloat(note.x || 0);
             let yVal = typeof layoutData.y === 'number' ? layoutData.y : parseFloat(note.y || 0);
@@ -975,21 +997,6 @@ PostIt.Board = (function () {
             const zVal = typeof layoutData.zIndex === 'number' ? layoutData.zIndex : (note.zIndex || 1);
 
             const boardRect = boardEl.getBoundingClientRect();
-            
-            // 🔍 診斷日誌：當座標接近 (0,0) 時印出完整資料，協助定位跳位根因
-            if (xVal < 1 && yVal < 1) {
-                console.warn('[Board] ⚠️ 偵測到卡牌即將渲染到 (0,0)!', {
-                    noteId: note.id,
-                    xVal, yVal, zVal,
-                    'layoutData': layoutData,
-                    'note.layouts': note.layouts,
-                    'note.x': note.x, 'note.y': note.y,
-                    'mode': (window.PostIt && PostIt.getDeviceMode) ? PostIt.getDeviceMode() : 'desktop',
-                    'boardRect.width': boardRect.width, 'boardRect.height': boardRect.height,
-                    'note(raw)': JSON.parse(JSON.stringify(note))
-                });
-            }
-            
             el.style.left = ((xVal / 100) * boardRect.width) + 'px';
             el.style.top = ((yVal / 100) * boardRect.height) + 'px';
 
