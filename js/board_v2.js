@@ -61,7 +61,9 @@ PostIt.Board = (function () {
             await PostIt.Settings.load();
 
             // 套用白板背景
-            applyBoardBgImage(PostIt.Settings.getAccountSettings().boardBgImage);
+            const bgUrl = PostIt.Settings.getAccountSettings().boardBgImage;
+            console.log('[Board] ⏱ Settings loaded, boardBgImage =', bgUrl ? bgUrl.substring(0, 80) + '...' : '(空/無)');
+            applyBoardBgImage(bgUrl);
 
             // 初始化多白板系統
             if (typeof PostIt.BoardModel !== 'undefined') {
@@ -2668,15 +2670,13 @@ PostIt.Board = (function () {
     function applyBoardBgImage(url) {
         if (!boardEl) return;
         if (url) {
-            // 直接設定 CSS background-image，讓瀏覽器自行管理圖片載入與快取
-            // 不使用 new Image() 預載 — 原因：
-            // 1. new Image() + crossOrigin 會觸發 CORS 預檢，Firebase Storage 預設不回應 → onerror
-            // 2. new Image() 的快取策略與 CSS background-image 不同，導致快取命中率下降
-            // 3. CSS background-image 載入失敗時會靜默保留 background-color，不會觸發 JS 錯誤
-            boardEl.style.setProperty('background-image', `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url("${url}")`, 'important');
+            // 先立即設定 CSS background-image（不等預載），確保即使圖片載入慢也不會空白
+            const bgValue = `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url("${url}")`;
+            boardEl.style.setProperty('background-image', bgValue, 'important');
             boardEl.style.setProperty('background-size', 'cover', 'important');
             boardEl.style.setProperty('background-position', 'center', 'important');
             boardEl.style.setProperty('background-repeat', 'no-repeat', 'important');
+            console.log('[Board] 背景圖已套用:', url.substring(0, 80) + '...');
         } else {
             // 清除，恢復 style.css 中擬真的預設背景設定
             boardEl.style.removeProperty('background-image');
