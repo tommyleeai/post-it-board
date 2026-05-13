@@ -4062,8 +4062,9 @@ body.pin-mode {
     position: absolute;
     bottom: -60px; /* Hide below the card */
     left: 10px;
-    width: calc(100% - 70px); /* 留 60px 給右下角的卡牌設定圖示，徹底避開 */
-    padding: 8px 12px;
+    right: 85px; /* 留 85px 給右下角的卡牌設定與編輯圖示 (編輯圖示在 right: 46px) */
+    width: auto;
+    padding: 8px 10px;
     border-radius: 12px;
     color: #fff;
     border: none;
