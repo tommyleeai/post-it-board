@@ -2670,6 +2670,7 @@ PostIt.Board = (function () {
         if (url) {
             // 背景載入機制：避免畫面全白讓使用者誤以為遺失
             const img = new Image();
+            img.crossOrigin = 'anonymous'; // 避免跨域問題導致 onerror
             img.onload = () => {
                 // 加入 35% 的黑色半透明遮罩，壓暗過度鮮豔的圖片與降低紋理噪聲，藉此凸顯前景便利貼
                 boardEl.style.setProperty('background-image', `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url("${url}")`, 'important');
@@ -2679,7 +2680,22 @@ PostIt.Board = (function () {
             };
             img.onerror = () => {
                 console.warn('[Board] 背景圖片載入失敗:', url);
-                boardEl.style.removeProperty('background-image');
+                // 不清除背景 — 保留 CSS 預設的擬真紋理或先前的背景圖
+                // 如果是 Firebase Storage token 過期，5 秒後自動重試一次
+                setTimeout(() => {
+                    const retryImg = new Image();
+                    retryImg.onload = () => {
+                        boardEl.style.setProperty('background-image', `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url("${url}")`, 'important');
+                        boardEl.style.setProperty('background-size', 'cover', 'important');
+                        boardEl.style.setProperty('background-position', 'center', 'important');
+                        boardEl.style.setProperty('background-repeat', 'no-repeat', 'important');
+                        console.log('[Board] 背景圖片重試成功');
+                    };
+                    retryImg.onerror = () => {
+                        console.warn('[Board] 背景圖片重試仍失敗，保留預設背景');
+                    };
+                    retryImg.src = url + (url.includes('?') ? '&' : '?') + '_retry=' + Date.now();
+                }, 5000);
             };
             img.src = url;
             
