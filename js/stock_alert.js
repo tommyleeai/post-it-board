@@ -575,11 +575,16 @@ PostIt.StockAlert = (function () {
                 
                 // 同步至資料庫，確保其他使用者也能看到層級變更
                 if (PostIt.Note && typeof PostIt.Note.updatePosition === 'function') {
-                    // 使用原本紀錄在元素上的 dataset (如果有的話) 或者擷取目前的 style
-                    const x = parseFloat(noteEl.style.left);
-                    const y = parseFloat(noteEl.style.top);
-                    if (!isNaN(x) && !isNaN(y)) {
-                        PostIt.Note.updatePosition(noteId, x, y, maxZ);
+                    const boardEl = document.getElementById('board');
+                    if (boardEl) {
+                        const boardRect = boardEl.getBoundingClientRect();
+                        const x = parseFloat(noteEl.style.left);
+                        const y = parseFloat(noteEl.style.top);
+                        if (!isNaN(x) && !isNaN(y) && boardRect.width > 0 && boardRect.height > 0) {
+                            const xPercent = (x / boardRect.width) * 100;
+                            const yPercent = (y / boardRect.height) * 100;
+                            PostIt.Note.updatePosition(noteId, xPercent, yPercent, maxZ);
+                        }
                     }
                 }
             }
