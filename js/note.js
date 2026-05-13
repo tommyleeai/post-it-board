@@ -194,6 +194,7 @@ PostIt.Note = (function () {
         }
 
         yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
+        console.log('[DEBUG updatePosition] updated note', noteId, 'x:', x, 'yNote:', yNote.toJSON());
     }
     // -------- 更新顏色 --------
     // -------- 更新顏色 --------

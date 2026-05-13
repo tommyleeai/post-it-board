@@ -255,6 +255,12 @@ PostIt.YjsSync = (function () {
         if (!currentDoc) return;
         try {
             const stateVector = Y.encodeStateAsUpdate(currentDoc);
+            console.log('[Yjs] stateVector size:', stateVector.byteLength, 'bytes');
+            
+            if (stateVector.byteLength > 1000000) {
+                console.error('[Yjs] ⚠️ stateVector size exceeds 1MB limit! Firebase will reject this update.');
+            }
+            
             const blob = firebase.firestore.Blob.fromUint8Array(stateVector);
             const db = PostIt.Firebase.getDb();
             await db.collection('boards').doc(boardId).update({
