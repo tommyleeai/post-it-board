@@ -42,8 +42,10 @@ PostIt.Settings = (function () {
 
         try {
             const db = PostIt.Firebase.getDb();
-            // 強制從伺服器讀取，避免與 auth.js 的 saveProfile 產生本地快取的競爭危害
-            const doc = await db.collection('users').doc(uid).get({ source: 'server' });
+            // 移除 source: 'server' 強制讀取，改用預設行為 (Cache-first/Server-sync)，
+            // 因為 auth.js 的 saveProfile 是使用 merge: true，不會覆蓋本地快取的 settings，
+            // 這樣能避免網路連線不穩或剛開機瞬間被視為 offline 而導致載入失敗掉回 DEFAULTS。
+            const doc = await db.collection('users').doc(uid).get();
             if (doc.exists && doc.data().settings) {
                 accountSettings = { ...DEFAULTS, ...doc.data().settings };
             } else {
