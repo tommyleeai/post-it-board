@@ -84,18 +84,30 @@ PostIt.StockAlert = (function () {
         const cache = PostIt.Note.getCache();
         const alerts = [];
         for (const [id, note] of Object.entries(cache)) {
-            let symbolToWatch = null;
-            if (note.stockAlert && note.stockAlert.status === 'watching' && note.stockAlert.symbol) {
-                symbolToWatch = note.stockAlert.symbol;
-            } else if (note.type === 'stock_card' && note.stockCardData && note.stockCardData.symbol) {
-                symbolToWatch = note.stockCardData.symbol;
+            let noteAlerts = note.stockAlerts || [];
+            if (note.stockAlert && !Array.isArray(note.stockAlert) && noteAlerts.length === 0) {
+                noteAlerts = [note.stockAlert];
             }
+            
+            let hasAnyRealAlert = false;
+            noteAlerts.forEach(a => {
+                if (a.status === 'watching' && a.symbol) {
+                    alerts.push({
+                        noteId: id,
+                        alertId: a.id || 'legacy',
+                        ...a
+                    });
+                    hasAnyRealAlert = true;
+                }
+            });
 
-            if (symbolToWatch) {
+            // 讓沒有設定警報的純股票卡牌也能持續更新報價
+            if (!hasAnyRealAlert && note.type === 'stock_card' && note.stockCardData && note.stockCardData.symbol) {
                 alerts.push({ 
                     noteId: id, 
-                    symbol: symbolToWatch,
-                    ...note.stockAlert // 如果有 alert 就帶上，沒有就是 undefined
+                    alertId: 'quote_only',
+                    symbol: note.stockCardData.symbol
+                    // 無 condition，所以純粹抓報價
                 });
             }
         }
@@ -201,24 +213,28 @@ PostIt.StockAlert = (function () {
     }
 
     // --- 觸發通知 ---
+    // --- 觸發通知 ---
     function triggerStockNotification(noteId, alert, currentPrice) {
+        if (!alert || alert.alertId === 'quote_only') return;
+
         const direction = alert.condition === '>=' ? '漲到' : '跌到';
         const msg = `📈 ${alert.symbol} 已${direction} $${currentPrice.toFixed(2)}！（目標: $${alert.targetPrice}）`;
 
         // 更新狀態為 triggered
-        if (PostIt.Note && PostIt.Note.updateStockAlertField) {
-            PostIt.Note.updateStockAlertField(noteId, 'status', 'triggered');
-            PostIt.Note.updateStockAlertField(noteId, 'triggeredAt', new Date().toISOString());
-            PostIt.Note.updateStockAlertField(noteId, 'lastPrice', currentPrice);
+        if (PostIt.Note && PostIt.Note.updateStockAlertStatus) {
+            PostIt.Note.updateStockAlertStatus(noteId, alert.alertId, 'triggered', {
+                triggeredAt: new Date().toISOString(),
+                lastPrice: currentPrice
+            });
         }
 
         // 視覺提示：Toast
-        if (typeof PostIt.Board !== 'undefined') {
+        if (typeof PostIt.Board !== 'undefined' && alert.options?.toast !== false) {
             PostIt.Board.showToast(msg, 'info', null, 0); // 常駐
         }
 
-        // 聲音提示：整合進真正的 Alarm 系統（無限震動與聲音，直到點擊解除或 5 分鐘後）
-        if (typeof PostIt.Alarm !== 'undefined' && PostIt.Alarm.triggerAlarm) {
+        // 聲音提示：整合進真正的 Alarm 系統
+        if ((alert.options?.sound !== false) && typeof PostIt.Alarm !== 'undefined' && PostIt.Alarm.triggerAlarm) {
             PostIt.Alarm.triggerAlarm(noteId);
             
             // 5 分鐘 (300,000 ms) 後自動解除，避免永無止境響
@@ -230,12 +246,14 @@ PostIt.StockAlert = (function () {
         }
 
         // TTS 語音播報
-        try {
-            const utterance = new SpeechSynthesisUtterance(`注意！${alert.symbol} 已達到目標價格 ${currentPrice.toFixed(0)} 美元！`);
-            utterance.lang = 'zh-TW';
-            utterance.rate = 1.1;
-            speechSynthesis.speak(utterance);
-        } catch (e) { /* 無語音合成也不影響 */ }
+        if (alert.options?.tts !== false) {
+            try {
+                const utterance = new SpeechSynthesisUtterance(`注意！${alert.symbol} 已達到目標價格 ${currentPrice.toFixed(0)} 美元！`);
+                utterance.lang = 'zh-TW';
+                utterance.rate = 1.1;
+                speechSynthesis.speak(utterance);
+            } catch (e) { /* 無語音合成也不影響 */ }
+        }
 
         console.log(`[StockAlert] 🎯 觸發: ${msg}`);
     }
@@ -269,15 +287,19 @@ PostIt.StockAlert = (function () {
                 }
             }
 
-            // 原有的股價達標檢查 (只有設定了 alert 的才有 condition)
-            if (alert.condition) {
-                if (PostIt.Note && PostIt.Note.updateStockAlertField) {
-                    PostIt.Note.updateStockAlertField(alert.noteId, 'lastPrice', currentPrice);
-                    PostIt.Note.updateStockAlertField(alert.noteId, 'lastChecked', now);
-                }
-
-                // 更新卡片上的即時報價 badge (文字便利貼才會加)
+            // 更新卡片上的即時報價 badge (文字便利貼才會加)
+            if (alert.alertId !== 'quote_only') {
                 updatePriceBadge(alert.noteId, alert, currentPrice);
+            }
+
+            // 原有的股價達標檢查 (只有設定了 alert 的才有 condition)
+            if (alert.condition && alert.alertId !== 'quote_only') {
+                if (PostIt.Note && PostIt.Note.updateStockAlertStatus) {
+                    PostIt.Note.updateStockAlertStatus(alert.noteId, alert.alertId, 'watching', {
+                        lastPrice: currentPrice,
+                        lastChecked: now
+                    });
+                }
 
                 // 檢查是否達標
                 if (checkCondition(alert, currentPrice)) {

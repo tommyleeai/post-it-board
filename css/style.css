@@ -4135,6 +4135,67 @@ body.pin-mode {
 .sc-close-btn { background: none; border: none; color: #9ca3af; font-size: 18px; cursor: pointer; padding: 0; }
 .sc-close-btn:hover { color: #fff; }
 
+.sc-alerts-list {
+    max-height: 120px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    padding-right: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+/* Scrollbar styling for list */
+.sc-alerts-list::-webkit-scrollbar { width: 4px; }
+.sc-alerts-list::-webkit-scrollbar-track { background: #2d2d2d; border-radius: 4px; }
+.sc-alerts-list::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+
+.sc-alert-item {
+    background: #2d2d2d;
+    border: 1px solid #404040;
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+}
+.sc-alert-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #e5e7eb;
+}
+.sc-alert-opts {
+    font-size: 10px;
+    opacity: 0.7;
+    margin-left: 4px;
+}
+.sc-alert-badge {
+    font-size: 9px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+.sc-alert-badge.watching { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+.sc-alert-badge.triggered { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+.sc-alert-delete-btn {
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px;
+    transition: 0.2s;
+}
+.sc-alert-delete-btn:hover {
+    color: #ef4444;
+}
+
+.sc-add-alert-section {
+    border-top: 1px dashed #404040;
+    padding-top: 10px;
+}
+
 .sc-setting-group { margin-bottom: 12px; }
 .sc-setting-label { font-size: 11px; color: #9ca3af; margin-bottom: 5px; display: block; font-weight: 600;}
 .sc-price-wrapper { position: relative; display: flex; align-items: center; }

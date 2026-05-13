@@ -1382,14 +1382,15 @@ PostIt.Board = (function () {
                 const logoHtml = sd.logo ? `<img src="${escapeHtml(sd.logo)}" class="stock-card-logo" alt="${symbol}">` : `<div class="stock-card-logo"></div>`;
                 const watermarkHtml = sd.logo ? `<div style="position:absolute; top:0; left:0; width:100%; height:100%; overflow:hidden; border-radius:16px; pointer-events:none; z-index:0;"><img src="${escapeHtml(sd.logo)}" class="stock-card-watermark" alt="watermark"></div>` : '';
 
-                const alertData = note.stockAlert || {};
-                const isWatching = alertData.status === 'watching';
-                const targetPrice = alertData.targetPrice || '';
-                const condition = alertData.condition || (currentPrice ? '>=' : '');
+                const alerts = note.stockAlerts || [];
+                const watchingAlerts = alerts.filter(a => a.status === 'watching');
                 
                 // Active Alert Button (Slide up from bottom on hover)
                 let alertBtnHtml = '';
-                if (isWatching) {
+                if (watchingAlerts.length === 1) {
+                    const alertData = watchingAlerts[0];
+                    const targetPrice = alertData.targetPrice || '';
+                    const condition = alertData.condition || '>=';
                     const condIcon = condition === '>=' ? '📈' : '📉';
                     const condText = condition === '>=' ? '漲破' : '跌破';
                     const btnClass = condition === '>=' ? 'alert-up' : 'alert-down';
@@ -1398,7 +1399,6 @@ PostIt.Board = (function () {
                     const hasSound = alertData.options?.sound !== false;
                     const hasTts = alertData.options?.tts !== false;
                     
-                    // 小齒輪、小喇叭、對話泡泡 (Toast = 彈出通知/對話泡泡)
                     let optIcons = '<i class="fa-solid fa-gear" style="margin-right:6px;" title="修改設定"></i>';
                     if (hasSound || hasTts) optIcons += '<i class="fa-solid fa-volume-high" style="margin-right:6px;" title="鈴聲/語音"></i>';
                     if (hasToast) optIcons += '<i class="fa-solid fa-message" title="彈出通知"></i>';
@@ -1407,6 +1407,13 @@ PostIt.Board = (function () {
                     <button class="stock-card-active-alert-btn ${btnClass}" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.openFocusMode('${note.id}', event)">
                         <span style="display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-bell"></i> 監控中: ${condIcon} ${condText} $${targetPrice}</span>
                         <span style="opacity:0.9; font-size:0.9em; font-weight:normal;">${optIcons}</span>
+                    </button>`;
+                } else if (watchingAlerts.length > 1) {
+                    // 多重警報 UI
+                    alertBtnHtml = `
+                    <button class="stock-card-active-alert-btn alert-up" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.openFocusMode('${note.id}', event)">
+                        <span style="display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-bell"></i> 監控中: ${watchingAlerts.length} 個警報條件</span>
+                        <span style="opacity:0.9; font-size:0.9em; font-weight:normal;"><i class="fa-solid fa-list-ul"></i></span>
                     </button>`;
                 }
 
@@ -1446,7 +1453,7 @@ PostIt.Board = (function () {
                                 ${svgPath}
                             </svg>
                             <div class="stock-card-pulse-dot" style="top: ${pulseDotTop};"></div>
-                            ${!isWatching ? `<button class="stock-card-set-alert-btn" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.openFocusMode('${note.id}', event)">🔔 設定警報</button>` : ''}
+                            ${watchingAlerts.length === 0 ? `<button class="stock-card-set-alert-btn" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.openFocusMode('${note.id}', event)">🔔 設定警報</button>` : ''}
                         </div>
 
                         <div class="stock-card-metrics-grid">
@@ -1471,44 +1478,74 @@ PostIt.Board = (function () {
                     </div>
                 `;
 
+                // 產生現有警報清單 HTML
+                let alertsListHtml = '';
+                if (alerts.length > 0) {
+                    alertsListHtml = '<div class="sc-alerts-list">';
+                    alerts.forEach(a => {
+                        const icon = a.condition === '>=' ? '📈' : '📉';
+                        const t = a.condition === '>=' ? '漲破' : '跌破';
+                        let optStr = '';
+                        if (a.options?.toast !== false) optStr += '💬';
+                        if (a.options?.sound !== false || a.options?.tts !== false) optStr += '🔊';
+                        
+                        let statusStr = a.status === 'watching' ? '<span class="sc-alert-badge watching">監控中</span>' : '<span class="sc-alert-badge triggered">已觸發</span>';
+                        
+                        alertsListHtml += `
+                            <div class="sc-alert-item">
+                                <div class="sc-alert-info">
+                                    <span class="sc-alert-icon">${icon}</span>
+                                    <span>${t} <b>$${a.targetPrice}</b></span>
+                                    <span class="sc-alert-opts">${optStr}</span>
+                                    ${statusStr}
+                                </div>
+                                <button class="sc-alert-delete-btn" title="刪除警報" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.deleteAlert('${note.id}', '${a.id}', event)"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        `;
+                    });
+                    alertsListHtml += '</div>';
+                }
+
                 // 背面 HTML
                 const backHtml = `
                     <div class="stock-card-back">
                         <div class="sc-back-header">
-                            <div class="sc-back-title">🔔 設定股價警報</div>
+                            <div class="sc-back-title">🔔 股價警報設定</div>
                             <button class="sc-close-btn" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.closeFocusMode()">✕</button>
                         </div>
+                        
+                        ${alertsListHtml}
 
-                        <div class="sc-setting-group">
-                            <span class="sc-setting-label">目標價格 (Target Price)</span>
-                            <div class="sc-price-wrapper">
-                                <span>$</span>
-                                <input type="number" class="sc-price-input" id="sc-target-price-${note.id}" value="${targetPrice}" step="0.01" oninput="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.handlePriceInput('${note.id}', this.value, ${sd.currentPrice || 0})">
+                        <div class="sc-add-alert-section">
+                            <div class="sc-setting-group" style="margin-bottom:8px;">
+                                <div class="sc-price-wrapper">
+                                    <span>$</span>
+                                    <input type="number" class="sc-price-input" id="sc-target-price-${note.id}" placeholder="目標價" step="0.01" oninput="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.handlePriceInput('${note.id}', this.value, ${sd.currentPrice || 0})">
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="sc-setting-group">
-                            <div class="sc-toggle-row">
-                                <button class="sc-cond-btn up ${condition === '>=' ? 'active' : ''}" id="sc-cond-up-${note.id}" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.setCondition('${note.id}', '>=')">📈 漲破 (>=)</button>
-                                <button class="sc-cond-btn down ${condition === '<=' ? 'active' : ''}" id="sc-cond-down-${note.id}" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.setCondition('${note.id}', '<=')">📉 跌破 (<=)</button>
+                            <div class="sc-setting-group" style="margin-bottom:8px;">
+                                <div class="sc-toggle-row">
+                                    <button class="sc-cond-btn up" id="sc-cond-up-${note.id}" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.setCondition('${note.id}', '>=')">📈 漲破 (>=)</button>
+                                    <button class="sc-cond-btn down" id="sc-cond-down-${note.id}" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.setCondition('${note.id}', '<=')">📉 跌破 (<=)</button>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="sc-switches">
-                            <label class="sc-switch-item">
-                                <input type="checkbox" id="sc-opt-toast-${note.id}" ${alertData.options?.toast !== false ? 'checked' : ''}> 顯示彈出通知 (Toast)
-                            </label>
-                            <label class="sc-switch-item">
-                                <input type="checkbox" id="sc-opt-sound-${note.id}" ${alertData.options?.sound !== false ? 'checked' : ''}> 觸發警報鈴聲 🔊
-                            </label>
-                            <label class="sc-switch-item">
-                                <input type="checkbox" id="sc-opt-tts-${note.id}" ${alertData.options?.tts !== false ? 'checked' : ''}> AI 語音播報 (TTS)
-                            </label>
-                        </div>
+                            <div class="sc-switches">
+                                <label class="sc-switch-item">
+                                    <input type="checkbox" id="sc-opt-toast-${note.id}" checked> 彈出通知 (Toast)
+                                </label>
+                                <label class="sc-switch-item">
+                                    <input type="checkbox" id="sc-opt-sound-${note.id}" checked> 警報鈴聲 🔊
+                                </label>
+                                <label class="sc-switch-item">
+                                    <input type="checkbox" id="sc-opt-tts-${note.id}" checked> AI 語音 (TTS)
+                                </label>
+                            </div>
 
-                        <div class="sc-action-row" style="margin-top:auto;">
-                            <button class="sc-btn sc-btn-cancel" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.removeAlert('${note.id}')">🗑️ 移除</button>
-                            <button class="sc-btn sc-btn-save" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.saveAlert('${note.id}')">💾 儲存並監控</button>
+                            <div class="sc-action-row" style="margin-top:10px;">
+                                <button class="sc-btn sc-btn-save" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.addAlert('${note.id}')">➕ 新增並監控</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -2959,7 +2996,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
 
-        saveAlert(noteId) {
+        addAlert(noteId) {
             const inputEl = document.getElementById(`sc-target-price-${noteId}`);
             const upBtn = document.getElementById(`sc-cond-up-${noteId}`);
             
@@ -2984,9 +3021,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 tts: ttsEl ? ttsEl.checked : true
             };
 
-            // 更新到 Yjs 的動作延遲執行，等待卡片飛回原位的動畫 (300ms 翻轉 + 500ms 飛行 = 800ms) 結束，避免中途重繪 DOM 破壞動畫
+            // 為了讓 UI 有反應，先關閉並翻轉，翻轉完成後才寫入資料觸發重繪
             setTimeout(() => {
-                PostIt.Note.updateStockAlert(noteId, {
+                PostIt.Note.addStockAlert(noteId, {
                     symbol: symbol,
                     targetPrice: targetPrice,
                     condition: condition,
@@ -2996,7 +3033,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }, 850);
 
-            PostIt.Board.showToast(`📈 已設定監控 ${symbol}，目標 ${condition} $${targetPrice}`, 'success');
+            PostIt.Board.showToast(`📈 已新增監控 ${symbol}，目標 ${condition} $${targetPrice}`, 'success');
             
             if (typeof PostIt.StockAlert !== 'undefined') {
                 PostIt.StockAlert.startPolling();
@@ -3005,16 +3042,19 @@ document.addEventListener('DOMContentLoaded', () => {
             this.closeFocusMode();
         },
 
-        removeAlert(noteId) {
+        deleteAlert(noteId, alertId, event) {
+            if (event) {
+                event.stopPropagation();
+            }
+            
             PostIt.Board.showToast('🗑️ 警報已移除', 'info');
             this.closeFocusMode();
             
-            // 同樣延遲 850ms 等待動畫飛回原位後再清除資料與重繪
             setTimeout(() => {
-                // 清除設定
-                PostIt.Note.updateStockAlert(noteId, null);
+                // 清除指定的警報條件
+                PostIt.Note.removeStockAlert(noteId, alertId);
                 
-                // 重新渲染卡片 (因為移除了 alert，我們需要它重新讀取)
+                // 重新渲染卡片
                 setTimeout(() => {
                     const note = PostIt.Note.getCache()[noteId];
                     if (note && window.PostIt.Board.updateNoteElement) {
