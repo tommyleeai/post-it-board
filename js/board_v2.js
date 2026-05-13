@@ -2924,15 +2924,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 tts: ttsEl ? ttsEl.checked : true
             };
 
-            // 更新到 Yjs
-            PostIt.Note.updateStockAlert(noteId, {
-                symbol: symbol,
-                targetPrice: targetPrice,
-                condition: condition,
-                status: 'watching',
-                reason: '使用者手動設定',
-                options: options
-            });
+            // 更新到 Yjs 的動作延遲執行，等待卡片飛回原位的動畫 (300ms 翻轉 + 500ms 飛行 = 800ms) 結束，避免中途重繪 DOM 破壞動畫
+            setTimeout(() => {
+                PostIt.Note.updateStockAlert(noteId, {
+                    symbol: symbol,
+                    targetPrice: targetPrice,
+                    condition: condition,
+                    status: 'watching',
+                    reason: '使用者手動設定',
+                    options: options
+                });
+            }, 850);
 
             PostIt.Board.showToast(`📈 已設定監控 ${symbol}，目標 ${condition} $${targetPrice}`, 'success');
             
@@ -2944,18 +2946,22 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         removeAlert(noteId) {
-            // 清除設定
-            PostIt.Note.updateStockAlert(noteId, null);
             PostIt.Board.showToast('🗑️ 警報已移除', 'info');
             this.closeFocusMode();
             
-            // 重新渲染卡片 (因為移除了 alert，我們需要它重新讀取)
+            // 同樣延遲 850ms 等待動畫飛回原位後再清除資料與重繪
             setTimeout(() => {
-                const note = PostIt.Note.getCache()[noteId];
-                if (note && window.PostIt.Board.updateNoteElement) {
-                    window.PostIt.Board.updateNoteElement(noteId, note);
-                }
-            }, 300);
+                // 清除設定
+                PostIt.Note.updateStockAlert(noteId, null);
+                
+                // 重新渲染卡片 (因為移除了 alert，我們需要它重新讀取)
+                setTimeout(() => {
+                    const note = PostIt.Note.getCache()[noteId];
+                    if (note && window.PostIt.Board.updateNoteElement) {
+                        window.PostIt.Board.updateNoteElement(noteId, note);
+                    }
+                }, 50);
+            }, 850);
         }
     };
 });
