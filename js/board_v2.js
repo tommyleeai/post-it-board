@@ -415,16 +415,23 @@ PostIt.Board = (function () {
 
     function autoSort() {
         const notes = PostIt.Note.getCache();
-        const noteIds = Object.keys(notes);
-        if (noteIds.length === 0) {
+        const allIds = Object.keys(notes);
+        if (allIds.length === 0) {
             showToast('白板上沒有貼紙', 'error');
+            return;
+        }
+
+        // 1. 過濾出真正需要排列的卡片：獨立卡片或群組的首張卡片 (沒有 groupId)
+        const topLevelIds = allIds.filter(id => !notes[id].groupId);
+        if (topLevelIds.length === 0) {
+            showToast('沒有獨立的貼紙可供排列', 'info');
             return;
         }
 
         // 記住原始位置（只在第一次排列時儲存，避免重複排列覆蓋原始位置）
         if (!savedPositions) {
             savedPositions = {};
-            noteIds.forEach(id => {
+            topLevelIds.forEach(id => {
                 const note = notes[id];
                 savedPositions[id] = { x: note.x, y: note.y, zIndex: note.zIndex, rotation: note.rotation };
             });
@@ -432,29 +439,51 @@ PostIt.Board = (function () {
 
         const boardRect = boardEl.getBoundingClientRect();
 
-        // 計算網格參數
-        const padding = 20; // 邊距 px
-        const gap = 16;     // 間距 px
-        const noteW = 340;  // 估計貼紙寬度 px（加倍後）
-        const noteH = 300;  // 估計貼紙高度 px（加倍後）
+        // 2. 瀑布流網格參數
+        const padding = 40; // 邊緣保留空間
+        const gap = 20;     // 卡片間距 px
+        const noteW = 340;  // 基準貼紙寬度 px
 
         const availW = boardRect.width - padding * 2;
-        const cols = Math.max(1, Math.floor(availW / (noteW + gap)));
+        const cols = Math.max(1, Math.floor((availW + gap) / (noteW + gap)));
+        
+        // 計算置中偏移量 (讓整個網格在畫面中居中)
+        const gridTotalWidth = cols * noteW + (cols - 1) * gap;
+        const offsetX = Math.max(padding, (boardRect.width - gridTotalWidth) / 2);
 
-        // 按建立時間排序
-        const sortedIds = noteIds.sort((a, b) => {
+        // 準備追蹤每一行當前的高度的陣列，初始高度為 padding (Y座標起點)
+        const colHeights = new Array(cols).fill(padding);
+
+        // 3. 按建立時間排序
+        const sortedIds = topLevelIds.sort((a, b) => {
             const ta = notes[a].createdAt ? (notes[a].createdAt.seconds || 0) : 0;
             const tb = notes[b].createdAt ? (notes[b].createdAt.seconds || 0) : 0;
             return ta - tb;
         });
 
-        // 計算每張貼紙的網格位置並更新
+        // 4. 計算並套用瀑布流位置
         sortedIds.forEach((id, i) => {
-            const col = i % cols;
-            const row = Math.floor(i / cols);
+            const noteEl = document.querySelector(`[data-note-id="${id}"]`);
+            if (!noteEl) return;
 
-            const xPx = padding + col * (noteW + gap);
-            const yPx = padding + row * (noteH + gap);
+            // 尋找目前最短的那一行
+            let minCol = 0;
+            let minHeight = colHeights[0];
+            for (let c = 1; c < cols; c++) {
+                if (colHeights[c] < minHeight) {
+                    minHeight = colHeights[c];
+                    minCol = c;
+                }
+            }
+
+            // 精確測量這張卡片的真實高度 (如果剛好 display:none 測不到就給個預設 300)
+            const actualH = noteEl.offsetHeight || 300;
+
+            const xPx = offsetX + minCol * (noteW + gap);
+            const yPx = colHeights[minCol];
+
+            // 更新該行的高度
+            colHeights[minCol] += actualH + gap;
 
             const xPercent = (xPx / boardRect.width) * 100;
             const yPercent = (yPx / boardRect.height) * 100;
@@ -463,19 +492,16 @@ PostIt.Board = (function () {
             PostIt.Note.updatePosition(id, xPercent, yPercent, i + 1);
 
             // 動畫移動 DOM
-            const noteEl = document.querySelector(`[data-note-id="${id}"]`);
-            if (noteEl) {
-                noteEl.style.transition = 'left 0.5s cubic-bezier(0.4, 0, 0.2, 1), top 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s ease';
-                noteEl.style.left = xPx + 'px';
-                noteEl.style.top = yPx + 'px';
-                noteEl.style.transform = 'rotate(0deg)';
-                noteEl.style.zIndex = i + 1;
+            noteEl.style.transition = 'left 0.5s cubic-bezier(0.4, 0, 0.2, 1), top 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s ease';
+            noteEl.style.left = xPx + 'px';
+            noteEl.style.top = yPx + 'px';
+            noteEl.style.transform = 'rotate(0deg)';
+            noteEl.style.zIndex = i + 1;
 
-                // 動畫結束後移除 transition
-                setTimeout(() => {
-                    noteEl.style.transition = '';
-                }, 550);
-            }
+            // 動畫結束後移除 transition
+            setTimeout(() => {
+                noteEl.style.transition = '';
+            }, 550);
         });
 
         // 顯示還原按鈕
