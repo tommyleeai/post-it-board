@@ -3990,6 +3990,13 @@ body.pin-mode {
     padding: 0 !important;
 }
 
+/* 確保 .note-text-content 也維持 3D 空間，否則子元素會被扁平化 */
+.sticky-note.stock-card-note .note-text-content {
+    transform-style: preserve-3d;
+    width: 100%;
+    height: 100%;
+}
+
 /* 當翻轉 class 加上時，轉 180 度 */
 .sticky-note.focus-mode.is-flipped .note-content {
     transform: rotateY(180deg);
@@ -3998,6 +4005,7 @@ body.pin-mode {
 /* 正面與背面的共用設定 */
 .stock-card-front, .stock-card-back {
     backface-visibility: hidden; /* 轉到背面時隱藏 */
+    -webkit-backface-visibility: hidden;
     border-radius: 16px;
     box-sizing: border-box;
     padding: 20px;
