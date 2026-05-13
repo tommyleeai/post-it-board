@@ -987,11 +987,11 @@ PostIt.Board = (function () {
             // 最終防線：如果連 root 也無效，則置中而非丟到左上角，並避免出現 (0,0)
             if (isNaN(xVal) || xVal === null || xVal === undefined) {
                 // 加入視覺化除錯，讓使用者告訴我們到底丟了什麼資料
-                const debugStr = `L:${typeof layoutData === 'object' ? JSON.stringify(layoutData) : typeof layoutData} | Nx:${note.x}`;
+                const debugStr = `LType:${typeof layoutData} | Keys:${typeof layoutData === 'object' ? Object.keys(layoutData).join(',') : 'none'} | xValType:${typeof layoutData.x} | Nx:${note.x}`;
                 if (!el.querySelector('.debug-pos')) {
                     const dbg = document.createElement('div');
                     dbg.className = 'debug-pos';
-                    dbg.style.cssText = 'position:absolute;top:-20px;left:0;background:red;color:white;font-size:10px;padding:2px;z-index:999999;white-space:nowrap;';
+                    dbg.style.cssText = 'position:absolute;top:0;left:0;width:100%;background:rgba(255,0,0,0.9);color:white;font-size:12px;padding:4px;z-index:999999;word-wrap:break-word;white-space:normal;line-height:1.2;';
                     dbg.textContent = debugStr;
                     el.appendChild(dbg);
                 } else {
