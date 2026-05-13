@@ -52,6 +52,11 @@
 
 
 
+
+## [2.5.17] - 2026-05-13
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   更新 stock_alert、yjs_sync 模組
 ## [2.5.16] - 2026-05-13
 
 ### 🔧 優化與修正 (Improved & Fixed)

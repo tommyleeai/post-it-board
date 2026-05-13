@@ -63,7 +63,7 @@ PostIt.YjsSync = (function () {
         // 每當資料改變，延遲寫入 Firestore 備份
         currentDoc.on('update', () => {
             clearTimeout(backupTimeout);
-            backupTimeout = setTimeout(() => backupToCloud(boardId), 5000);
+            backupTimeout = setTimeout(() => backupToCloud(boardId), 800);
         });
 
         // 監聽 Y.Map 變更以更新 UI

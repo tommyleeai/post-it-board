@@ -575,7 +575,7 @@ PostIt.StockAlert = (function () {
                 
                 // 同步至資料庫，確保其他使用者也能看到層級變更
                 if (PostIt.Note && typeof PostIt.Note.updatePosition === 'function') {
-                    const boardEl = document.getElementById('board');
+                    const boardEl = document.getElementById('whiteboard');
                     if (boardEl) {
                         const boardRect = boardEl.getBoundingClientRect();
                         const x = parseFloat(noteEl.style.left);
