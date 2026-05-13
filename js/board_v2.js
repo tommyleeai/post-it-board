@@ -2807,7 +2807,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             const overlay = document.getElementById('focus-overlay');
-            const noteEl = document.querySelector(`.sticky-note[data-id="${noteId}"]`);
+            const noteEl = document.querySelector(`.sticky-note[data-note-id="${noteId}"]`);
             if (!overlay || !noteEl) return;
 
             this._activeNoteId = noteId;
@@ -2829,7 +2829,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const noteId = this._activeNoteId;
             const overlay = document.getElementById('focus-overlay');
-            const noteEl = document.querySelector(`.sticky-note[data-id="${noteId}"]`);
+            const noteEl = document.querySelector(`.sticky-note[data-note-id="${noteId}"]`);
             
             if (noteEl) {
                 // 1. 翻轉回正面
@@ -2884,7 +2884,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const targetPrice = parseFloat(inputEl.value) || 0;
             const condition = (upBtn && upBtn.classList.contains('active')) ? '>=' : '<=';
-            const symbolEl = document.querySelector(`.sticky-note[data-id="${noteId}"] .stock-card-symbol`);
+            const symbolEl = document.querySelector(`.sticky-note[data-note-id="${noteId}"] .stock-card-symbol`);
             const symbol = symbolEl ? symbolEl.textContent : '';
 
             if (!symbol || targetPrice <= 0) {
