@@ -981,9 +981,9 @@ PostIt.Board = (function () {
             if (window.PostIt && PostIt.Drag) PostIt.Drag.setMaxZIndex(zVal);
         }
 
-        // 內容（只在非編輯時更新，且若是超級好物則不破壞其專屬 DOM 結構）
+        // 內容（只在非編輯時更新，且若是超級好物/股票卡則不破壞其專屬 DOM 結構）
         const contentEl = el.querySelector('.note-content');
-        if (contentEl && contentEl.getAttribute('contenteditable') !== 'true' && note.type !== 'super_deal') {
+        if (contentEl && contentEl.getAttribute('contenteditable') !== 'true' && note.type !== 'super_deal' && note.type !== 'stock_card') {
             const contentStr2 = String(note.content).trim();
             const urlMatch2 = contentStr2.match(/https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s]*)?/i) || contentStr2.match(/data:image\/[a-zA-Z0-9+]+;base64,[^\s]+/);
             const extractedUrl2 = urlMatch2 ? urlMatch2[0] : null;
@@ -1079,6 +1079,22 @@ PostIt.Board = (function () {
                 el.classList.remove(parsedYtId ? 'image-only' : 'video-only');
             } else {
                 el.classList.remove('image-only', 'video-only');
+            }
+        }
+
+        // === stock_card 專用差量 DOM 更新（不重建整個 DOM，只更新價格文字） ===
+        if (note.type === 'stock_card' && contentEl) {
+            const sd = note.stockCardData || {};
+            const priceEl = contentEl.querySelector('.stock-card-current-price');
+            if (priceEl && sd.currentPrice != null) {
+                priceEl.textContent = `$${sd.currentPrice.toFixed(2)}`;
+            }
+            const changeEl = contentEl.querySelector('.stock-card-price-change');
+            if (changeEl && sd.priceChange !== undefined) {
+                const isUp = sd.priceChange >= 0;
+                const sign = sd.priceChange > 0 ? '+' : '';
+                changeEl.className = `stock-card-price-change ${isUp ? 'up' : 'down'}`;
+                changeEl.innerHTML = `<i class="fa-solid fa-arrow-trend-${isUp ? 'up' : 'down'}"></i> ${sign}$${sd.priceChange.toFixed(2)} (${sign}${sd.priceChangePercent.toFixed(2)}%)`;
             }
         }
 

@@ -276,15 +276,12 @@ PostIt.StockAlert = (function () {
 
             const currentPrice = quote.price;
 
-            // 如果有 stockCardData，更新即時報價
-            if (PostIt.Note && PostIt.Note.updateNote) {
+            // 如果有 stockCardData，僅更新本地 DOM，不寫入 Yjs
+            // 避免每分鐘 poll 觸發 Yjs → Firestore → 全分頁重繪的同步風暴
+            if (PostIt.Note) {
                 const note = PostIt.Note.getNote(alert.noteId);
-                if (note && note.type === 'stock_card' && note.stockCardData) {
-                    const newData = { ...note.stockCardData };
-                    newData.currentPrice = currentPrice;
-                    newData.priceChange = quote.change;
-                    newData.priceChangePercent = quote.changePercent;
-                    PostIt.Note.updateNote(alert.noteId, { stockCardData: newData });
+                if (note && note.type === 'stock_card') {
+                    updateStockCardDOM(alert.noteId, currentPrice, quote.change, quote.changePercent);
                 }
             }
 
@@ -307,6 +304,25 @@ PostIt.StockAlert = (function () {
                     triggerStockNotification(alert.noteId, alert, currentPrice);
                 }
             }
+        }
+    }
+
+    // --- 股票卡片純 DOM 即時報價更新 (不經過 Yjs 同步) ---
+    function updateStockCardDOM(noteId, currentPrice, priceChange, priceChangePercent) {
+        const noteEl = document.querySelector(`.sticky-note[data-note-id="${noteId}"]`);
+        if (!noteEl) return;
+
+        const priceEl = noteEl.querySelector('.stock-card-current-price');
+        if (priceEl && currentPrice != null) {
+            priceEl.textContent = `$${currentPrice.toFixed(2)}`;
+        }
+
+        const changeEl = noteEl.querySelector('.stock-card-price-change');
+        if (changeEl && priceChange !== undefined) {
+            const isUp = priceChange >= 0;
+            const sign = priceChange > 0 ? '+' : '';
+            changeEl.className = `stock-card-price-change ${isUp ? 'up' : 'down'}`;
+            changeEl.innerHTML = `<i class="fa-solid fa-arrow-trend-${isUp ? 'up' : 'down'}"></i> ${sign}$${priceChange.toFixed(2)} (${sign}${priceChangePercent.toFixed(2)}%)`;
         }
     }
 

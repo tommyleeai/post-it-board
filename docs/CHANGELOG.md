@@ -54,6 +54,11 @@
 
 
 
+
+## [2.5.19] - 2026-05-13
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   更新 board_v2、stock_alert、yjs_sync 模組
 ## [2.5.18] - 2026-05-13
 
 ### 🔧 優化與修正 (Improved & Fixed)

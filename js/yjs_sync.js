@@ -15,6 +15,7 @@ PostIt.YjsSync = (function () {
     let onNotesUpdatedCallback = null;
     let backupTimeout = null;
     let unsubscribeFirestore = null;
+    let _renderRAF = null;
 
     async function loadModules() {
         if (Y) return;
@@ -67,9 +68,13 @@ PostIt.YjsSync = (function () {
             backupTimeout = setTimeout(() => backupToCloud(boardId), 800);
         });
 
-        // 監聽 Y.Map 變更以更新 UI
+        // 監聽 Y.Map 變更以更新 UI（加入 rAF 防抖，同一幀內多次變更只觸發一次渲染）
         yNotesMap.observeDeep(() => {
-            triggerUpdate();
+            if (_renderRAF) return;
+            _renderRAF = requestAnimationFrame(() => {
+                _renderRAF = null;
+                triggerUpdate();
+            });
         });
         
         return true;
@@ -92,6 +97,9 @@ PostIt.YjsSync = (function () {
         // 建立即時監聽，取代原本的單次拉取
         // 當 WebRTC 斷線時，透過 Firestore 確保多個分頁/裝置依然能保持同步
         unsubscribeFirestore = db.collection('boards').doc(boardId).onSnapshot(docSnap => {
+            // 過濾自我回音：如果是本地寫入尚未確認的樂觀更新，跳過
+            if (docSnap.metadata.hasPendingWrites) return;
+
             if (docSnap.exists) {
                 const data = docSnap.data();
                 if (data.yjs_state) {
@@ -266,6 +274,10 @@ PostIt.YjsSync = (function () {
         currentDoc = null;
         yNotesMap = null;
         clearTimeout(backupTimeout);
+        if (_renderRAF) {
+            cancelAnimationFrame(_renderRAF);
+            _renderRAF = null;
+        }
     }
 
     function getNotesMap() { return yNotesMap; }
