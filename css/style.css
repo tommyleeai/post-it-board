@@ -4020,9 +4020,15 @@ body.pin-mode {
     background: rgba(15, 23, 42, 0.95);
 }
 
+.stock-card-chart-container {
+    position: relative;
+}
+
 /* 設定按鈕 (Hover 顯示) */
 .stock-card-set-alert-btn {
     position: absolute;
+    top: 50%;
+    left: 50%;
     background: #10b981;
     color: white;
     border: none;
@@ -4032,18 +4038,19 @@ body.pin-mode {
     font-weight: 600;
     cursor: pointer;
     opacity: 0;
-    transform: translateY(10px);
+    transform: translate(-50%, -40%);
     transition: all 0.2s ease;
     box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
     pointer-events: none;
     z-index: 10;
+    white-space: nowrap;
 }
 .stock-card-chart-container:hover .stock-card-set-alert-btn {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate(-50%, -50%);
     pointer-events: auto;
 }
-.stock-card-set-alert-btn:hover { background: #059669; transform: scale(1.05); }
+.stock-card-set-alert-btn:hover { background: #059669; transform: translate(-50%, -50%) scale(1.05) !important; }
 
 /* 背面 (設定面板) */
 .stock-card-back {
