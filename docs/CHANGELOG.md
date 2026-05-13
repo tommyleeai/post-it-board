@@ -64,10 +64,18 @@
 
 
 
+
+## [2.5.29] - 2026-05-13
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   加入視覺化診斷標籤追蹤座標跳躍
 ## [2.5.28] - 2026-05-13
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   更新 board_v2、note 模組
+*   完全修復多裝置多分頁座標同步跳躍至 (0,0) 的問題：
+    *   **資料保留機制**：在 `note.js` 的 `updatePosition` 中加入安全轉移機制。當從舊版 plain object 遷移至 Y.Map 時，會深拷貝保留原有的裝置模式座標 (如 mobile)，避免被覆蓋為只剩當前模式。
+    *   **強力降級防護**：重構 `board_v2.js` 的 `_getLayoutData`，將 `typeof ... === 'number'` 的嚴格判定改為更寬容的 `parseFloat` 與 `isNaN` 檢查，以應對 JSON.stringify 在 Yjs 同步過程中可能因 undefined 屬性或 NaN 造成的資料丟失或字串化 ("10px")。
+    *   **終極防彈衣**：若卡牌在所有層級與 root 的座標皆已損毀或無法讀取，強制將卡牌置中於 `(50, 50)`，徹底終結 (0,0) 渲染現象。
 ## [2.5.27] - 2026-05-13
 
 ### 🔧 優化與修正 (Improved & Fixed)
