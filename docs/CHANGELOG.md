@@ -61,8 +61,13 @@
 
 ## [2.5.23] - 2026-05-13
 
-### 🔧 優化與修正 (Improved & Fixed)
-*   修復背景圖消失根因：auth.js saveProfile 改為 await，消除與 Settings.load 的 Firestore 延遲補償快取競爭危害
+### 🐛 修復 (Hotfix)
+*   **修復白板背景圖消失的真正根因 — Firestore 延遲補償快取競爭危害 (Race Condition)**
+    *   根因：`auth.js` 的 `saveProfile(user)` 是 async 但**沒有 await**，導致 `Settings.load()` 的 `db.get()` 在 `saveProfile` 的 `db.set()` 尚未完成時就執行
+    *   Firebase SDK 會回傳被 `saveProfile` 寫入所污染的「延遲補償快取 (Latency-compensated snapshot)」，此快照不含 `settings` 欄位
+    *   程式誤以為使用者沒有自訂設定 → `boardBgImage = ''` → 背景被清除
+    *   修復：`saveProfile` 改為 `await saveProfile(user)`，確保 Firestore 寫入完全落地後才觸發 `onAuthStateChanged` 回調
+    *   此問題在 2026-04-12 首次被 `docs/bug_report_background_persistence.md` 記錄，但修復後在後續版本中被意外退化
 ## [2.5.22] - 2026-05-13
 
 ### 🔧 優化與修正 (Improved & Fixed)
