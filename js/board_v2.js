@@ -975,6 +975,21 @@ PostIt.Board = (function () {
             const zVal = typeof layoutData.zIndex === 'number' ? layoutData.zIndex : (note.zIndex || 1);
 
             const boardRect = boardEl.getBoundingClientRect();
+            
+            // 🔍 診斷日誌：當座標接近 (0,0) 時印出完整資料，協助定位跳位根因
+            if (xVal < 1 && yVal < 1) {
+                console.warn('[Board] ⚠️ 偵測到卡牌即將渲染到 (0,0)!', {
+                    noteId: note.id,
+                    xVal, yVal, zVal,
+                    'layoutData': layoutData,
+                    'note.layouts': note.layouts,
+                    'note.x': note.x, 'note.y': note.y,
+                    'mode': (window.PostIt && PostIt.getDeviceMode) ? PostIt.getDeviceMode() : 'desktop',
+                    'boardRect.width': boardRect.width, 'boardRect.height': boardRect.height,
+                    'note(raw)': JSON.parse(JSON.stringify(note))
+                });
+            }
+            
             el.style.left = ((xVal / 100) * boardRect.width) + 'px';
             el.style.top = ((yVal / 100) * boardRect.height) + 'px';
 
