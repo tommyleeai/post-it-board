@@ -56,6 +56,11 @@
 
 
 
+
+## [2.5.21] - 2026-05-13
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   修復背景圖消失：移除 new Image 預載機制和 crossOrigin，改用直接 CSS 設定避免 CORS/快取衝突
 ## [2.5.20] - 2026-05-13
 
 ### 🔧 優化與修正 (Improved & Fixed)
