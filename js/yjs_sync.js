@@ -15,6 +15,10 @@ PostIt.YjsSync = (function () {
     let onNotesUpdatedCallback = null;
     let backupTimeout = null;
     let unsubscribeFirestore = null;
+    // ⚠️ 遠端同步 flag：Y.applyUpdate() 會觸發 doc.on('update')，
+    //    如果不過濾，Tab B 收到 Tab A 的更新後又寫回 Firestore，形成 Echo 無限迴圈。
+    //    詳見：多分頁拖曳座標回彈 (0,0) 問題
+    let _isApplyingRemote = false;
     let _renderRAF = null;
 
     async function loadModules() {
@@ -62,8 +66,10 @@ PostIt.YjsSync = (function () {
             triggerUpdate();
         });
 
-        // 每當資料改變，延遲寫入 Firestore 備份
+        // 每當「本地」資料改變，延遲寫入 Firestore 備份
+        // ⚠️ 必須過濾遠端同步（Y.applyUpdate）觸發的 update，否則會形成 Echo 無限迴圈
         currentDoc.on('update', () => {
+            if (_isApplyingRemote) return;
             clearTimeout(backupTimeout);
             backupTimeout = setTimeout(() => backupToCloud(boardId), 800);
         });
@@ -105,9 +111,11 @@ PostIt.YjsSync = (function () {
                 if (data.yjs_state) {
                     try {
                         const bytes = data.yjs_state.toUint8Array();
-                        // 合併雲端的更新到本地
+                        // 合併雲端的更新到本地（標記為遠端同步，避免觸發 backupToCloud 迴圈）
                         if (currentDoc) {
+                            _isApplyingRemote = true;
                             Y.applyUpdate(currentDoc, bytes);
+                            _isApplyingRemote = false;
                         }
                     } catch(e) {
                         console.error('[Yjs] Cloud sync apply failed', e);

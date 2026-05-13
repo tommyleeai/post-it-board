@@ -638,8 +638,8 @@ PostIt.Board = (function () {
                 if (parseInt(el.style.zIndex || 0) > 490000) hasAnomalies = true;
             });
             if (hasAnomalies) {
-                console.warn('[Board] 偵測到異常的高層級便利貼，自動觸發重置與回寫...');
-                PostIt.Drag.normalizeZIndex(true);
+                console.warn('[Board] 偵測到異常的高層級便利貼，自動觸發 DOM 重置（不回寫資料庫以避免多分頁衝突）...');
+                PostIt.Drag.normalizeZIndex(false);
             }
         }
 

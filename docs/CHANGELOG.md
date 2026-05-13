@@ -59,6 +59,11 @@
 
 
 
+
+## [2.5.24] - 2026-05-13
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   修復多分頁拖曳卡牌跳回左上角：消除 Y.applyUpdate 觸發的 Firestore Echo 無限迴圈，normalizeZIndex 不再寫回資料庫
 ## [2.5.23] - 2026-05-13
 
 ### 🐛 修復 (Hotfix)
