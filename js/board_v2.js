@@ -2835,11 +2835,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 1. 翻轉回正面
                 noteEl.classList.remove('is-flipped');
                 
-                // 2. 延遲解除 Focus 模式
+                // 2. 延遲解除 Focus 模式的置中定位，並加上 returning 維持過渡動畫
                 setTimeout(() => {
+                    noteEl.classList.add('focus-mode-returning');
                     noteEl.classList.remove('focus-mode');
                     if (overlay) overlay.classList.remove('active');
                     this._activeNoteId = null;
+                    
+                    // 3. 等待飛回動畫結束後，徹底清除 returning 狀態
+                    setTimeout(() => {
+                        noteEl.classList.remove('focus-mode-returning');
+                    }, 500);
                 }, 300);
             } else {
                 if (overlay) overlay.classList.remove('active');
