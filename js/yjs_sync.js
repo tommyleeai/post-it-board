@@ -35,6 +35,7 @@ PostIt.YjsSync = (function () {
     async function init(boardId, onUpdate, onAwarenessUpdate) {
         await loadModules();
         if (!Y) return false;
+        if (window.updateLoader) window.updateLoader(80, '載入本地快取...');
 
         cleanup();
         onNotesUpdatedCallback = onUpdate;
@@ -49,6 +50,7 @@ PostIt.YjsSync = (function () {
         // 本地 DB 載入完成後，設定 Firestore 即時同步並取得是否需遷移
         currentPersistence.whenSynced.then(async () => {
             console.log('[Yjs] IndexedDB 同步完成');
+            if (window.updateLoader) window.updateLoader(90, '與雲端進行同步...');
             const hasCloudYjs = await setupCloudSync(boardId);
             
             // 如果從未備份到雲端，執行自動遷移

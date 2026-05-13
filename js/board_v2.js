@@ -11,6 +11,7 @@ PostIt.Board = (function () {
 
     // ======== 初始化 ========
     function init() {
+        if (window.updateLoader) window.updateLoader(30, '驗證登入狀態...');
         // 初始化 Firebase
         if (!PostIt.Firebase.init()) {
             showToast('系統初始化失敗', 'error');
@@ -43,6 +44,7 @@ PostIt.Board = (function () {
 
     // ======== 登入狀態變化 ========
     async function onAuthStateChanged(user) {
+        if (window.updateLoader) window.updateLoader(50, '讀取使用者設定...');
         const loginScreen = document.getElementById('login-screen');
         const app = document.getElementById('app');
 
@@ -80,6 +82,7 @@ PostIt.Board = (function () {
             }
 
             // 訂閱筆記
+            if (window.updateLoader) window.updateLoader(70, '連接即時協作引擎...');
             PostIt.Note.subscribe(renderNotes, renderOnlineUsers);
 
             // 啟提圖釘連線系統
@@ -91,6 +94,7 @@ PostIt.Board = (function () {
             console.log('[Board] 使用者已登入:', user.displayName);
         } else {
             // 已登出 → 顯示登入畫面
+            if (window.updateLoader) window.updateLoader(100, '請先登入系統');
             loginScreen.classList.remove('hidden');
             app.classList.add('hidden');
 
@@ -545,7 +549,12 @@ PostIt.Board = (function () {
     }
 
     // ======== 渲染貼紙 ========
+    let _isFirstRender = true;
     function renderNotes(notes) {
+        if (_isFirstRender) {
+            _isFirstRender = false;
+            if (window.updateLoader) window.updateLoader(100, '畫面繪製中...');
+        }
         const existingIds = new Set();
         const fragment = document.createDocumentFragment();
         const newElements = [];

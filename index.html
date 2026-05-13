@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css?v=3.14">
+    <link rel="stylesheet" href="css/style.css?v=3.15">
     <link rel="stylesheet" href="css/animations.css">
     <script>
         window.addEventListener('load', () => {
@@ -32,9 +32,39 @@
                 }
             }, 3000);
         });
+    <!-- 載入動畫全域控制 API (必須盡早載入) -->
+    <script>
+        window.updateLoader = function(percent, text) {
+            const loader = document.getElementById('global-loader');
+            const fill = document.getElementById('loader-progress');
+            const textEl = document.getElementById('loader-text');
+            if (fill) fill.style.width = percent + '%';
+            if (textEl && text) textEl.textContent = text;
+            
+            // 當進度達 100%，延遲 500ms 後隱藏，讓進度條動畫跑完
+            if (percent >= 100 && loader) {
+                setTimeout(() => {
+                    loader.classList.add('hidden');
+                    // 等待淡出動畫結束後完全移除 pointer-events
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                    }, 500);
+                }, 500);
+            }
+        };
     </script>
 </head>
 <body>
+    <!-- 全域載入進度條 -->
+    <div id="global-loader" class="global-loader">
+        <div class="loader-content">
+            <div class="loader-spinner"></div>
+            <div class="loader-text" id="loader-text">初始化系統...</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="loader-progress"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- ===== 登入畫面 ===== -->
     <div id="login-screen" class="login-screen">
@@ -87,7 +117,7 @@
                 <div class="toolbar-brand">
                     <i class="fa-solid fa-note-sticky"></i>
                     <span>Post It</span>
-                    <span id="app-version" class="app-version" title="查看系統更新與版本紀錄">v2.4.85</span>
+                    <span id="app-version" class="app-version" title="查看系統更新與版本紀錄">v2.5.0</span>
                 </div>
             </div>
             <div class="toolbar-right">
@@ -505,23 +535,27 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 
     <!-- App Scripts -->
-    <script src="js/firebase-config.js?v=2.4.85"></script>
-    <script src="js/layer_manager.js?v=2.4.85"></script>
-    <script src="js/yjs_sync.js?v=2.4.85"></script>
-    <script src="js/board.model.js?v=2.4.85"></script>
-    <script src="js/auth.js?v=2.4.85"></script>
-    <script src="js/drag.js?v=2.4.85"></script>
-    <script src="js/sound.js?v=2.4.85"></script>
-    <script src="js/settings_v2.js?v=2.4.85"></script>
-    <script src="js/ai.js?v=2.4.85"></script>
-    <script src="js/alarm.js?v=2.4.85"></script>
-    <script src="js/note.js?v=2.4.85"></script>
-    <script src="js/group.js?v=2.4.85"></script>
-    <script src="js/deal_notifier.js?v=2.4.85"></script>
-    <script src="js/stock_alert.js?v=2.4.85"></script>
-    <script src="js/board_v2.js?v=2.4.85"></script>
-    <script src="js/stamp_v2.js?v=2.4.85"></script>
-    <script src="js/connect.js?v=2.4.85"></script>
-    <script src="js/changelog.js?v=2.4.85"></script>
+    <script src="js/firebase-config.js?v=2.5.0"></script>
+    <script src="js/layer_manager.js?v=2.5.0"></script>
+    <script src="js/yjs_sync.js?v=2.5.0"></script>
+    <script src="js/board.model.js?v=2.5.0"></script>
+    <script src="js/auth.js?v=2.5.0"></script>
+    <script src="js/drag.js?v=2.5.0"></script>
+    <script src="js/sound.js?v=2.5.0"></script>
+    <script src="js/settings_v2.js?v=2.5.0"></script>
+    <script src="js/ai.js?v=2.5.0"></script>
+    <script src="js/alarm.js?v=2.5.0"></script>
+    <script src="js/note.js?v=2.5.0"></script>
+    <script src="js/group.js?v=2.5.0"></script>
+    <script src="js/deal_notifier.js?v=2.5.0"></script>
+    <script src="js/stock_alert.js?v=2.5.0"></script>
+    <script src="js/board_v2.js?v=2.5.0"></script>
+    <script src="js/stamp_v2.js?v=2.5.0"></script>
+    <script src="js/connect.js?v=2.5.0"></script>
+    <script src="js/changelog.js?v=2.5.0"></script>
+    <script>
+        // DOM 解析完畢
+        if (window.updateLoader) window.updateLoader(10, '載入核心腳本...');
+    </script>
 </body>
 </html>
