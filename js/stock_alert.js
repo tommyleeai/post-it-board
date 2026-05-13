@@ -482,20 +482,29 @@ PostIt.StockAlert = (function () {
         const countEl = document.getElementById('alert-dashboard-count');
         if (!listEl || !countEl) return;
 
-        // 取得所有帶有警報的股票 (過濾掉只是 stock_card 但沒有警報設定的)
+        // 取得所有帶有警報的股票
         const allNotes = typeof PostIt.Note !== 'undefined' ? PostIt.Note.getCache() : {};
         const activeAlerts = [];
         
         for (const [id, note] of Object.entries(allNotes)) {
-            if (note.stockAlert && note.stockAlert.status === 'watching' && note.stockAlert.symbol) {
-                activeAlerts.push({
-                    noteId: id,
-                    symbol: note.stockAlert.symbol,
-                    targetPrice: note.stockAlert.targetPrice,
-                    condition: note.stockAlert.condition,
-                    options: note.stockAlert.options || { toast: true, sound: true, tts: true }
-                });
+            // 兼容舊格式與新格式
+            let noteAlerts = note.stockAlerts || [];
+            if (note.stockAlert && !Array.isArray(note.stockAlert) && noteAlerts.length === 0) {
+                noteAlerts = [note.stockAlert];
             }
+            
+            noteAlerts.forEach(a => {
+                if (a.status === 'watching' && a.symbol) {
+                    activeAlerts.push({
+                        noteId: id,
+                        alertId: a.id || 'legacy',
+                        symbol: a.symbol,
+                        targetPrice: a.targetPrice,
+                        condition: a.condition,
+                        options: a.options || { toast: true, sound: true, tts: true }
+                    });
+                }
+            });
         }
 
         countEl.textContent = activeAlerts.length;
@@ -528,7 +537,7 @@ PostIt.StockAlert = (function () {
                         </div>
                         <div class="alert-item-actions">
                             <button class="btn-alert-locate" onclick="PostIt.StockAlert.locateAlert('${alert.noteId}')"><i class="fa-solid fa-location-crosshairs"></i> 定位</button>
-                            <button class="btn-alert-remove" onclick="PostIt.StockAlert.removeAlertFromDashboard('${alert.noteId}')"><i class="fa-solid fa-trash"></i> 移除</button>
+                            <button class="btn-alert-remove" onclick="PostIt.StockAlert.removeAlertFromDashboard('${alert.noteId}', '${alert.alertId}')"><i class="fa-solid fa-trash"></i> 移除</button>
                         </div>
                     </div>
                 </div>
@@ -544,6 +553,9 @@ PostIt.StockAlert = (function () {
         // 取得貼紙元素
         const noteEl = document.querySelector(`.sticky-note[data-note-id="${noteId}"]`);
         if (noteEl) {
+            // 平滑滾動畫面將目標卡片置中 (如果畫布支援原生的 scrolling)
+            noteEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+
             // 加上 Highlight 特效
             noteEl.classList.add('highlight-glow');
             setTimeout(() => {
@@ -557,11 +569,16 @@ PostIt.StockAlert = (function () {
         }
     }
 
-    function removeAlertFromDashboard(noteId) {
+    function removeAlertFromDashboard(noteId, alertId) {
         if (!window.PostIt || !window.PostIt.Note) return;
         
-        // 呼叫原本的更新，將設定清空
-        PostIt.Note.updateStockAlert(noteId, null);
+        // 呼叫更新將特定警報移除
+        if (alertId === 'legacy') {
+            PostIt.Note.updateStockAlert(noteId, null);
+        } else {
+            PostIt.Note.removeStockAlert(noteId, alertId);
+        }
+
         if (window.PostIt.Board) {
             PostIt.Board.showToast('🗑️ 警報已移除', 'info');
         }
