@@ -177,14 +177,22 @@ PostIt.Note = (function () {
             yMode = new Y.Map();
             yLayouts.set(mode, yMode);
         }
-        yMode.set('x', x);
-        yMode.set('y', y);
-        yMode.set('zIndex', zIndex);
 
-        // 為了相容也寫入 root
-        yNote.set('x', x);
-        yNote.set('y', y);
-        yNote.set('zIndex', zIndex);
+        // 防禦性寫入：絕對不可將 undefined 或 NaN 寫入 Yjs，否則會導致 toJSON 遺失這些欄位，引發全域座標重置 (0,0) Bug
+        if (typeof x === 'number' && !isNaN(x)) {
+            yMode.set('x', x);
+            yNote.set('x', x);
+        }
+        if (typeof y === 'number' && !isNaN(y)) {
+            yMode.set('y', y);
+            yNote.set('y', y);
+        }
+        
+        if (zIndex !== undefined && zIndex !== null) {
+            yMode.set('zIndex', zIndex);
+            yNote.set('zIndex', zIndex);
+        }
+
         yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
     }
     // -------- 更新顏色 --------

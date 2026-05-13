@@ -81,9 +81,12 @@ PostIt.DealNotifier = (function () {
                 const mode = (window.PostIt && PostIt.getDeviceMode) ? PostIt.getDeviceMode() : 'desktop';
                 const layoutData = (existingSuperDeal.layouts && existingSuperDeal.layouts[mode]) ? existingSuperDeal.layouts[mode] : existingSuperDeal;
                 
+                let targetX = typeof layoutData.x === 'number' && !isNaN(layoutData.x) ? layoutData.x : existingSuperDeal.x;
+                let targetY = typeof layoutData.y === 'number' && !isNaN(layoutData.y) ? layoutData.y : existingSuperDeal.y;
+                
                 spawnPos = { 
-                    x: typeof layoutData.x === 'number' ? layoutData.x : existingSuperDeal.x, 
-                    y: typeof layoutData.y === 'number' ? layoutData.y : existingSuperDeal.y 
+                    x: typeof targetX === 'number' && !isNaN(targetX) ? targetX : 5, 
+                    y: typeof targetY === 'number' && !isNaN(targetY) ? targetY : 15 
                 };
             }
         }
