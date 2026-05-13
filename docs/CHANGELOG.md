@@ -61,7 +61,11 @@
 ## [2.5.22] - 2026-05-13
 
 ### 🔧 優化與修正 (Improved & Fixed)
-*   更新 index、board_v2 模組
+*   **修復白板背景圖消失問題**：移除 v2.5.20/v2.5.21 的錯誤修復嘗試，回歸正確方案
+    *   根因：`applyBoardBgImage` 的 `img.onerror` 會執行 `removeProperty('background-image')` 導致背景被清除
+    *   修復：完全移除 `new Image()` 預載和 `onerror` 回調，改為直接設定 CSS `background-image`，不再有任何 JS 路徑可以清除背景
+    *   加入診斷 `console.log` 以追蹤 Settings 載入時序與背景圖 URL
+*   **清理殘留 debug 程式碼**：移除 `index.html` 中遺留的 Firestore settings 除錯腳本
 ## [2.5.21] - 2026-05-13
 
 ### 🔧 優化與修正 (Improved & Fixed)
