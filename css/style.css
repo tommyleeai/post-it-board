@@ -3698,8 +3698,8 @@ body.pin-mode {
 /* === Timer Progress Bar END === */
 
 /* === Stock Card UI START === */
-.sticky-note.stock-card-note {
-    /* 移除背景、邊框與 padding，交給內部的 front 與 back 處理，以支援 3D 翻轉 */
+/* 一般狀態下：移除背景、邊框與 padding，交給內部的 front 與 back 處理，以支援 3D 翻轉 */
+.sticky-note.stock-card-note:not(:has(.note-content[contenteditable="true"])) {
     background: transparent !important;
     border-radius: 16px !important;
     box-shadow: none !important;
@@ -3708,7 +3708,22 @@ body.pin-mode {
     padding: 0 !important;
     overflow: visible !important;
     width: 320px; 
-    /* 移除 min-height，讓 front 內容自然撐開 */
+}
+
+/* 編輯狀態下：因為內部的 3D 結構會被純文字取代，必須補回原有的卡片外觀，否則文字會懸浮 */
+.sticky-note.stock-card-note:has(.note-content[contenteditable="true"]) {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255,255,255,0.4) !important;
+    padding: 20px !important;
+    overflow: visible !important;
+    width: 320px; 
+}
+
+.dark-card.sticky-note.stock-card-note:has(.note-content[contenteditable="true"]) {
+    background: rgba(15, 23, 42, 0.95) !important;
 }
 
 .sticky-note.stock-card-note::before,
