@@ -950,6 +950,11 @@ PostIt.Board = (function () {
                 return;
             }
 
+            // 待辦清單卡片禁止單擊進入編輯模式（避免勾選時誤觸編輯，需透過 ✏️ 按鈕編輯）
+            if (note.todoItems && Array.isArray(note.todoItems) && note.todoItems.length >= 2) {
+                return;
+            }
+
             // 純圖片/純影片便利貼禁止單擊進入編輯模式（避免圖片 URL 被意外清空）
             // 使用者仍可透過 ✏️ 編輯按鈕主動進入編輯
             if (el.classList.contains('image-only') || el.classList.contains('video-only')) {
