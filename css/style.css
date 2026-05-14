@@ -3984,16 +3984,77 @@ body.pin-mode {
     border-radius: 50%;
     display: inline-block;
 }
-.market-status-indicator.live {
-    background-color: #3b82f6;
-    animation: blink-blue 2s infinite;
+
+/* 1. 連線中 (盤中) - 藍色呼吸 */
+.market-status-indicator.live { background-color: #3b82f6; animation: blink-blue 2s infinite; }
+@keyframes blink-blue { 0%, 100% { opacity: 1; box-shadow: 0 0 6px #3b82f6; } 50% { opacity: 0.4; box-shadow: none; } }
+
+/* 2. 連線中 (盤後) - 黃色呼吸 */
+.market-status-indicator.closed { background-color: #eab308; animation: blink-yellow 2s infinite; }
+@keyframes blink-yellow { 0%, 100% { opacity: 1; box-shadow: 0 0 6px #eab308; } 50% { opacity: 0.4; box-shadow: none; } }
+
+/* 3. 抓取中 - 紫色快閃 */
+.market-status-indicator.fetching { background-color: #a855f7; animation: blink-fast-purple 0.5s infinite; }
+@keyframes blink-fast-purple { 0%, 100% { opacity: 1; box-shadow: 0 0 8px #a855f7; } 50% { opacity: 0.2; box-shadow: none; } }
+
+/* 4. API限制 - 橘色快閃 */
+.market-status-indicator.rate_limit { background-color: #f97316; animation: blink-fast-orange 0.5s infinite; }
+@keyframes blink-fast-orange { 0%, 100% { opacity: 1; box-shadow: 0 0 8px #f97316; } 50% { opacity: 0.2; box-shadow: none; } }
+
+/* 5. 錯誤斷線 - 紅色呼吸 */
+.market-status-indicator.error { background-color: #ef4444; animation: blink-red 2s infinite; }
+@keyframes blink-red { 0%, 100% { opacity: 1; box-shadow: 0 0 6px #ef4444; } 50% { opacity: 0.4; box-shadow: none; } }
+
+/* 6. 暫停監控 - 灰色靜止 */
+.market-status-indicator.paused { background-color: #9ca3af; box-shadow: inset 0 0 2px rgba(0,0,0,0.2); }
+
+/* 7. 無效代碼 - 黑色靜止 */
+.market-status-indicator.invalid { background-color: #111827; box-shadow: inset 0 0 2px rgba(0,0,0,0.5); }
+
+/* Tooltip for market status */
+.market-status-indicator-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: help;
 }
-.market-status-indicator.closed {
-    background-color: #ef4444;
+
+.market-status-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    pointer-events: none;
+    z-index: 100;
+    letter-spacing: 0.5px;
 }
-@keyframes blink-blue {
-    0%, 100% { opacity: 1; box-shadow: 0 0 6px #3b82f6; }
-    50% { opacity: 0.4; box-shadow: none; }
+
+.market-status-indicator-wrapper:hover .market-status-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.market-status-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
 }
 
 .stock-card-timestamp-icon {

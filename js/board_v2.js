@@ -1150,6 +1150,18 @@ PostIt.Board = (function () {
                 changeEl.innerHTML = `<i class="fa-solid fa-arrow-trend-${isUp ? 'up' : 'down'}"></i> ${sign}$${sd.priceChange.toFixed(2)} (${sign}${sd.priceChangePercent.toFixed(2)}%)`;
             }
 
+            if (sd.marketStatus) {
+                const indicatorEl = contentEl.querySelector('.market-status-indicator');
+                if (indicatorEl) {
+                    indicatorEl.className = `market-status-indicator ${sd.marketStatus}`;
+                }
+                const statusTooltipEl = contentEl.querySelector('.market-status-tooltip');
+                if (statusTooltipEl) {
+                    const statusMap = { 'live': '連線中 (盤中)', 'closed': '連線中 (盤後)', 'fetching': '抓取資料中...', 'rate_limit': 'API 請求頻繁被限制', 'error': '連線錯誤', 'paused': '暫停監控', 'invalid': '無效的股票代碼' };
+                    statusTooltipEl.textContent = statusMap[sd.marketStatus] || '未知狀態';
+                }
+            }
+
             if (sd.lastUpdated) {
                 const tooltipEl = contentEl.querySelector('.stock-card-timestamp-tooltip');
                 if (tooltipEl) {
@@ -1399,8 +1411,9 @@ PostIt.Board = (function () {
 
                 let statusIndicatorHtml = '';
                 if (typeof PostIt !== 'undefined' && PostIt.StockAlert) {
-                    const isMarketOpen = PostIt.StockAlert.isMarketOpen();
-                    const statusClass = isMarketOpen ? 'live' : 'closed';
+                    const statusClass = sd.marketStatus || (PostIt.StockAlert.isMarketOpen() ? 'live' : 'closed');
+                    const statusMap = { 'live': '連線中 (盤中)', 'closed': '連線中 (盤後)', 'fetching': '抓取資料中...', 'rate_limit': 'API 請求頻繁被限制', 'error': '連線錯誤', 'paused': '暫停監控', 'invalid': '無效的股票代碼' };
+                    const statusText = statusMap[statusClass] || '未知狀態';
                     
                     let timeStr = '尚未取得更新';
                     if (sd.lastUpdated) {
@@ -1411,7 +1424,10 @@ PostIt.Board = (function () {
                     
                     statusIndicatorHtml = `
                     <div class="market-status-container">
-                        <span class="market-status-indicator ${statusClass}"></span>
+                        <div class="market-status-indicator-wrapper">
+                            <span class="market-status-indicator ${statusClass}"></span>
+                            <div class="market-status-tooltip">${statusText}</div>
+                        </div>
                         <div class="stock-card-timestamp-icon" onclick="if(window.PostIt && PostIt.StockAlert) { PostIt.StockAlert.manualRefresh('${note.id}', '${symbol}', this); event.stopPropagation(); }">🕒
                             <div class="stock-card-timestamp-tooltip">最後抓取時間：${timeStr}</div>
                         </div>

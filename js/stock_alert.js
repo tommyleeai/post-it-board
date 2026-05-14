@@ -142,66 +142,100 @@ PostIt.StockAlert = (function () {
             const resp = await fetch(url);
             if (!resp.ok) {
                 console.error('[StockAlert] API 回應錯誤:', resp.status);
-                if (resp.status === 401) {
+                if (resp.status === 429) {
+                    showErrorOnce('📈 股價監控：API 請求次數已達上限，請稍後再試。');
+                    return { _error: 'rate_limit' };
+                } else if (resp.status === 401) {
                     showErrorOnce('📈 股價監控失敗：API Token 無效，請確認 Token 是否正確。');
+                    return { _error: 'error' };
                 } else if (resp.status === 503) {
                     showErrorOnce('📈 股價監控失敗：伺服器尚未設定 Finnhub API Key。');
+                    return { _error: 'error' };
                 } else {
                     showErrorOnce(`📈 股價監控暫時無法使用（HTTP ${resp.status}），將自動重試。`);
+                    return { _error: 'error' };
                 }
-                return {};
             }
             const data = await resp.json();
             return data.quotes || {};
         } catch (e) {
             console.error('[StockAlert] 查詢報價失敗:', e);
             showErrorOnce('📈 股價監控：無法連線到報價伺服器，請確認網路連線。');
-            return {};
+            return { _error: 'error' };
         }
     }
 
     async function fetchCardData(noteId, symbol) {
         const token = getApiToken();
-        if (!token) return;
+        if (!token) {
+            if (typeof PostIt.Note !== 'undefined') {
+                const existingData = PostIt.Note.getNote(noteId)?.stockCardData || {};
+                PostIt.Note.updateNote(noteId, { stockCardData: { ...existingData, marketStatus: 'paused', lastUpdated: Date.now() } });
+            }
+            return;
+        }
 
+        let marketStatus = isMarketOpen() ? 'live' : 'closed';
         try {
-            // 由於我們也需要即時報價，可以同時拿
             const [profileResp, chartResp, quotesDict] = await Promise.all([
                 fetch(`${API_BASE}/api/stock/profile?symbol=${symbol}&token=${encodeURIComponent(token)}`),
                 fetch(`${API_BASE}/api/stock/chart?symbol=${symbol}&token=${encodeURIComponent(token)}`),
                 fetchQuotes([symbol])
             ]);
 
-            if (profileResp.ok) {
-                const profile = await profileResp.json();
-                const chart = chartResp.ok ? await chartResp.json() : { success: true, prices: [] };
-                const quote = (quotesDict && quotesDict[symbol.toUpperCase()]) ? quotesDict[symbol.toUpperCase()] : null;
+            if (profileResp.status === 429 || chartResp.status === 429 || quotesDict._error === 'rate_limit') {
+                marketStatus = 'rate_limit';
+            } else if (!profileResp.ok || quotesDict._error === 'error') {
+                marketStatus = 'error';
+            }
 
-                if (profile.success) {
-                    const cardData = {
-                        symbol: profile.symbol,
-                        name: profile.name,
-                        logo: profile.logo,
-                        marketCap: profile.marketCap,
-                        peRatio: profile.peRatio,
-                        high52: profile.high52,
-                        low52: profile.low52,
-                        recommendation: profile.recommendation,
-                        prices: chart.success ? chart.prices : [],
-                        currentPrice: quote ? quote.price : null,
-                        priceChange: quote ? quote.change : null,
-                        priceChangePercent: quote ? quote.changePercent : null,
-                        lastUpdated: Date.now()
-                    };
-                    
-                    // 將結果存入該便利貼
-                    if (typeof PostIt.Note !== 'undefined') {
-                        PostIt.Note.updateNote(noteId, { stockCardData: cardData });
-                    }
+            if (marketStatus === 'rate_limit' || marketStatus === 'error') {
+                 if (typeof PostIt.Note !== 'undefined') {
+                     const existingData = PostIt.Note.getNote(noteId)?.stockCardData || {};
+                     PostIt.Note.updateNote(noteId, { stockCardData: { ...existingData, marketStatus: marketStatus, lastUpdated: Date.now() } });
+                 }
+                 return;
+            }
+
+            const profile = await profileResp.json();
+            if (!profile.success) {
+                marketStatus = 'invalid';
+                if (typeof PostIt.Note !== 'undefined') {
+                    const existingData = PostIt.Note.getNote(noteId)?.stockCardData || {};
+                    PostIt.Note.updateNote(noteId, { stockCardData: { ...existingData, marketStatus: marketStatus, lastUpdated: Date.now() } });
                 }
+                return;
+            }
+
+            const chart = chartResp.ok ? await chartResp.json() : { success: true, prices: [] };
+            const quote = (quotesDict && quotesDict[symbol.toUpperCase()]) ? quotesDict[symbol.toUpperCase()] : null;
+
+            const cardData = {
+                symbol: profile.symbol,
+                name: profile.name,
+                logo: profile.logo,
+                marketCap: profile.marketCap,
+                peRatio: profile.peRatio,
+                high52: profile.high52,
+                low52: profile.low52,
+                recommendation: profile.recommendation,
+                prices: chart.success ? chart.prices : [],
+                currentPrice: quote ? quote.price : null,
+                priceChange: quote ? quote.change : null,
+                priceChangePercent: quote ? quote.changePercent : null,
+                lastUpdated: Date.now(),
+                marketStatus: marketStatus
+            };
+            
+            if (typeof PostIt.Note !== 'undefined') {
+                PostIt.Note.updateNote(noteId, { stockCardData: cardData });
             }
         } catch (e) {
             console.error('[StockAlert] 獲取股票卡片資料失敗:', e);
+            if (typeof PostIt.Note !== 'undefined') {
+                const existingData = PostIt.Note.getNote(noteId)?.stockCardData || {};
+                PostIt.Note.updateNote(noteId, { stockCardData: { ...existingData, marketStatus: 'error', lastUpdated: Date.now() } });
+            }
         }
     }
 
@@ -211,6 +245,8 @@ PostIt.StockAlert = (function () {
             iconEl.style.pointerEvents = 'none'; // Prevent double clicks
             iconEl.style.opacity = '0.5';
         }
+        
+        updateStockCardDOM(noteId, null, undefined, undefined, undefined, 'fetching');
         
         await fetchCardData(noteId, symbol);
         
@@ -282,27 +318,58 @@ PostIt.StockAlert = (function () {
 
     // --- 主輪詢邏輯 ---
     async function poll() {
+        const token = getApiToken();
         const alerts = getActiveAlerts();
         if (alerts.length === 0) return;
+
+        if (!token) {
+            for (const alert of alerts) {
+                if (PostIt.Note) {
+                    const note = PostIt.Note.getNote(alert.noteId);
+                    if (note && note.type === 'stock_card') {
+                        updateStockCardDOM(alert.noteId, null, undefined, undefined, Date.now(), 'paused');
+                    }
+                }
+            }
+            return;
+        }
 
         // 收集不重複的 symbol
         const symbols = [...new Set(alerts.map(a => a.symbol))];
         const quotes = await fetchQuotes(symbols);
-
         const now = new Date().toISOString();
+
+        if (quotes._error) {
+            for (const alert of alerts) {
+                if (PostIt.Note) {
+                    const note = PostIt.Note.getNote(alert.noteId);
+                    if (note && note.type === 'stock_card') {
+                        updateStockCardDOM(alert.noteId, null, undefined, undefined, Date.now(), quotes._error);
+                    }
+                }
+            }
+            return;
+        }
 
         for (const alert of alerts) {
             const quote = quotes[alert.symbol];
-            if (!quote || !quote.price) continue;
+            if (!quote || !quote.price) {
+                if (PostIt.Note) {
+                    const note = PostIt.Note.getNote(alert.noteId);
+                    if (note && note.type === 'stock_card') {
+                        updateStockCardDOM(alert.noteId, null, undefined, undefined, Date.now(), 'invalid');
+                    }
+                }
+                continue;
+            }
 
             const currentPrice = quote.price;
 
             // 如果有 stockCardData，僅更新本地 DOM，不寫入 Yjs
-            // 避免每分鐘 poll 觸發 Yjs → Firestore → 全分頁重繪的同步風暴
             if (PostIt.Note) {
                 const note = PostIt.Note.getNote(alert.noteId);
                 if (note && note.type === 'stock_card') {
-                    updateStockCardDOM(alert.noteId, currentPrice, quote.change, quote.changePercent, Date.now(), isMarketOpen());
+                    updateStockCardDOM(alert.noteId, currentPrice, quote.change, quote.changePercent, Date.now(), isMarketOpen() ? 'live' : 'closed');
                 }
             }
 
@@ -329,7 +396,7 @@ PostIt.StockAlert = (function () {
     }
 
     // --- 股票卡片純 DOM 即時報價更新 (不經過 Yjs 同步) ---
-    function updateStockCardDOM(noteId, currentPrice, priceChange, priceChangePercent, lastUpdated, marketOpen) {
+    function updateStockCardDOM(noteId, currentPrice, priceChange, priceChangePercent, lastUpdated, marketStatus) {
         const noteEl = document.querySelector(`.sticky-note[data-note-id="${noteId}"]`);
         if (!noteEl) return;
 
@@ -357,17 +424,34 @@ PostIt.StockAlert = (function () {
             changeEl.innerHTML = `<i class="fa-solid fa-arrow-trend-${isUp ? 'up' : 'down'}"></i> ${sign}$${priceChange.toFixed(2)} (${sign}${priceChangePercent.toFixed(2)}%)`;
         }
 
-        if (lastUpdated !== undefined && marketOpen !== undefined) {
+        if (marketStatus !== undefined) {
             const indicatorEl = noteEl.querySelector('.market-status-indicator');
             if (indicatorEl) {
-                indicatorEl.className = `market-status-indicator ${marketOpen ? 'live' : 'closed'}`;
+                indicatorEl.className = `market-status-indicator ${marketStatus}`;
             }
-            const tooltipEl = noteEl.querySelector('.stock-card-timestamp-tooltip');
+            
+            const tooltipEl = noteEl.querySelector('.market-status-tooltip');
             if (tooltipEl) {
+                const statusMap = {
+                    'live': '連線中 (盤中)',
+                    'closed': '連線中 (盤後)',
+                    'fetching': '抓取資料中...',
+                    'rate_limit': 'API 請求頻繁被限制',
+                    'error': '連線錯誤',
+                    'paused': '暫停監控',
+                    'invalid': '無效的股票代碼'
+                };
+                tooltipEl.textContent = statusMap[marketStatus] || '未知狀態';
+            }
+        }
+        
+        if (lastUpdated !== undefined) {
+            const tsTooltipEl = noteEl.querySelector('.stock-card-timestamp-tooltip');
+            if (tsTooltipEl) {
                 const dt = new Date(lastUpdated);
                 const pad = n => String(n).padStart(2, '0');
                 const timeStr = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
-                tooltipEl.textContent = `最後抓取時間：${timeStr}`;
+                tsTooltipEl.textContent = `最後抓取時間：${timeStr}`;
             }
         }
     }
