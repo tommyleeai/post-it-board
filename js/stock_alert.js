@@ -205,6 +205,26 @@ PostIt.StockAlert = (function () {
         }
     }
 
+    async function manualRefresh(noteId, symbol, iconEl) {
+        if (iconEl) {
+            iconEl.classList.add('refreshing');
+            iconEl.style.pointerEvents = 'none'; // Prevent double clicks
+            iconEl.style.opacity = '0.5';
+        }
+        
+        await fetchCardData(noteId, symbol);
+        
+        if (iconEl) {
+            iconEl.classList.remove('refreshing');
+            iconEl.style.pointerEvents = 'auto';
+            iconEl.style.opacity = '1';
+        }
+        
+        if (typeof PostIt !== 'undefined' && PostIt.Board) {
+            PostIt.Board.showToast(`✅ ${symbol} 股價已手動更新`, 'success', null, 2000);
+        }
+    }
+
     // --- 條件檢查 ---
     function checkCondition(alert, currentPrice) {
         switch (alert.condition) {
@@ -666,7 +686,7 @@ PostIt.StockAlert = (function () {
         getMarketFreq, getAfterHoursFreq, getApiToken,
         getActiveAlerts, isMarketOpen, fetchCardData,
         showDashboard, locateAlert, removeAlertFromDashboard,
-        FREQ_OPTIONS
+        FREQ_OPTIONS, manualRefresh
     };
 })();
 

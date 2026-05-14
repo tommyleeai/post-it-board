@@ -1402,7 +1402,7 @@ PostIt.Board = (function () {
                     statusIndicatorHtml = `
                     <div class="market-status-container">
                         <span class="market-status-indicator ${statusClass}"></span>
-                        <div class="stock-card-timestamp-icon">🕒
+                        <div class="stock-card-timestamp-icon" onclick="if(window.PostIt && PostIt.StockAlert) { PostIt.StockAlert.manualRefresh('${note.id}', '${symbol}', this); event.stopPropagation(); }">🕒
                             <div class="stock-card-timestamp-tooltip">最後抓取時間：${timeStr}</div>
                         </div>
                     </div>`;

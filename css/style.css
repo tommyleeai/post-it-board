@@ -4005,6 +4005,21 @@ body.pin-mode {
     align-items: center;
     margin-left: 4px;
     vertical-align: super; /* To place it top right conceptually */
+    transition: transform 0.3s ease, opacity 0.3s;
+}
+
+.stock-card-timestamp-icon:hover {
+    transform: scale(1.1);
+}
+
+.stock-card-timestamp-icon.refreshing {
+    animation: spin 1s linear infinite;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+@keyframes spin {
+    100% { transform: rotate(360deg); }
 }
 
 .stock-card-timestamp-tooltip {
