@@ -469,8 +469,17 @@ PostIt.Note = (function () {
         yNote.set('reminderStatus', aiResult.alertTime ? 'pending' : null);
         yNote.set('aiReason', aiResult.reason || null);
         yNote.set('repeatRule', aiResult.repeatRule || 'none');
-        yNote.set('needsClarification', !!aiResult.needsClarification);
-        yNote.set('clarificationQuestion', aiResult.clarificationQuestion || null);
+        // 防呆：若 AI 判定為股價提醒（hasStockAlert），且沒有獨立的時間提醒需求，
+        // 就不應該反問使用者「你希望什麼時候被提醒？」，因為觸發條件是「價格」而非「時間」
+        let finalNeedsClarification = !!aiResult.needsClarification;
+        let finalClarificationQuestion = aiResult.clarificationQuestion || null;
+        if (aiResult.hasStockAlert && !aiResult.alertTime) {
+            finalNeedsClarification = false;
+            finalClarificationQuestion = null;
+        }
+
+        yNote.set('needsClarification', finalNeedsClarification);
+        yNote.set('clarificationQuestion', finalClarificationQuestion);
         yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
     }
 
