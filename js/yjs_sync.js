@@ -23,7 +23,7 @@ PostIt.YjsSync = (function () {
             console.log('[Yjs] 正在從 CDN 載入 Yjs 模組...');
             const yjsMod = await import('https://esm.sh/yjs@13.6.14');
             Y = yjsMod;
-            const idbMod = await import('https://esm.sh/y-indexeddb@9.0.12');
+            const idbMod = await import('https://esm.sh/y-indexeddb@9.0.12?deps=yjs@13.6.14');
             IndexeddbPersistence = idbMod.IndexeddbPersistence;
             console.log('[Yjs] 模組載入完成');
         } catch (e) {

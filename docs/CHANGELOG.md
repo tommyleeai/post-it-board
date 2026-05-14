@@ -68,6 +68,11 @@
 
 
 
+
+## [2.5.33] - 2026-05-14
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   修復致命 Bug：解決 Yjs 與 y-indexeddb CDN 模組重複載入導致 Constructor Checks 失敗與資料遺失問題
 ## [2.5.32] - 2026-05-13
 
 ### 🔧 優化與修正 (Improved & Fixed)
