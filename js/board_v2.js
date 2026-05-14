@@ -1171,6 +1171,80 @@ PostIt.Board = (function () {
                     tooltipEl.textContent = `最後抓取時間：${timeStr}`;
                 }
             }
+
+            // === 警報按鈕與列表差量更新 ===
+            const alerts = note.stockAlerts || [];
+            const watchingAlerts = alerts.filter(a => a.status === 'watching');
+            
+            let alertBtnHtml = '';
+            if (watchingAlerts.length === 1) {
+                const alertData = watchingAlerts[0];
+                const targetPrice = alertData.targetPrice || '';
+                const condition = alertData.condition || '>=';
+                const condIcon = condition === '>=' ? '📈' : '📉';
+                const condText = condition === '>=' ? '漲破' : '跌破';
+                const btnClass = condition === '>=' ? 'alert-up' : 'alert-down';
+                let optIcons = '<i class="fa-solid fa-gear" style="margin-right:6px;" title="修改設定"></i>';
+                if (alertData.options?.sound !== false || alertData.options?.tts !== false) optIcons += '<i class="fa-solid fa-volume-high" style="margin-right:6px;" title="鈴聲/語音"></i>';
+                if (alertData.options?.toast !== false) optIcons += '<i class="fa-solid fa-message" title="彈出通知"></i>';
+
+                alertBtnHtml = `
+                <button class="stock-card-active-alert-btn ${btnClass}" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.openFocusMode('${note.id}', event)">
+                    <span style="display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-bell"></i> 監控中: ${condIcon} ${condText} $${targetPrice}</span>
+                    <span style="opacity:0.9; font-size:0.9em; font-weight:normal;">${optIcons}</span>
+                </button>`;
+            } else if (watchingAlerts.length > 1) {
+                alertBtnHtml = `
+                <button class="stock-card-active-alert-btn alert-up" style="background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.openFocusMode('${note.id}', event)">
+                    <span style="display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-bell"></i> 監控中: ${watchingAlerts.length} 個警報條件</span>
+                    <span style="opacity:0.9; font-size:0.9em; font-weight:normal;"><i class="fa-solid fa-list-ul"></i></span>
+                </button>`;
+            }
+
+            const alertWrapperEl = contentEl.querySelector('.stock-card-alert-wrapper');
+            if (alertWrapperEl) {
+                alertWrapperEl.innerHTML = alertBtnHtml;
+            }
+
+            let alertsListHtml = '';
+            if (alerts.length > 0) {
+                alertsListHtml = '<div class="sc-alerts-list">';
+                alerts.forEach(a => {
+                    const icon = a.condition === '>=' ? '📈' : '📉';
+                    const t = a.condition === '>=' ? '漲破' : '跌破';
+                    let optStr = '';
+                    if (a.options?.toast !== false) optStr += '💬';
+                    if (a.options?.sound !== false || a.options?.tts !== false) optStr += '🔊';
+                    let statusStr = a.status === 'watching' ? '<span class="sc-alert-badge watching">監控中</span>' : '<span class="sc-alert-badge triggered">已觸發</span>';
+                    alertsListHtml += `
+                        <div class="sc-alert-item">
+                            <div class="sc-alert-info">
+                                <span class="sc-alert-icon">${icon}</span>
+                                <span>${t} <b>$${a.targetPrice}</b></span>
+                                <span class="sc-alert-opts">${optStr}</span>
+                                ${statusStr}
+                            </div>
+                            <button class="sc-alert-delete-btn" title="刪除警報" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.deleteAlert('${note.id}', '${a.id}', event)"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    `;
+                });
+                alertsListHtml += '</div>';
+            }
+            
+            const listContainerEl = contentEl.querySelector('.sc-alerts-list-container');
+            if (listContainerEl) {
+                listContainerEl.innerHTML = alertsListHtml;
+            }
+
+            const chartContainer = contentEl.querySelector('.stock-card-chart-container');
+            if (chartContainer) {
+                const oldBtn = chartContainer.querySelector('.stock-card-set-alert-btn');
+                if (watchingAlerts.length === 0 && !oldBtn) {
+                     chartContainer.insertAdjacentHTML('beforeend', `<button class="stock-card-set-alert-btn" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.openFocusMode('${note.id}', event)">🔔 設定警報</button>`);
+                } else if (watchingAlerts.length > 0 && oldBtn) {
+                     oldBtn.remove();
+                }
+            }
         }
 
         // 套用字型樣式
@@ -1593,7 +1667,7 @@ PostIt.Board = (function () {
                                 <span class="stock-card-metric-value">${sd.low52 ? '$' + sd.low52.toFixed(2) : '--'}</span>
                             </div>
                         </div>
-                        ${alertBtnHtml}
+                        <div class="stock-card-alert-wrapper">${alertBtnHtml}</div>
                     </div>
                 `;
 
@@ -1628,16 +1702,19 @@ PostIt.Board = (function () {
                 // 背面 HTML
                 const backHtml = `
                     <div class="stock-card-back">
-                        <div class="sc-back-header">
-                            <div class="sc-back-title">🔔 股價警報設定</div>
-                            <button class="sc-close-btn" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.closeFocusMode()">✕</button>
-                        </div>
-                        
-                        ${alertsListHtml}
+                        <div class="sc-back-side">
+                            <div class="sc-back-header">
+                                <div class="sc-back-title">🔔 股價警報設定</div>
+                                <button class="sc-close-btn" onclick="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.closeFocusMode()">✕</button>
+                            </div>
+                            
+                            <div class="sc-alerts-list-container">
+                                ${alertsListHtml}
+                            </div>
 
-                        <div class="sc-add-alert-section">
-                            <div class="sc-setting-group" style="margin-bottom:8px;">
-                                <div class="sc-price-wrapper">
+                            <div class="sc-add-alert-section">
+                                <div class="sc-setting-group" style="margin-bottom:8px;">
+                                    <div class="sc-price-wrapper">
                                     <span>$</span>
                                     <input type="number" class="sc-price-input" id="sc-target-price-${note.id}" placeholder="目標價" step="0.01" oninput="if(window.PostIt && PostIt.StockCardUI) PostIt.StockCardUI.handlePriceInput('${note.id}', this.value, ${sd.currentPrice || 0})">
                                 </div>
