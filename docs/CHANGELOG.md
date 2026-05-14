@@ -71,8 +71,10 @@
 
 ## [2.5.33] - 2026-05-14
 
-### 🔧 優化與修正 (Improved & Fixed)
-*   修復致命 Bug：解決 Yjs 與 y-indexeddb CDN 模組重複載入導致 Constructor Checks 失敗與資料遺失問題
+### 🐛 嚴重錯誤修復 (Critical Bug Fixes)
+* **Yjs 同步核心 (Critical)**: 修復因 `esm.sh` CDN 解析機制導致 `y-indexeddb` 下載第二個重複的 Yjs 引擎 (Duplicated Instances) 的世紀 Bug。
+  * **根本原因**: 雙重實例導致 Yjs 底層的 `instanceof Y.Map` 驗證徹底失效。這造成程式在壓縮序列化 (`Y.encodeStateAsUpdate`) 時，把巢狀的結構（如含有 `x`, `y` 座標的物件）判定為「非法的外部結構」並予以丟棄。引發跨分頁同步時卡牌座標莫名回彈至 (50, 50) 或 (0,0)。
+  * **解決方案**: 在動態載入時強制加入 `?deps=yjs@13.6.14` 參數，強迫 CDN 將 `y-indexeddb` 與主程式綁定至「同一個記憶體位址的 Yjs 引擎」。詳細排查歷程已紀錄至 `docs/postmortem_yjs_coordinate_loss.md`。
 ## [2.5.32] - 2026-05-13
 
 ### 🔧 優化與修正 (Improved & Fixed)
