@@ -945,6 +945,11 @@ PostIt.Board = (function () {
                 return;
             }
 
+            // 股票卡片禁止單擊進入編輯模式（避免破壞卡片佈局，需透過 ✏️ 按鈕編輯）
+            if (note.type === 'stock_card') {
+                return;
+            }
+
             // 純圖片/純影片便利貼禁止單擊進入編輯模式（避免圖片 URL 被意外清空）
             // 使用者仍可透過 ✏️ 編輯按鈕主動進入編輯
             if (el.classList.contains('image-only') || el.classList.contains('video-only')) {
