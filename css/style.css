@@ -3970,6 +3970,123 @@ body.pin-mode {
 }
 /* === Stock Card UI END === */
 
+/* === Todo Checklist START === */
+.todo-checklist {
+    padding: 4px 0;
+    font-family: 'Inter', sans-serif;
+}
+
+.todo-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid rgba(0,0,0,0.08);
+    letter-spacing: 0.3px;
+}
+
+.todo-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 8px;
+    margin: 2px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    user-select: none;
+}
+
+.todo-item:hover {
+    background: rgba(0,0,0,0.04);
+    transform: translateX(2px);
+}
+
+.todo-item:active {
+    transform: scale(0.98);
+}
+
+.todo-checkbox {
+    font-size: 18px;
+    color: #94a3b8;
+    transition: color 0.2s, transform 0.2s;
+    flex-shrink: 0;
+}
+
+.todo-item:hover .todo-checkbox {
+    color: #3b82f6;
+}
+
+.todo-item.done .todo-checkbox {
+    color: #10b981;
+    transform: scale(1.1);
+}
+
+.todo-text {
+    font-size: 14px;
+    color: #334155;
+    line-height: 1.4;
+    transition: color 0.2s, text-decoration 0.2s;
+}
+
+.todo-item.done .todo-text {
+    text-decoration: line-through;
+    color: #94a3b8;
+}
+
+.todo-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+}
+
+.todo-progress-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(0,0,0,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.todo-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    border-radius: 3px;
+    transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.todo-progress-complete .todo-progress-fill {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.todo-progress-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+}
+
+.todo-progress-complete .todo-progress-text {
+    color: #10b981;
+}
+
+/* 全部完成時的慶祝動畫 */
+@keyframes todo-celebrate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.todo-progress-complete {
+    animation: todo-celebrate 0.5s ease;
+}
+/* === Todo Checklist END === */
+
 /* === Stock Card Market Status START === */
 .market-status-container {
     display: inline-flex;

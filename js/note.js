@@ -493,6 +493,43 @@ PostIt.Note = (function () {
         }
     }
 
+    // -------- 待辦事項 (Todo Checklist) --------
+    function updateTodoItems(noteId, aiResult) {
+        const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
+        if (!yNotesMap) return;
+        const yNote = yNotesMap.get(noteId);
+        if (!yNote) return;
+
+        if (!aiResult || !aiResult.hasTodoItems || !aiResult.todoItems || aiResult.todoItems.length < 2) {
+            yNote.set('todoTitle', null);
+            yNote.set('todoItems', null);
+            yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
+            return;
+        }
+
+        const items = aiResult.todoItems.map(text => ({ text: text, done: false }));
+        yNote.set('todoTitle', aiResult.todoTitle || '');
+        yNote.set('todoItems', items);
+        yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
+    }
+
+    function toggleTodoItem(noteId, index) {
+        const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
+        if (!yNotesMap) return;
+        const yNote = yNotesMap.get(noteId);
+        if (!yNote) return;
+
+        const items = yNote.get('todoItems');
+        if (!items || !Array.isArray(items) || index < 0 || index >= items.length) return;
+
+        const updated = items.map((item, i) => {
+            if (i === index) return { ...item, done: !item.done };
+            return item;
+        });
+        yNote.set('todoItems', updated);
+        yNote.set('updatedAt', { seconds: Math.floor(Date.now() / 1000) });
+    }
+
     // -------- 股價提醒 --------
     function addStockAlert(noteId, alertData) {
         const yNotesMap = typeof PostIt.YjsSync !== 'undefined' ? PostIt.YjsSync.getNotesMap() : null;
@@ -830,6 +867,7 @@ PostIt.Note = (function () {
         subscribe, cleanup, create, updateContent, updateNote, updatePosition,
         updateColor, updateStyle, archive, unarchive, deleteArchive, getArchivedNotes, remove, uploadImage, detectType,
         updateReminderLogic, updateReminderStatus, getNotesRef,
+        updateTodoItems, toggleTodoItem,
         updateStockAlert, clearStockAlert, updateStockAlertField,
         addStockAlert, removeStockAlert, updateStockAlertStatus,
         mergeToGroup, removeFromGroup, disbandGroup, removeGroup, getGroupNotes, MAX_GROUP_SIZE,

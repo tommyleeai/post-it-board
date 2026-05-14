@@ -1470,6 +1470,37 @@ PostIt.Board = (function () {
             }
         }
 
+        // === 待辦事項 Checklist 渲染 ===
+        if (note.todoItems && Array.isArray(note.todoItems) && note.todoItems.length >= 2) {
+            const doneCount = note.todoItems.filter(i => i.done).length;
+            const totalCount = note.todoItems.length;
+            const allDone = doneCount === totalCount;
+            const progressPct = Math.round((doneCount / totalCount) * 100);
+            
+            let titleHtml = '';
+            if (note.todoTitle) {
+                titleHtml = `<div class="todo-title">${escapeHtml(note.todoTitle)}</div>`;
+            }
+
+            let itemsHtml = note.todoItems.map((item, idx) => {
+                const checkedClass = item.done ? 'done' : '';
+                const checkIcon = item.done ? 'fa-square-check' : 'fa-square';
+                return `<div class="todo-item ${checkedClass}" data-todo-index="${idx}" onclick="event.stopPropagation(); if(window.PostIt && PostIt.Note) PostIt.Note.toggleTodoItem('${note.id}', ${idx});">
+                    <i class="fa-regular ${checkIcon} todo-checkbox"></i>
+                    <span class="todo-text">${escapeHtml(item.text)}</span>
+                </div>`;
+            }).join('');
+
+            const progressClass = allDone ? 'todo-progress-complete' : '';
+            const completeEmoji = allDone ? ' 🎉' : '';
+            const progressHtml = `<div class="todo-progress ${progressClass}">
+                <div class="todo-progress-bar"><div class="todo-progress-fill" style="width: ${progressPct}%"></div></div>
+                <span class="todo-progress-text">${doneCount}/${totalCount} 完成${completeEmoji}</span>
+            </div>`;
+
+            return `<div class="todo-checklist">${titleHtml}${itemsHtml}${progressHtml}</div>`;
+        }
+
         switch (note.type) {
             case 'stock_card':
                 // 從 cache 或 note 取出資料 (預設顯示載入中或基礎代碼)
@@ -1913,6 +1944,14 @@ PostIt.Board = (function () {
                         if (typeof PostIt.StockAlert !== 'undefined') {
                             PostIt.StockAlert.startPolling();
                         }
+                    }
+                    // 待辦事項提取
+                    if (aiResult && aiResult.hasTodoItems && aiResult.todoItems && aiResult.todoItems.length >= 2) {
+                        PostIt.Note.updateTodoItems(noteId, aiResult);
+                        showToast(`✅ 已提取 ${aiResult.todoItems.length} 項待辦事項`, 'success', null, 3000);
+                    } else if (aiResult && !aiResult.hasTodoItems && !aiResult.error) {
+                        // 重新編輯後不再是待辦清單，清除舊資料
+                        PostIt.Note.updateTodoItems(noteId, null);
                     }
                 }
             }
