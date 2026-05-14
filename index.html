@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css?v=3.58">
+    <link rel="stylesheet" href="css/style.css?v=3.59">
     <link rel="stylesheet" href="css/animations.css">
     
     <!-- 載入動畫全域控制 API (必須盡早載入) -->
@@ -61,10 +61,9 @@
     <!-- ===== 登入畫面 ===== -->
     <div id="login-screen" class="login-screen">
         <div class="login-card">
-            <div class="login-logo">
-                <i class="fa-solid fa-note-sticky"></i>
+            <div class="login-logo-img-wrapper">
+                <img src="assets/logo_3d.png" alt="Post It Logo" class="login-logo-img">
             </div>
-            <h1 class="login-title">Post It</h1>
             <p class="login-subtitle">你的數位白板，隨手記錄一切靈感</p>
             <button id="btn-google-login" class="btn-google-login">
                 <svg viewBox="0 0 24 24" width="20" height="20">
@@ -107,9 +106,8 @@
         <header id="toolbar" class="toolbar">
             <div class="toolbar-left">
                 <div class="toolbar-brand">
-                    <i class="fa-solid fa-note-sticky"></i>
-                    <span>Post It</span>
-                    <span id="app-version" class="app-version" title="查看系統更新與版本紀錄">v2.6.2</span>
+                    <img src="assets/logo_3d.png" alt="Post It" class="brand-logo-img">
+                    <span id="app-version" class="app-version" title="查看系統更新與版本紀錄">v2.7.0</span>
                 </div>
             </div>
             <div class="toolbar-right">
@@ -527,24 +525,24 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 
     <!-- App Scripts -->
-    <script src="js/firebase-config.js?v=2.6.2"></script>
-    <script src="js/layer_manager.js?v=2.6.2"></script>
-    <script src="js/yjs_sync.js?v=2.6.2"></script>
-    <script src="js/board.model.js?v=2.6.2"></script>
-    <script src="js/auth.js?v=2.6.2"></script>
-    <script src="js/drag.js?v=2.6.2"></script>
-    <script src="js/sound.js?v=2.6.2"></script>
-    <script src="js/settings_v2.js?v=2.6.2"></script>
-    <script src="js/ai.js?v=2.6.2"></script>
-    <script src="js/alarm.js?v=2.6.2"></script>
-    <script src="js/note.js?v=2.6.2"></script>
-    <script src="js/group.js?v=2.6.2"></script>
-    <script src="js/deal_notifier.js?v=2.6.2"></script>
-    <script src="js/stock_alert.js?v=2.6.2"></script>
-    <script src="js/board_v2.js?v=2.6.2"></script>
-    <script src="js/stamp_v2.js?v=2.6.2"></script>
-    <script src="js/connect.js?v=2.6.2"></script>
-    <script src="js/changelog.js?v=2.6.2"></script>
+    <script src="js/firebase-config.js?v=2.7.0"></script>
+    <script src="js/layer_manager.js?v=2.7.0"></script>
+    <script src="js/yjs_sync.js?v=2.7.0"></script>
+    <script src="js/board.model.js?v=2.7.0"></script>
+    <script src="js/auth.js?v=2.7.0"></script>
+    <script src="js/drag.js?v=2.7.0"></script>
+    <script src="js/sound.js?v=2.7.0"></script>
+    <script src="js/settings_v2.js?v=2.7.0"></script>
+    <script src="js/ai.js?v=2.7.0"></script>
+    <script src="js/alarm.js?v=2.7.0"></script>
+    <script src="js/note.js?v=2.7.0"></script>
+    <script src="js/group.js?v=2.7.0"></script>
+    <script src="js/deal_notifier.js?v=2.7.0"></script>
+    <script src="js/stock_alert.js?v=2.7.0"></script>
+    <script src="js/board_v2.js?v=2.7.0"></script>
+    <script src="js/stamp_v2.js?v=2.7.0"></script>
+    <script src="js/connect.js?v=2.7.0"></script>
+    <script src="js/changelog.js?v=2.7.0"></script>
     <script>
         // DOM 解析完畢
         if (window.updateLoader) window.updateLoader(10, '載入核心腳本...');

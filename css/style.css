@@ -108,20 +108,16 @@ html, body {
     animation: fadeInUp 0.8s ease;
 }
 
-.login-logo {
-    font-size: 56px;
-    color: var(--note-yellow);
-    margin-bottom: 16px;
-    filter: drop-shadow(0 4px 12px rgba(255, 241, 118, 0.3));
+.login-logo-img-wrapper {
+    text-align: center;
+    margin-bottom: 24px;
 }
 
-.login-title {
-    font-family: var(--font-handwriting);
-    font-size: 48px;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 8px;
-    letter-spacing: 1px;
+.login-logo-img {
+    height: 70px; /* matched the visual size of previous 56px icon + 48px title */
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 12px rgba(255, 241, 118, 0.2));
 }
 
 .login-subtitle {
@@ -484,10 +480,13 @@ html, body {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-family: var(--font-handwriting);
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--note-yellow);
+}
+
+.brand-logo-img {
+    height: 32px;
+    width: auto;
+    object-fit: contain;
+    display: block;
 }
 
 .toolbar-brand i {
@@ -4675,6 +4674,7 @@ body.pin-mode {
     margin: 0 auto 16px auto;
     display: block;
     border-radius: 12px;
+    mix-blend-mode: screen;
 }
 
 .loader-text {
