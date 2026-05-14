@@ -3970,6 +3970,82 @@ body.pin-mode {
 }
 /* === Stock Card UI END === */
 
+/* === Stock Card Market Status START === */
+.market-status-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+.market-status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.market-status-indicator.live {
+    background-color: #3b82f6;
+    animation: blink-blue 2s infinite;
+}
+.market-status-indicator.closed {
+    background-color: #ef4444;
+}
+@keyframes blink-blue {
+    0%, 100% { opacity: 1; box-shadow: 0 0 6px #3b82f6; }
+    50% { opacity: 0.4; box-shadow: none; }
+}
+
+.stock-card-timestamp-icon {
+    font-size: 14px;
+    color: #9ca3af;
+    cursor: pointer;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+    vertical-align: super; /* To place it top right conceptually */
+}
+
+.stock-card-timestamp-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    pointer-events: none;
+    z-index: 100;
+    letter-spacing: 0.5px;
+}
+
+.stock-card-timestamp-icon:hover .stock-card-timestamp-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.stock-card-timestamp-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
+}
+/* === Stock Card Market Status END === */
+
 /* === Stock Card 3D Flip Focus Mode START === */
 #focus-overlay {
     position: fixed;

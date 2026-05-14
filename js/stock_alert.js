@@ -190,7 +190,8 @@ PostIt.StockAlert = (function () {
                         prices: chart.success ? chart.prices : [],
                         currentPrice: quote ? quote.price : null,
                         priceChange: quote ? quote.change : null,
-                        priceChangePercent: quote ? quote.changePercent : null
+                        priceChangePercent: quote ? quote.changePercent : null,
+                        lastUpdated: Date.now()
                     };
                     
                     // 將結果存入該便利貼
@@ -281,7 +282,7 @@ PostIt.StockAlert = (function () {
             if (PostIt.Note) {
                 const note = PostIt.Note.getNote(alert.noteId);
                 if (note && note.type === 'stock_card') {
-                    updateStockCardDOM(alert.noteId, currentPrice, quote.change, quote.changePercent);
+                    updateStockCardDOM(alert.noteId, currentPrice, quote.change, quote.changePercent, Date.now(), isMarketOpen());
                 }
             }
 
@@ -308,13 +309,24 @@ PostIt.StockAlert = (function () {
     }
 
     // --- 股票卡片純 DOM 即時報價更新 (不經過 Yjs 同步) ---
-    function updateStockCardDOM(noteId, currentPrice, priceChange, priceChangePercent) {
+    function updateStockCardDOM(noteId, currentPrice, priceChange, priceChangePercent, lastUpdated, marketOpen) {
         const noteEl = document.querySelector(`.sticky-note[data-note-id="${noteId}"]`);
         if (!noteEl) return;
 
-        const priceEl = noteEl.querySelector('.stock-card-current-price');
-        if (priceEl && currentPrice != null) {
-            priceEl.textContent = `$${currentPrice.toFixed(2)}`;
+        const priceTextEl = noteEl.querySelector('.stock-card-current-price .price-text');
+        if (priceTextEl && currentPrice != null) {
+            priceTextEl.textContent = `$${currentPrice.toFixed(2)}`;
+        } else if (!priceTextEl) {
+            // Fallback for older DOM structure without .price-text
+            const priceEl = noteEl.querySelector('.stock-card-current-price');
+            if (priceEl && currentPrice != null) {
+                // Safely update just the first child text node to avoid destroying inner icons if they somehow exist
+                if (priceEl.firstChild && priceEl.firstChild.nodeType === Node.TEXT_NODE) {
+                    priceEl.firstChild.textContent = `$${currentPrice.toFixed(2)}`;
+                } else {
+                    priceEl.textContent = `$${currentPrice.toFixed(2)}`;
+                }
+            }
         }
 
         const changeEl = noteEl.querySelector('.stock-card-price-change');
@@ -323,6 +335,20 @@ PostIt.StockAlert = (function () {
             const sign = priceChange > 0 ? '+' : '';
             changeEl.className = `stock-card-price-change ${isUp ? 'up' : 'down'}`;
             changeEl.innerHTML = `<i class="fa-solid fa-arrow-trend-${isUp ? 'up' : 'down'}"></i> ${sign}$${priceChange.toFixed(2)} (${sign}${priceChangePercent.toFixed(2)}%)`;
+        }
+
+        if (lastUpdated !== undefined && marketOpen !== undefined) {
+            const indicatorEl = noteEl.querySelector('.market-status-indicator');
+            if (indicatorEl) {
+                indicatorEl.className = `market-status-indicator ${marketOpen ? 'live' : 'closed'}`;
+            }
+            const tooltipEl = noteEl.querySelector('.stock-card-timestamp-tooltip');
+            if (tooltipEl) {
+                const dt = new Date(lastUpdated);
+                const pad = n => String(n).padStart(2, '0');
+                const timeStr = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+                tooltipEl.textContent = `最後抓取時間：${timeStr}`;
+            }
         }
     }
 

@@ -1127,10 +1127,21 @@ PostIt.Board = (function () {
         // === stock_card 專用差量 DOM 更新（不重建整個 DOM，只更新價格文字） ===
         if (note.type === 'stock_card' && contentEl) {
             const sd = note.stockCardData || {};
-            const priceEl = contentEl.querySelector('.stock-card-current-price');
-            if (priceEl && sd.currentPrice != null) {
-                priceEl.textContent = `$${sd.currentPrice.toFixed(2)}`;
+            
+            const priceTextEl = contentEl.querySelector('.stock-card-current-price .price-text');
+            if (priceTextEl && sd.currentPrice != null) {
+                priceTextEl.textContent = `$${sd.currentPrice.toFixed(2)}`;
+            } else if (!priceTextEl) {
+                const priceEl = contentEl.querySelector('.stock-card-current-price');
+                if (priceEl && sd.currentPrice != null) {
+                    if (priceEl.firstChild && priceEl.firstChild.nodeType === Node.TEXT_NODE) {
+                        priceEl.firstChild.textContent = `$${sd.currentPrice.toFixed(2)}`;
+                    } else {
+                        priceEl.textContent = `$${sd.currentPrice.toFixed(2)}`;
+                    }
+                }
             }
+
             const changeEl = contentEl.querySelector('.stock-card-price-change');
             if (changeEl && sd.priceChange !== undefined) {
                 const isUp = sd.priceChange >= 0;
@@ -1376,6 +1387,27 @@ PostIt.Board = (function () {
                 const changeHtml = sd.currentPrice ? 
                     `<div class="stock-card-price-change ${trendClass}">${trendIcon} ${diffStr}$${diff.toFixed(2)} (${diffStr}${pct.toFixed(2)}%)</div>` : '';
 
+                let statusIndicatorHtml = '';
+                if (typeof PostIt !== 'undefined' && PostIt.StockAlert) {
+                    const isMarketOpen = PostIt.StockAlert.isMarketOpen();
+                    const statusClass = isMarketOpen ? 'live' : 'closed';
+                    
+                    let timeStr = '尚未取得更新';
+                    if (sd.lastUpdated) {
+                        const dt = new Date(sd.lastUpdated);
+                        const pad = n => String(n).padStart(2, '0');
+                        timeStr = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+                    }
+                    
+                    statusIndicatorHtml = `
+                    <div class="market-status-container">
+                        <span class="market-status-indicator ${statusClass}"></span>
+                        <div class="stock-card-timestamp-icon">🕒
+                            <div class="stock-card-timestamp-tooltip">最後抓取時間：${timeStr}</div>
+                        </div>
+                    </div>`;
+                }
+
                 // Recommendation Badge
                 let recHtml = '';
                 if (sd.recommendation) {
@@ -1491,7 +1523,10 @@ PostIt.Board = (function () {
                         </div>
 
                         <div class="stock-card-price-section">
-                            <div class="stock-card-current-price">${currentPrice}</div>
+                            <div class="stock-card-current-price">
+                                <span class="price-text">${currentPrice}</span>
+                                ${statusIndicatorHtml}
+                            </div>
                             ${changeHtml}
                         </div>
 
