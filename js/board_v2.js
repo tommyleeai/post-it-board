@@ -1149,6 +1149,16 @@ PostIt.Board = (function () {
                 changeEl.className = `stock-card-price-change ${isUp ? 'up' : 'down'}`;
                 changeEl.innerHTML = `<i class="fa-solid fa-arrow-trend-${isUp ? 'up' : 'down'}"></i> ${sign}$${sd.priceChange.toFixed(2)} (${sign}${sd.priceChangePercent.toFixed(2)}%)`;
             }
+
+            if (sd.lastUpdated) {
+                const tooltipEl = contentEl.querySelector('.stock-card-timestamp-tooltip');
+                if (tooltipEl) {
+                    const dt = new Date(sd.lastUpdated);
+                    const pad = n => String(n).padStart(2, '0');
+                    const timeStr = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+                    tooltipEl.textContent = `最後抓取時間：${timeStr}`;
+                }
+            }
         }
 
         // 套用字型樣式
