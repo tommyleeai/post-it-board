@@ -27,6 +27,8 @@ PostIt.Auth = (function () {
                 sessionStorage.setItem('profileSaved', 'true');
             }
 
+            updateAdminEntry(user);
+
             if (onAuthChangeCallback) {
                 onAuthChangeCallback(user);
             }
@@ -73,6 +75,27 @@ PostIt.Auth = (function () {
 
     function getUid() {
         return currentUser ? currentUser.uid : null;
+    }
+
+    async function updateAdminEntry(user) {
+        const btn = document.getElementById('btn-admin-entry');
+        if (!btn) return;
+
+        if (!user || !user.email) {
+            btn.classList.add('hidden');
+            return;
+        }
+
+        try {
+            const db = PostIt.Firebase.getDb();
+            if (db && PostIt.AdminAccess) {
+                await PostIt.AdminAccess.loadAdminEmails(db);
+            }
+            btn.classList.toggle('hidden', !PostIt.AdminAccess || !PostIt.AdminAccess.isAdmin(user.email));
+        } catch (e) {
+            console.warn('[Auth] 管理員入口判斷失敗:', e.message);
+            btn.classList.add('hidden');
+        }
     }
 
     // 儲存使用者 profile 到 Firestore（供 admin 後台查看）

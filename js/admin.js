@@ -4,10 +4,6 @@
 (function () {
     'use strict';
 
-    // 管理員 Email 清單（fallback，優先從 Firestore config/admin 讀取）
-    const FALLBACK_ADMIN_EMAILS = ['tommylee@gmail.com'];
-    let adminEmails = [...FALLBACK_ADMIN_EMAILS];
-
     let db = null;
     let auth = null;
     let allUsersData = []; // [{uid, name, email, photo, notes:[], noteCount, imageCount, lastActive}]
@@ -55,17 +51,9 @@
         // 監聽登入狀態
         auth.onAuthStateChanged(async user => {
             if (user) {
-                // 先嘗試從 Firestore 讀取管理員清單
-                try {
-                    const configDoc = await db.collection('config').doc('admin').get();
-                    if (configDoc.exists && configDoc.data().emails) {
-                        adminEmails = configDoc.data().emails;
-                    }
-                } catch (e) {
-                    console.warn('[Admin] 無法讀取 Firestore 管理員設定，使用 fallback:', e.message);
-                }
+                await PostIt.AdminAccess.loadAdminEmails(db);
 
-                if (adminEmails.includes(user.email)) {
+                if (PostIt.AdminAccess.isAdmin(user.email)) {
                     showAdminApp();
                     loadAllData();
                 } else {

@@ -571,6 +571,15 @@ html, body {
 .btn-toolbar.hidden {
     display: none;
 }
+
+a.btn-toolbar,
+a.btn-admin-entry {
+    text-decoration: none;
+}
+
+.btn-admin-entry {
+    margin-right: -4px;
+}
 /* === Toolbar END === */
 
 /* === Whiteboard START === */
