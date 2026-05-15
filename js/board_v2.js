@@ -1479,7 +1479,9 @@ PostIt.Board = (function () {
         let previewHtml = '';
         if (note.linkPreviewData) {
             const data = note.linkPreviewData;
-            if (text.includes(data.url)) {
+            if (data.originalMatch && text.includes(data.originalMatch)) {
+                text = text.replace(data.originalMatch, '').trim();
+            } else if (text.includes(data.url)) {
                 text = text.replace(data.url, '').trim();
             }
             
@@ -1946,13 +1948,21 @@ PostIt.Board = (function () {
 
                     // 智慧連結預覽偵測
                     const ytRegexForPreview = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})[^\s]*/i;
-                    const urlMatch = newContent.match(/https?:\/\/[^\s]+/i);
-                    if (urlMatch && !ytRegexForPreview.test(urlMatch[0]) && !urlMatch[0].match(/\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s]*)?$/i)) {
-                        const targetUrl = urlMatch[0];
+                    const generalUrlRegex = /(?:https?:\/\/)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?/i;
+                    const urlMatch = newContent.match(generalUrlRegex);
+                    const isImageUrl = urlMatch ? urlMatch[0].match(/\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s]*)?$/i) : false;
+
+                    if (urlMatch && !ytRegexForPreview.test(urlMatch[0]) && !isImageUrl) {
+                        let targetUrl = urlMatch[0];
+                        if (!/^https?:\/\//i.test(targetUrl)) {
+                            targetUrl = 'https://' + targetUrl;
+                        }
+
                         if (!note.linkPreviewData || note.linkPreviewData.url !== targetUrl) {
                             if (window.PostIt.LinkPreview) {
                                 window.PostIt.LinkPreview.fetchMetadata(targetUrl).then(meta => {
                                     if (meta) {
+                                        meta.originalMatch = urlMatch[0];
                                         PostIt.Note.updateNote(noteId, { linkPreviewData: meta });
                                     } else {
                                         PostIt.Note.updateNote(noteId, { linkPreviewData: null });

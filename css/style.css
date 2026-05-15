@@ -3331,8 +3331,7 @@ body.pin-mode {
     background: transparent !important;
 }
 .sticky-note.link-only::before,
-.sticky-note.link-only::after,
-.sticky-note.link-only .note-tape {
+.sticky-note.link-only::after {
     display: none !important;
 }
 .sticky-note.link-only .note-content {
