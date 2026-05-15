@@ -50,7 +50,15 @@ PostIt.LinkPreview = {
             
             if (!response.ok) {
                 console.warn('[LinkPreview] Fallback fetch failed:', response.status);
-                return null;
+                // 3. 所有方法都失敗，回傳最基礎的預覽資料，確保至少能顯示卡片
+                return {
+                    url: url,
+                    title: domain,
+                    description: '無法載入預覽內容',
+                    image: '',
+                    favicon: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+                    domain: domain
+                };
             }
 
             const html = await response.text();
@@ -83,7 +91,16 @@ PostIt.LinkPreview = {
                 favicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
             }
 
-            if (!title && !description && !image) return null;
+            if (!title && !description && !image) {
+                return {
+                    url: url,
+                    title: domain,
+                    description: '無法載入預覽內容',
+                    image: '',
+                    favicon: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+                    domain: domain
+                };
+            }
 
             return {
                 url: url,
@@ -94,9 +111,17 @@ PostIt.LinkPreview = {
                 domain: domain
             };
 
-        } catch (e) {
-            console.warn('[LinkPreview] 無法解析連結:', url, e);
-            return null;
+        } catch (error) {
+            console.error('[LinkPreview] 擷取 Metadata 發生嚴重錯誤:', error);
+            // 發生例外錯誤時也回傳基礎預覽資料
+            return {
+                url: url,
+                title: urlObj ? urlObj.hostname : url,
+                description: '預覽載入失敗',
+                image: '',
+                favicon: urlObj ? `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=64` : '',
+                domain: urlObj ? urlObj.hostname : '未知來源'
+            };
         }
     }
 };
