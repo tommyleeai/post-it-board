@@ -21,17 +21,19 @@ PostIt.LinkPreview = {
 
             // 1. 優先使用 microlink API (專業 Metadata 解析服務，能繞過 Amazon 等多數防爬機制)
             try {
-                const microResponse = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`, { signal: controller.signal });
+                // 加上自訂選擇器，針對 Amazon 抓取真實的產品圖片（#landingImage, #imgBlkFront），覆蓋掉預設的 Prime Logo
+                const microUrl = `https://api.microlink.io/?url=${encodeURIComponent(url)}&data.amazonImage.selector=%23landingImage,%23imgBlkFront,%23main-image&data.amazonImage.attr=src`;
+                const microResponse = await fetch(microUrl, { signal: controller.signal });
                 if (microResponse.ok) {
                     const json = await microResponse.json();
-                    if (json && json.data && (json.data.title || json.data.image)) {
+                    if (json && json.data && (json.data.title || json.data.image || json.data.amazonImage)) {
                         clearTimeout(timeoutId);
                         const d = json.data;
                         return {
                             url: url,
                             title: (d.title || '').trim(),
                             description: (d.description || '').trim(),
-                            image: (d.image?.url || '').trim(),
+                            image: (d.amazonImage || d.image?.url || '').trim(),
                             favicon: (d.logo?.url || `https://www.google.com/s2/favicons?domain=${domain}&sz=64`).trim(),
                             domain: domain
                         };
