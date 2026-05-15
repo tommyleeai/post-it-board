@@ -6,7 +6,7 @@
 
 ## 🔥 高價值 — 直接強化現有體驗
 
-- [ ] **#1 🔗 智慧連結預覽**
+- [x] **#1 🔗 智慧連結預覽**
   偵測到 URL 時自動抓取網頁標題、縮圖、描述，產生 Link Card（類似 Slack/Discord 預覽卡片）
   範例：`https://www.youtube.com/watch?v=xxx` → 自動產生預覽卡
 

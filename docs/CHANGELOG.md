@@ -85,6 +85,11 @@
 
 
 
+
+## [2.7.6] - 2026-05-15
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   更新 ai_features_todo 模組
 ## [2.7.5] - 2026-05-15
 
 ### 🔧 優化與修正 (Improved & Fixed)
