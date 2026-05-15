@@ -1126,11 +1126,18 @@ PostIt.Board = (function () {
 
             const textHTML = renderContentText(note, parsedImageUrl, extractedYtUrl2);
             contentEl.innerHTML = textHTML;
-            if ((parsedImageUrl || parsedYtId) && !String(textHTML).replace(/<[^>]*>?/gm, '').trim()) {
+            
+            const rawText = String(textHTML).replace(/<a [^>]*class="link-preview-card"[^>]*>.*?<\/a>/gs, '').replace(/<[^>]*>?/gm, '').trim();
+            const hasPreview = !!note.linkPreviewData;
+
+            if ((parsedImageUrl || parsedYtId) && !rawText && !hasPreview) {
                 el.classList.add(parsedYtId ? 'video-only' : 'image-only');
-                el.classList.remove(parsedYtId ? 'image-only' : 'video-only');
-            } else {
+                el.classList.remove(parsedYtId ? 'image-only' : 'video-only', 'link-only');
+            } else if (hasPreview && !rawText && !parsedImageUrl && !parsedYtId) {
+                el.classList.add('link-only');
                 el.classList.remove('image-only', 'video-only');
+            } else {
+                el.classList.remove('image-only', 'video-only', 'link-only');
             }
         }
 
@@ -1469,8 +1476,29 @@ PostIt.Board = (function () {
             text = text.replace(extractedYtUrl, '').trim();
         }
 
-        // 如果剝離後沒剩文字，就直接不顯示文字區
-        if (!text) {
+        let previewHtml = '';
+        if (note.linkPreviewData) {
+            const data = note.linkPreviewData;
+            if (text.includes(data.url)) {
+                text = text.replace(data.url, '').trim();
+            }
+            
+            previewHtml = `
+            <a href="${escapeHtml(data.url)}" target="_blank" class="link-preview-card" contenteditable="false">
+                ${data.image ? `<img src="${escapeHtml(data.image)}" class="link-preview-image" alt="Preview" draggable="false">` : ''}
+                <div class="link-preview-content">
+                    <div class="link-preview-title">${escapeHtml(data.title)}</div>
+                    ${data.description ? `<div class="link-preview-desc">${escapeHtml(data.description)}</div>` : ''}
+                    <div class="link-preview-meta">
+                        ${data.favicon ? `<img src="${escapeHtml(data.favicon)}" class="link-preview-favicon" alt="" draggable="false" onerror="this.style.display='none'">` : ''}
+                        <span>${escapeHtml(data.domain)}</span>
+                    </div>
+                </div>
+            </a>`;
+        }
+
+        // 如果剝離後沒剩文字且沒有預覽卡片，就直接不顯示文字區
+        if (!text && !previewHtml) {
             return '';
         }
 
@@ -1801,17 +1829,17 @@ PostIt.Board = (function () {
                 // 嘗試顯示漂亮的連結
                 try {
                     const url = new URL(text);
-                    return `<a href="${escapeHtml(text)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(text)}">${escapeHtml(url.hostname + url.pathname)}</a>`;
+                    return `<a href="${escapeHtml(text)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(text)}">${escapeHtml(url.hostname + url.pathname)}</a>` + previewHtml;
                 } catch {
-                    return `<a href="${escapeHtml(text)}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`;
+                    return `<a href="${escapeHtml(text)}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>` + previewHtml;
                 }
 
             case 'image':
                 // 已經分流處理了，這裡當作字串直接回傳 (若意外進入此區塊)
-                return escapeHtml(text).replace(/\n/g, '<br>');
+                return escapeHtml(text).replace(/\n/g, '<br>') + previewHtml;
 
             default:
-                return escapeHtml(text).replace(/\n/g, '<br>');
+                return escapeHtml(text).replace(/\n/g, '<br>') + previewHtml;
         }
     }
 
@@ -1925,6 +1953,26 @@ PostIt.Board = (function () {
                     // 若原本是 stock_card 但現在不是了，要把它還原成普通文字
                     if (note?.type === 'stock_card') {
                         PostIt.Note.updateNote(noteId, { type: 'text' });
+                    }
+
+                    // 智慧連結預覽偵測
+                    const ytRegexForPreview = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})[^\s]*/i;
+                    const urlMatch = newContent.match(/https?:\/\/[^\s]+/i);
+                    if (urlMatch && !ytRegexForPreview.test(urlMatch[0]) && !urlMatch[0].match(/\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s]*)?$/i)) {
+                        const targetUrl = urlMatch[0];
+                        if (!note.linkPreviewData || note.linkPreviewData.url !== targetUrl) {
+                            if (window.PostIt.LinkPreview) {
+                                window.PostIt.LinkPreview.fetchMetadata(targetUrl).then(meta => {
+                                    if (meta) {
+                                        PostIt.Note.updateNote(noteId, { linkPreviewData: meta });
+                                    } else {
+                                        PostIt.Note.updateNote(noteId, { linkPreviewData: null });
+                                    }
+                                });
+                            }
+                        }
+                    } else if (note.linkPreviewData) {
+                        PostIt.Note.updateNote(noteId, { linkPreviewData: null });
                     }
                 }
                 

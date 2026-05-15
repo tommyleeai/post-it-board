@@ -84,6 +84,11 @@
 
 
 
+
+## [2.7.5] - 2026-05-15
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   更新 style、index、board_v2 模組
 ## [2.7.4] - 2026-05-15
 
 ### 🔧 優化與修正 (Improved & Fixed)
