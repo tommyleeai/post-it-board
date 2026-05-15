@@ -1136,6 +1136,11 @@ PostIt.Board = (function () {
 
         // === stock_card 專用差量 DOM 更新（不重建整個 DOM，只更新價格文字） ===
         if (note.type === 'stock_card' && contentEl) {
+            // 如果從純文字剛轉為股票卡，DOM 尚未建立結構，需先完整重建
+            if (!contentEl.querySelector('.stock-card-front')) {
+                contentEl.innerHTML = renderContentText(note, null, null);
+            }
+
             const sd = note.stockCardData || {};
             
             const priceTextEl = contentEl.querySelector('.stock-card-current-price .price-text');

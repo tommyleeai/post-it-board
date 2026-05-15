@@ -82,6 +82,11 @@
 
 
 
+
+## [2.7.3] - 2026-05-15
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   更新 ai_features_todo、board_v2 模組
 ## [2.7.2] - 2026-05-14
 
 ### 🔧 優化與修正 (Improved & Fixed)
