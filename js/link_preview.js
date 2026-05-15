@@ -12,28 +12,49 @@ PostIt.LinkPreview = {
      */
     fetchMetadata: async function(url) {
         try {
-            // 使用 api.allorigins.win 作為 CORS Proxy 來獲取原始 HTML
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+            const urlObj = new URL(url);
+            const domain = urlObj.hostname;
             
             // 設定一個 timeout 以防長時間等待
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 8000);
-            
+
+            // 1. 優先使用 microlink API (專業 Metadata 解析服務，能繞過 Amazon 等多數防爬機制)
+            try {
+                const microResponse = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`, { signal: controller.signal });
+                if (microResponse.ok) {
+                    const json = await microResponse.json();
+                    if (json && json.data && (json.data.title || json.data.image)) {
+                        clearTimeout(timeoutId);
+                        const d = json.data;
+                        return {
+                            url: url,
+                            title: (d.title || '').trim(),
+                            description: (d.description || '').trim(),
+                            image: (d.image?.url || '').trim(),
+                            favicon: (d.logo?.url || `https://www.google.com/s2/favicons?domain=${domain}&sz=64`).trim(),
+                            domain: domain
+                        };
+                    }
+                }
+            } catch (err) {
+                console.warn('[LinkPreview] Microlink API 失敗，嘗試降級使用 allorigins proxy...', err);
+            }
+
+            // 2. 如果 microlink 失敗，降級使用 api.allorigins.win 作為 CORS Proxy 來獲取原始 HTML
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
             const response = await fetch(proxyUrl, { signal: controller.signal });
             clearTimeout(timeoutId);
             
             if (!response.ok) {
-                console.warn('[LinkPreview] Fetch failed:', response.status);
+                console.warn('[LinkPreview] Fallback fetch failed:', response.status);
                 return null;
             }
 
             const html = await response.text();
-            
-            // 使用 DOMParser 解析 HTML
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             
-            // 提取 metadata 的輔助函式
             const getMeta = (propName) => {
                 const el = doc.querySelector(`meta[property="${propName}"], meta[name="${propName}"]`);
                 return el ? el.getAttribute('content') : null;
@@ -43,16 +64,10 @@ PostIt.LinkPreview = {
             let description = getMeta('og:description') || getMeta('twitter:description') || getMeta('description') || '';
             let image = getMeta('og:image') || getMeta('twitter:image') || '';
             
-            // 整理與解析 URL 確保相對路徑能轉換為絕對路徑
-            const urlObj = new URL(url);
-            const domain = urlObj.hostname;
-            
             if (image && image.startsWith('/')) {
-                // 處理相對路徑圖片
                 image = `${urlObj.protocol}//${urlObj.host}${image}`;
             }
 
-            // 尋找 Favicon
             let favicon = doc.querySelector('link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]')?.getAttribute('href');
             if (favicon) {
                 if (favicon.startsWith('//')) {
@@ -63,11 +78,9 @@ PostIt.LinkPreview = {
                     favicon = `${urlObj.protocol}//${urlObj.host}/${favicon}`;
                 }
             } else {
-                // 如果找不到，使用 Google S2 的 Favicon 服務作為備用方案
                 favicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
             }
 
-            // 如果全部為空，則代表無效的預覽
             if (!title && !description && !image) return null;
 
             return {
