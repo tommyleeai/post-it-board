@@ -1483,18 +1483,7 @@ PostIt.Board = (function () {
                 text = text.replace(data.url, '').trim();
             }
             
-            previewHtml = `
-            <a href="${escapeHtml(data.url)}" target="_blank" class="link-preview-card" contenteditable="false">
-                ${data.image ? `<img src="${escapeHtml(data.image)}" class="link-preview-image" alt="Preview" draggable="false">` : ''}
-                <div class="link-preview-content">
-                    <div class="link-preview-title">${escapeHtml(data.title)}</div>
-                    ${data.description ? `<div class="link-preview-desc">${escapeHtml(data.description)}</div>` : ''}
-                    <div class="link-preview-meta">
-                        ${data.favicon ? `<img src="${escapeHtml(data.favicon)}" class="link-preview-favicon" alt="" draggable="false" onerror="this.style.display='none'">` : ''}
-                        <span>${escapeHtml(data.domain)}</span>
-                    </div>
-                </div>
-            </a>`;
+            previewHtml = `<a href="${escapeHtml(data.url)}" target="_blank" class="link-preview-card" contenteditable="false">${data.image ? `<img src="${escapeHtml(data.image)}" class="link-preview-image" alt="Preview" draggable="false">` : ''}<div class="link-preview-content"><div class="link-preview-title">${escapeHtml(data.title)}</div>${data.description ? `<div class="link-preview-desc">${escapeHtml(data.description)}</div>` : ''}<div class="link-preview-meta">${data.favicon ? `<img src="${escapeHtml(data.favicon)}" class="link-preview-favicon" alt="" draggable="false" onerror="this.style.display='none'">` : ''}<span>${escapeHtml(data.domain)}</span></div></div></a>`;
         }
 
         // 如果剝離後沒剩文字且沒有預覽卡片，就直接不顯示文字區

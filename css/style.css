@@ -3326,10 +3326,13 @@ body.pin-mode {
 
 /* 滿版連結預覽 (.link-only) */
 .sticky-note.link-only {
+    padding: 0 !important;
+    min-height: auto !important;
     background: transparent !important;
 }
 .sticky-note.link-only::before,
-.sticky-note.link-only::after {
+.sticky-note.link-only::after,
+.sticky-note.link-only .note-tape {
     display: none !important;
 }
 .sticky-note.link-only .note-content {
