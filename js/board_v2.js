@@ -309,6 +309,85 @@ PostIt.Board = (function () {
             }
         });
 
+        // ===== 拖曳事件支援 (Drag & Drop) =====
+        boardEl.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            boardEl.classList.add('drag-over');
+        });
+
+        boardEl.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            boardEl.classList.remove('drag-over');
+        });
+
+        boardEl.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            boardEl.classList.remove('drag-over');
+
+            if (PostIt.Note.getCount() >= 50) {
+                showToast('已達 50 張貼紙上限！', 'error');
+                return;
+            }
+
+            const boardRect = boardEl.getBoundingClientRect();
+            let xPercent = ((e.clientX - boardRect.left) / boardRect.width) * 100;
+            let yPercent = ((e.clientY - boardRect.top) / boardRect.height) * 100;
+            xPercent = Math.max(0, Math.min(xPercent, 95));
+            yPercent = Math.max(0, Math.min(yPercent, 95));
+
+            // 1. 優先處理圖片檔案拖曳 (從電腦資料夾拖拉進來)
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                let hasHandledFile = false;
+                for (let i = 0; i < e.dataTransfer.files.length; i++) {
+                    const file = e.dataTransfer.files[i];
+                    if (file.type.startsWith('image/')) {
+                        // 若有多張，稍微偏移以免完全重疊
+                        const offsetX = Math.min(xPercent + (i * 2), 95);
+                        const offsetY = Math.min(yPercent + (i * 2), 95);
+                        const noteId = await PostIt.Note.addNote('', offsetX, offsetY);
+                        if (noteId) {
+                            await PostIt.Note.uploadImage(noteId, file);
+                        }
+                        hasHandledFile = true;
+                    }
+                }
+                if (hasHandledFile) return;
+            }
+
+            // 2. 處理網址或文字拖曳 (從其他分頁拖拉連結)
+            const droppedUrl = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
+            if (droppedUrl) {
+                const text = droppedUrl.trim();
+                if (text) {
+                    const noteId = await PostIt.Note.addNote(text, xPercent, yPercent);
+                    if (noteId) {
+                        // 智慧連結檢測，自動抓取 Microlink 預覽 (與 onBlur 邏輯一致)
+                        const ytRegexForPreview = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})[^\s]*/i;
+                        const generalUrlRegex = /(?:https?:\/\/)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?/i;
+                        const urlMatch = text.match(generalUrlRegex);
+                        const isImageUrl = urlMatch ? urlMatch[0].match(/\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s]*)?$/i) : false;
+
+                        if (urlMatch && !ytRegexForPreview.test(urlMatch[0]) && !isImageUrl) {
+                            let targetUrl = urlMatch[0];
+                            if (!/^https?:\/\//i.test(targetUrl)) {
+                                targetUrl = 'https://' + targetUrl;
+                            }
+                            if (window.PostIt.LinkPreview) {
+                                window.PostIt.LinkPreview.fetchMetadata(targetUrl).then(meta => {
+                                    if (meta) {
+                                        meta.originalMatch = urlMatch[0];
+                                        PostIt.Note.updateNote(noteId, { linkPreviewData: meta });
+                                    } else {
+                                        PostIt.Note.updateNote(noteId, { linkPreviewData: null });
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
         // ===== 自動排列按鈕 =====
         document.getElementById('btn-auto-sort').addEventListener('click', autoSort);
 
