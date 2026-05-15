@@ -3285,10 +3285,12 @@ body.pin-mode {
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 .link-preview-image {
+    display: block;
     width: 100%;
     max-height: 160px;
     height: auto;
-    object-fit: cover;
+    min-height: 0;
+    object-fit: contain;
     object-position: center;
     background-color: #f8f9fa; /* 為透明圖片或 Logo 加上淺色底墊 */
     border-bottom: 1px solid rgba(0,0,0,0.05);
