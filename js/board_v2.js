@@ -3215,13 +3215,13 @@ PostIt.Board = (function () {
 
         const textEl = el.querySelector('.cloud-storage-text');
         const fillEl = el.querySelector('.cloud-storage-fill');
-        const percent = Math.min(100, stats.percent);
+        const barPercent = Math.min(100, stats.percent);
 
-        if (textEl) textEl.textContent = `雲端 ${percent}%`;
-        if (fillEl) fillEl.style.width = `${percent}%`;
+        if (textEl) textEl.textContent = `總容量 ${stats.percent}%`;
+        if (fillEl) fillEl.style.width = `${barPercent}%`;
 
         const summary = PostIt.YjsSync.getStorageSummaryText(stats);
-        let title = `雲端備份：${summary}`;
+        let title = `同步總容量：${summary}`;
         if (stats.lastBackupOk === false && stats.lastBackupError) {
             title += `\n最近備份失敗：${stats.lastBackupError}`;
         } else if (stats.lastBackupOk === true) {
@@ -3249,7 +3249,7 @@ PostIt.Board = (function () {
             e.preventDefault();
             const stats = PostIt.YjsSync.getStorageStats();
             const summary = PostIt.YjsSync.getStorageSummaryText(stats);
-            let msg = `☁️ 雲端備份使用量\n${summary}`;
+            let msg = `📦 同步總容量\n${summary}`;
             if (stats.lastBackupOk === false) {
                 msg += `\n\n⚠️ ${stats.lastBackupError || '最近備份失敗'}`;
             }

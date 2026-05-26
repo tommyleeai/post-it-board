@@ -78,11 +78,11 @@ PostIt.YjsSync = (function () {
         const limit = formatBytes(FIRESTORE_LIMIT_BYTES);
 
         if (status === 'warn' && prev !== 'critical' && prev !== 'over') {
-            showToast(`⚠️ 雲端備份已使用 ${used} / ${limit}（${storageStats.percent}%），建議刪除或歸檔部分貼紙`, 'error', null, 8000);
+            showToast(`⚠️ 同步總容量已使用 ${used} / ${limit}（${storageStats.percent}%），建議刪除或歸檔部分貼紙`, 'error', null, 8000);
         } else if (status === 'critical' && prev !== 'over') {
-            showToast(`🚨 雲端備份接近上限！${used} / ${limit}（${storageStats.percent}%），請盡快整理貼紙`, 'error', null, 10000);
+            showToast(`🚨 同步總容量接近上限！${used} / ${limit}（${storageStats.percent}%），請盡快整理貼紙`, 'error', null, 10000);
         } else if (status === 'over') {
-            showToast(`❌ 雲端備份超過 ${limit}，無法同步到其他裝置！請刪除或歸檔貼紙後再試`, 'error', null, 12000);
+            showToast(`❌ 同步總容量超過 ${limit}，無法同步到其他裝置！請刪除或歸檔貼紙後再試`, 'error', null, 12000);
         }
     }
 
