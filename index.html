@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css?v=3.74">
+    <link rel="stylesheet" href="css/style.css?v=3.75">
     <link rel="stylesheet" href="css/animations.css">
     
     <!-- 載入動畫全域控制 API (必須盡早載入) -->
@@ -107,7 +107,7 @@
             <div class="toolbar-left">
                 <div class="toolbar-brand">
                     <img src="assets/logo_3d.png" alt="Post It" class="brand-logo-img">
-                    <span id="app-version" class="app-version" title="查看系統更新與版本紀錄">v2.7.15</span>
+                    <span id="app-version" class="app-version" title="查看系統更新與版本紀錄">v2.7.16</span>
                 </div>
             </div>
             <div class="toolbar-right">
@@ -367,9 +367,16 @@
                 <div class="account-section">
                     <label>Gemini API 金鑰（AI 提醒解析）</label>
                     <div style="display: flex; gap: 8px;">
-                        <input type="password" id="account-ai-key" class="settings-input" placeholder="AIzaSy... (選填)" style="flex: 1;">
+                        <input type="password" id="account-ai-key" class="settings-input" placeholder="請至 Google AI Studio 申請後填入" style="flex: 1;">
                         <button id="btn-test-gemini" style="padding: 0 15px; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; cursor: pointer; white-space: nowrap;">⚡ 測試連線</button>
                     </div>
+                    <p style="font-size: 0.8em; color: #777; margin: 6px 0 0;">未填寫時，AI 提醒、待辦提取、股價語意解析將無法使用。僅儲存在本機瀏覽器。</p>
+                </div>
+                <!-- 好物報報 API Token -->
+                <div class="account-section">
+                    <label>好物報報 API Token（股價監控 / 好物雷達）</label>
+                    <input type="password" id="account-external-api-token" class="settings-input" placeholder="向好物報報申請後填入">
+                    <p style="font-size: 0.8em; color: #777; margin: 6px 0 0;">未填寫時，股票報價與好物雷達將無法使用。僅儲存在本機瀏覽器。</p>
                 </div>
                 <!-- Ollama 本地 AI 備援設定 -->
                 <div class="account-section" style="border-top: 1px dashed #ddd; padding-top: 15px; margin-top: 15px;">
@@ -528,26 +535,26 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 
     <!-- App Scripts -->
-    <script src="js/firebase-config.js?v=2.7.15"></script>
-    <script src="js/admin_access.js?v=2.7.15"></script>
-    <script src="js/layer_manager.js?v=2.7.15"></script>
-    <script src="js/yjs_sync.js?v=2.7.15"></script>
-    <script src="js/board.model.js?v=2.7.15"></script>
-    <script src="js/auth.js?v=2.7.15"></script>
-    <script src="js/drag.js?v=2.7.15"></script>
-    <script src="js/sound.js?v=2.7.15"></script>
-    <script src="js/settings_v2.js?v=2.7.15"></script>
-    <script src="js/ai.js?v=2.7.15"></script>
-    <script src="js/alarm.js?v=2.7.15"></script>
-    <script src="js/note.js?v=2.7.15"></script>
-    <script src="js/group.js?v=2.7.15"></script>
-    <script src="js/deal_notifier.js?v=2.7.15"></script>
-    <script src="js/stock_alert.js?v=2.7.15"></script>
-    <script src="js/link_preview.js?v=2.7.15"></script>
-    <script src="js/board_v2.js?v=2.7.15"></script>
-    <script src="js/stamp_v2.js?v=2.7.15"></script>
-    <script src="js/connect.js?v=2.7.15"></script>
-    <script src="js/changelog.js?v=2.7.15"></script>
+    <script src="js/firebase-config.js?v=2.7.16"></script>
+    <script src="js/admin_access.js?v=2.7.16"></script>
+    <script src="js/layer_manager.js?v=2.7.16"></script>
+    <script src="js/yjs_sync.js?v=2.7.16"></script>
+    <script src="js/board.model.js?v=2.7.16"></script>
+    <script src="js/auth.js?v=2.7.16"></script>
+    <script src="js/drag.js?v=2.7.16"></script>
+    <script src="js/sound.js?v=2.7.16"></script>
+    <script src="js/settings_v2.js?v=2.7.16"></script>
+    <script src="js/ai.js?v=2.7.16"></script>
+    <script src="js/alarm.js?v=2.7.16"></script>
+    <script src="js/note.js?v=2.7.16"></script>
+    <script src="js/group.js?v=2.7.16"></script>
+    <script src="js/deal_notifier.js?v=2.7.16"></script>
+    <script src="js/stock_alert.js?v=2.7.16"></script>
+    <script src="js/link_preview.js?v=2.7.16"></script>
+    <script src="js/board_v2.js?v=2.7.16"></script>
+    <script src="js/stamp_v2.js?v=2.7.16"></script>
+    <script src="js/connect.js?v=2.7.16"></script>
+    <script src="js/changelog.js?v=2.7.16"></script>
     <script>
         // DOM 解析完畢
         if (window.updateLoader) window.updateLoader(10, '載入核心腳本...');

@@ -30,12 +30,9 @@ PostIt.StockAlert = (function () {
     function getAfterHoursFreq() {
         return localStorage.getItem(STORAGE_KEY_FREQ_AFTER) || 'none';
     }
-    // 內建 token（與 deal_notifier 共用的 external API token）
-    const DEFAULT_API_TOKEN = 'y9oBzyD2kDdXaQEKopp-ZQsan2uTXPes3PkFEnvdRfo';
-
     function getApiToken() {
-        // 優先讀使用者自訂 token，否則用內建預設
-        return localStorage.getItem(STORAGE_KEY_TOKEN) || DEFAULT_API_TOKEN;
+        const token = localStorage.getItem(STORAGE_KEY_TOKEN);
+        return token ? token.trim() : '';
     }
     function setMarketFreq(freq) {
         localStorage.setItem(STORAGE_KEY_FREQ_MARKET, freq);
@@ -46,7 +43,12 @@ PostIt.StockAlert = (function () {
         restartPolling();
     }
     function setApiToken(token) {
-        localStorage.setItem(STORAGE_KEY_TOKEN, token);
+        const trimmed = (token || '').trim();
+        if (!trimmed) {
+            localStorage.removeItem(STORAGE_KEY_TOKEN);
+        } else {
+            localStorage.setItem(STORAGE_KEY_TOKEN, trimmed);
+        }
     }
 
     // --- 美股開盤判斷 ---

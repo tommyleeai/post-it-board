@@ -179,6 +179,39 @@ try {
     const cpCmd = `Get-ChildItem -Path '${rootDir}' -Exclude ${excludeStr} | Copy-Item -Destination '${snapshotDir}' -Recurse -Force`;
     execSync(`powershell -Command "& { ${cpCmd} }"`);
     log('備份快照完成');
+
+    // 自動清理舊快照，只保留最新 5 個
+    try {
+        const files = fs.readdirSync(paths.backups);
+        const snapshots = files
+            .filter(f => f.startsWith('v') && f.endsWith('_snapshot'))
+            .map(f => {
+                const p = path.join(paths.backups, f);
+                return {
+                    name: f,
+                    path: p,
+                    mtime: fs.statSync(p).mtime.getTime()
+                };
+            })
+            .sort((a, b) => b.mtime - a.mtime); // 按修改時間排序，新到舊
+
+        const maxSnapshots = 5;
+        if (snapshots.length > maxSnapshots) {
+            log(`開始自動清理舊快照（僅保留最新 ${maxSnapshots} 個）...`);
+            const toDelete = snapshots.slice(maxSnapshots);
+            toDelete.forEach(s => {
+                log(`正在刪除過期快照: ${s.name}`);
+                if (fs.rmSync) {
+                    fs.rmSync(s.path, { recursive: true, force: true });
+                } else {
+                    fs.rmdirSync(s.path, { recursive: true });
+                }
+            });
+            log(`自動清理完成，共刪除 ${toDelete.length} 個舊快照`);
+        }
+    } catch (cleanErr) {
+        log(`警告: 自動清理舊快照失敗 (${cleanErr.message})`);
+    }
 } catch (err) {
     log(`警告: 備份建立失敗 (${err.message})，但部署將繼續。`);
 }

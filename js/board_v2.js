@@ -2596,9 +2596,15 @@ PostIt.Board = (function () {
             const bgImageInput = document.getElementById('account-bg-image-url');
             if (bgImageInput) bgImageInput.value = settings.boardBgImage || '';
 
-            // 填充 AI 金鑰 (如果為預設金鑰則不顯示)
+            // 填充 AI 金鑰
             const aiKeyInput = document.getElementById('account-ai-key');
-            aiKeyInput.value = PostIt.Settings.getAiKey() === 'AIzaSyA4rngnyQfawDPXU1W2clDtUHbrqHB8DnU' ? '' : PostIt.Settings.getAiKey();
+            aiKeyInput.value = PostIt.Settings.getAiKey();
+
+            // 填充好物報報 API Token
+            const externalTokenInput = document.getElementById('account-external-api-token');
+            if (externalTokenInput && typeof PostIt.StockAlert !== 'undefined') {
+                externalTokenInput.value = PostIt.StockAlert.getApiToken();
+            }
 
             // 填充 Ollama 設定
             const ollamaSettings = PostIt.Settings.getOllamaSettings();
@@ -2819,6 +2825,12 @@ PostIt.Board = (function () {
                 // 儲存 AI Key (本地)
                 const aiKeyInput = document.getElementById('account-ai-key');
                 PostIt.Settings.setAiKey(aiKeyInput.value);
+
+                // 儲存好物報報 API Token (本地)
+                const externalTokenInput = document.getElementById('account-external-api-token');
+                if (externalTokenInput && typeof PostIt.StockAlert !== 'undefined') {
+                    PostIt.StockAlert.setApiToken(externalTokenInput.value);
+                }
 
                 // 儲存 Ollama 設定 (本地)
                 const ollamaEnable = document.getElementById('account-ollama-enable');

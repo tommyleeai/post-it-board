@@ -3,10 +3,26 @@ window.PostIt = window.PostIt || {};
 PostIt.DealNotifier = (function () {
     'use strict';
 
-    const API_URL = 'https://smart.tdeals.cc/api/external/deal_radar?token=y9oBzyD2kDdXaQEKopp-ZQsan2uTXPes3PkFEnvdRfo';
+    const API_BASE = 'https://smart.tdeals.cc/api/external/deal_radar';
+    const STORAGE_KEY_TOKEN = 'stockAlert_apiToken';
     const POLL_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
     const STORAGE_KEY = 'postit_last_super_deal_id';
     let timer = null;
+
+    function getApiToken() {
+        if (PostIt.StockAlert && typeof PostIt.StockAlert.getApiToken === 'function') {
+            return PostIt.StockAlert.getApiToken();
+        }
+        const token = localStorage.getItem(STORAGE_KEY_TOKEN);
+        return token ? token.trim() : '';
+    }
+
+    function buildApiUrl(extraParams) {
+        const token = getApiToken();
+        if (!token) return null;
+        const suffix = extraParams ? `&${extraParams}` : '';
+        return `${API_BASE}?token=${encodeURIComponent(token)}${suffix}`;
+    }
 
     /**
      * 啟動輪詢排程器
@@ -32,7 +48,10 @@ PostIt.DealNotifier = (function () {
      */
     async function checkDeals() {
         try {
-            const response = await fetch(API_URL);
+            const apiUrl = buildApiUrl();
+            if (!apiUrl) return;
+
+            const response = await fetch(apiUrl);
             if (!response.ok) return;
             const data = await response.json();
             
@@ -151,13 +170,21 @@ PostIt.DealNotifier = (function () {
      */
     async function triggerRadarManual() {
         console.log('[DealNotifier] 手動偵測雷達啟動...');
+        const apiUrl = buildApiUrl(`hours=1&offset=${manualOffsetCount}`);
+        if (!apiUrl) {
+            if (window.PostIt && window.PostIt.Board) {
+                window.PostIt.Board.showToast('請先在「帳號設定」填入好物報報 API Token', 'error');
+            }
+            return;
+        }
+
         try {
             const tempBtn = document.getElementById('btn-test-radar');
             if (tempBtn) tempBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 掃描中';
 
             // 改用獨立的變數來計算，避免算到舊的或昨天的超級好物卡片
             // 放回 hours=1 取得排名，並透過 offset 來循序拿下一張
-            const response = await fetch(`${API_URL}&hours=1&offset=${manualOffsetCount}`);
+            const response = await fetch(apiUrl);
             if (!response.ok) throw new Error('API fetch failed');
             const data = await response.json();
             

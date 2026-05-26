@@ -49,6 +49,9 @@
         這是一個極簡的網頁測試工具，讓您在沒有安裝其他 UI 的情況下，也能直接呼叫剛剛在背景跑起來的 CJEP 伺服器，體驗 Llama 3.1 8B 模型！
     </div>
 
+    <label for="token">CJEP API Token（Bearer）</label>
+    <input type="password" id="token" placeholder="請輸入您的 CJEP API Token" />
+
     <label for="url">CJEP 伺服器網址</label>
     <input type="text" id="url" value="http://localhost:8880/v1/chat/completions" />
 
@@ -70,7 +73,13 @@
     async function testConnection() {
         const urlObj = document.getElementById('url').value;
         const promptObj = document.getElementById('prompt').value;
+        const tokenObj = document.getElementById('token').value.trim();
         const resultDiv = document.getElementById('result');
+
+        if (!tokenObj) {
+            resultDiv.innerHTML = '<span class="error">❌ 請先輸入 CJEP API Token</span>';
+            return;
+        }
 
         resultDiv.innerHTML = '<span style="color: #fff">連線測試中，請稍候...</span>';
         
@@ -81,7 +90,7 @@
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer sk-ChatJimmyAICJ3P'
+                    'Authorization': `Bearer ${tokenObj}`
                 },
                 body: JSON.stringify({
                     model: "llama3.1-8B",

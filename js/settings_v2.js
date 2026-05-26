@@ -124,10 +124,10 @@ PostIt.Settings = (function () {
 
     // -------- AI API Key 管理 (純本地端儲存) --------
     const AI_KEY_STORAGE_KEY = 'postit_gemini_api_key';
-    const DEFAULT_AI_KEY = 'AIzaSyA4rngnyQfawDPXU1W2clDtUHbrqHB8DnU'; // 預設使用提供的金鑰
 
     function getAiKey() {
-        return localStorage.getItem(AI_KEY_STORAGE_KEY) || DEFAULT_AI_KEY;
+        const key = localStorage.getItem(AI_KEY_STORAGE_KEY);
+        return key ? key.trim() : '';
     }
 
     function setAiKey(key) {
