@@ -2627,6 +2627,42 @@ PostIt.Board = (function () {
             // 產生字體顏色色票
             renderFontColorSwatches();
 
+            // 綁定好物報報 Token 按鈕
+            const btnOpenTdealsToken = document.getElementById('btn-open-tdeals-token');
+            if (btnOpenTdealsToken) {
+                btnOpenTdealsToken.onclick = (e) => {
+                    e.preventDefault();
+                    window.open('https://smart.tdeals.cc/settings?tab=my-account', '_blank', 'noopener');
+                };
+            }
+
+            const btnTestExternalToken = document.getElementById('btn-test-external-token');
+            if (btnTestExternalToken && typeof PostIt.StockAlert !== 'undefined') {
+                btnTestExternalToken.onclick = async (e) => {
+                    e.preventDefault();
+                    const tokenInput = document.getElementById('account-external-api-token');
+                    const token = tokenInput ? tokenInput.value : '';
+                    if (!token.trim()) {
+                        showToast('請先填寫 Token，或按「去好物報報取得」', 'error');
+                        return;
+                    }
+
+                    const originalText = btnTestExternalToken.innerHTML;
+                    btnTestExternalToken.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 測試中';
+                    btnTestExternalToken.disabled = true;
+
+                    const result = await PostIt.StockAlert.testApiToken(token.trim());
+                    if (result.success) {
+                        showToast(result.msg, 'success');
+                    } else {
+                        showToast(`測試失敗：${result.msg}`, 'error', null, 6000);
+                    }
+
+                    btnTestExternalToken.innerHTML = originalText;
+                    btnTestExternalToken.disabled = false;
+                };
+            }
+
             // 綁定 Gemini 測試按鈕
             const btnTestGemini = document.getElementById('btn-test-gemini');
             if (btnTestGemini) {

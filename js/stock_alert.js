@@ -765,6 +765,30 @@ PostIt.StockAlert = (function () {
         renderAlertDashboard();
     }
 
+    async function testApiToken(token) {
+        const trimmed = (token || '').trim();
+        if (!trimmed) {
+            return { success: false, msg: '請先填寫好物報報 API Token' };
+        }
+
+        try {
+            const resp = await fetch(`${API_BASE}/api/external/ping`, {
+                headers: { 'X-API-Token': trimmed }
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                const name = data.user?.display_name || data.user?.username || '使用者';
+                return { success: true, msg: `連線成功！已驗證為：${name}` };
+            }
+            if (resp.status === 401) {
+                return { success: false, msg: 'Token 無效，請到好物報報重新產生 Key' };
+            }
+            return { success: false, msg: `伺服器回應 HTTP ${resp.status}` };
+        } catch (e) {
+            return { success: false, msg: '無法連線到 smart.tdeals.cc，請確認網路' };
+        }
+    }
+
     return {
         init, cleanup, debug, poll,
         startPolling, stopPolling,
@@ -772,7 +796,7 @@ PostIt.StockAlert = (function () {
         getMarketFreq, getAfterHoursFreq, getApiToken,
         getActiveAlerts, isMarketOpen, fetchCardData,
         showDashboard, locateAlert, removeAlertFromDashboard,
-        FREQ_OPTIONS, manualRefresh
+        FREQ_OPTIONS, manualRefresh, testApiToken
     };
 })();
 
