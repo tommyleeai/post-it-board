@@ -8,6 +8,7 @@ PostIt.Board = (function () {
 
     let boardEl = null;
     let toastTimer = null;
+    let unsubscribeStorageStats = null;
 
     // ======== 初始化 ========
     function init() {
@@ -86,6 +87,7 @@ PostIt.Board = (function () {
             // 訂閱筆記
             if (window.updateLoader) window.updateLoader(70, '連接即時協作引擎...');
             PostIt.Note.subscribe(renderNotes, renderOnlineUsers);
+            initCloudStorageIndicator();
 
             // 啟提圖釘連線系統
             if (typeof PostIt.Connect !== 'undefined') PostIt.Connect.start();
@@ -102,6 +104,7 @@ PostIt.Board = (function () {
 
             // 清除白板與全域鬧鐘
             if(typeof PostIt.Alarm !== 'undefined') PostIt.Alarm.cleanup();
+            cleanupCloudStorageIndicator();
             PostIt.Note.cleanup();
             clearBoard();
 
@@ -3196,6 +3199,76 @@ PostIt.Board = (function () {
                 memberEl.style.transform = `rotate(${baseRotation + rotDiff}deg)`;
             });
         });
+    }
+
+    function updateCloudStorageIndicator(stats) {
+        const el = document.getElementById('cloud-storage-indicator');
+        if (!el || typeof PostIt.YjsSync === 'undefined') return;
+
+        if (!stats || stats.status === 'unknown') {
+            el.classList.add('hidden');
+            return;
+        }
+
+        el.classList.remove('hidden', 'status-ok', 'status-warn', 'status-critical', 'status-over');
+        el.classList.add(`status-${stats.status}`);
+
+        const textEl = el.querySelector('.cloud-storage-text');
+        const fillEl = el.querySelector('.cloud-storage-fill');
+        const percent = Math.min(100, stats.percent);
+
+        if (textEl) textEl.textContent = `雲端 ${percent}%`;
+        if (fillEl) fillEl.style.width = `${percent}%`;
+
+        const summary = PostIt.YjsSync.getStorageSummaryText(stats);
+        let title = `雲端備份：${summary}`;
+        if (stats.lastBackupOk === false && stats.lastBackupError) {
+            title += `\n最近備份失敗：${stats.lastBackupError}`;
+        } else if (stats.lastBackupOk === true) {
+            title += '\n最近備份：成功';
+        }
+        if (stats.status === 'over' || stats.status === 'critical') {
+            title += '\n建議：刪除或歸檔部分貼紙，避免無法同步到其他裝置';
+        }
+        el.title = title;
+    }
+
+    function initCloudStorageIndicator() {
+        const el = document.getElementById('cloud-storage-indicator');
+        if (!el || typeof PostIt.YjsSync === 'undefined') return;
+
+        if (unsubscribeStorageStats) {
+            unsubscribeStorageStats();
+            unsubscribeStorageStats = null;
+        }
+
+        unsubscribeStorageStats = PostIt.YjsSync.onStorageStatsChange(updateCloudStorageIndicator);
+        updateCloudStorageIndicator(PostIt.YjsSync.getStorageStats());
+
+        el.onclick = (e) => {
+            e.preventDefault();
+            const stats = PostIt.YjsSync.getStorageStats();
+            const summary = PostIt.YjsSync.getStorageSummaryText(stats);
+            let msg = `☁️ 雲端備份使用量\n${summary}`;
+            if (stats.lastBackupOk === false) {
+                msg += `\n\n⚠️ ${stats.lastBackupError || '最近備份失敗'}`;
+            }
+            if (stats.status === 'over') {
+                msg += '\n\n已超過 1MB 上限，其他裝置可能載入不到最新資料。請刪除或歸檔貼紙。';
+            } else if (stats.status === 'critical' || stats.status === 'warn') {
+                msg += '\n\n建議整理貼紙，避免接近上限後無法同步。';
+            }
+            showToast(msg, stats.status === 'ok' ? 'info' : 'error', null, stats.status === 'ok' ? 5000 : 10000);
+        };
+    }
+
+    function cleanupCloudStorageIndicator() {
+        if (unsubscribeStorageStats) {
+            unsubscribeStorageStats();
+            unsubscribeStorageStats = null;
+        }
+        const el = document.getElementById('cloud-storage-indicator');
+        if (el) el.classList.add('hidden');
     }
 
     return { init, showToast, handleResize, openBoardModal, closeBoardModal, renderGroupVisuals, isLightboxOpen, closeLightbox, get _editingBoardId() { return editingBoardId; } };

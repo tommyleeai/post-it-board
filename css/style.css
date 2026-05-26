@@ -577,6 +577,86 @@ a.btn-admin-entry {
     text-decoration: none;
 }
 
+/* 雲端備份用量指示器 */
+.cloud-storage-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.75);
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    transition: all 0.2s ease;
+    max-width: 220px;
+}
+
+.cloud-storage-indicator:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.cloud-storage-indicator.hidden {
+    display: none !important;
+}
+
+.cloud-storage-indicator.status-ok {
+    border-color: rgba(76, 175, 80, 0.35);
+}
+
+.cloud-storage-indicator.status-warn {
+    border-color: rgba(255, 193, 7, 0.45);
+    background: rgba(255, 193, 7, 0.08);
+}
+
+.cloud-storage-indicator.status-critical,
+.cloud-storage-indicator.status-over {
+    border-color: rgba(244, 67, 54, 0.5);
+    background: rgba(244, 67, 54, 0.12);
+    color: #ffcdd2;
+}
+
+.cloud-storage-icon {
+    font-size: 12px;
+    opacity: 0.85;
+}
+
+.cloud-storage-text {
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.cloud-storage-bar {
+    display: inline-block;
+    width: 48px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.cloud-storage-fill {
+    display: block;
+    height: 100%;
+    width: 0%;
+    border-radius: inherit;
+    background: #66bb6a;
+    transition: width 0.35s ease, background-color 0.35s ease;
+}
+
+.cloud-storage-indicator.status-warn .cloud-storage-fill {
+    background: #ffca28;
+}
+
+.cloud-storage-indicator.status-critical .cloud-storage-fill,
+.cloud-storage-indicator.status-over .cloud-storage-fill {
+    background: #ef5350;
+}
+
 .btn-admin-entry {
     margin-right: -4px;
 }

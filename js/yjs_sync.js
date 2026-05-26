@@ -17,6 +17,140 @@ PostIt.YjsSync = (function () {
     let unsubscribeFirestore = null;
     let _renderRAF = null;
 
+    const FIRESTORE_LIMIT_BYTES = 1048576; // Firebase 單文件 1MB 上限
+    const WARN_RATIO = 0.85;
+    const CRITICAL_RATIO = 0.95;
+
+    let storageStats = {
+        sizeBytes: 0,
+        limitBytes: FIRESTORE_LIMIT_BYTES,
+        percent: 0,
+        noteCount: 0,
+        status: 'unknown', // ok | warn | critical | over | unknown
+        lastBackupOk: null,
+        lastBackupError: '',
+        lastBackupAt: null,
+        lastMeasuredAt: null
+    };
+    let statsListeners = new Set();
+    let statsRefreshTimer = null;
+    let lastNotifiedStatus = 'unknown';
+
+    function formatBytes(bytes) {
+        if (!bytes || bytes <= 0) return '0 B';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    }
+
+    function getStatusFromSize(sizeBytes) {
+        if (sizeBytes >= FIRESTORE_LIMIT_BYTES) return 'over';
+        if (sizeBytes >= FIRESTORE_LIMIT_BYTES * CRITICAL_RATIO) return 'critical';
+        if (sizeBytes >= FIRESTORE_LIMIT_BYTES * WARN_RATIO) return 'warn';
+        return 'ok';
+    }
+
+    function measureCurrentSize() {
+        if (!currentDoc || !Y) return 0;
+        try {
+            return Y.encodeStateAsUpdate(currentDoc).byteLength;
+        } catch (e) {
+            console.warn('[Yjs] 無法計算備份大小:', e);
+            return 0;
+        }
+    }
+
+    function notifyStatsListeners() {
+        statsListeners.forEach(fn => {
+            try { fn({ ...storageStats }); } catch (e) { console.warn('[Yjs] stats listener error', e); }
+        });
+    }
+
+    function maybeNotifyUser(status) {
+        if (status === lastNotifiedStatus) return;
+        const prev = lastNotifiedStatus;
+        lastNotifiedStatus = status;
+
+        const showToast = window.PostIt && PostIt.Board && PostIt.Board.showToast;
+        if (!showToast) return;
+
+        const used = formatBytes(storageStats.sizeBytes);
+        const limit = formatBytes(FIRESTORE_LIMIT_BYTES);
+
+        if (status === 'warn' && prev !== 'critical' && prev !== 'over') {
+            showToast(`⚠️ 雲端備份已使用 ${used} / ${limit}（${storageStats.percent}%），建議刪除或歸檔部分貼紙`, 'error', null, 8000);
+        } else if (status === 'critical' && prev !== 'over') {
+            showToast(`🚨 雲端備份接近上限！${used} / ${limit}（${storageStats.percent}%），請盡快整理貼紙`, 'error', null, 10000);
+        } else if (status === 'over') {
+            showToast(`❌ 雲端備份超過 ${limit}，無法同步到其他裝置！請刪除或歸檔貼紙後再試`, 'error', null, 12000);
+        }
+    }
+
+    function refreshStorageStats(options = {}) {
+        const { notify = false } = options;
+        if (!currentDoc) {
+            storageStats = {
+                ...storageStats,
+                sizeBytes: 0,
+                percent: 0,
+                noteCount: 0,
+                status: 'unknown',
+                lastMeasuredAt: Date.now()
+            };
+            notifyStatsListeners();
+            return { ...storageStats };
+        }
+
+        const sizeBytes = measureCurrentSize();
+        const noteCount = yNotesMap ? yNotesMap.size : 0;
+        const percent = Math.min(999, Math.round((sizeBytes / FIRESTORE_LIMIT_BYTES) * 100));
+        const status = getStatusFromSize(sizeBytes);
+
+        storageStats = {
+            ...storageStats,
+            sizeBytes,
+            limitBytes: FIRESTORE_LIMIT_BYTES,
+            percent,
+            noteCount,
+            status,
+            lastMeasuredAt: Date.now()
+        };
+
+        notifyStatsListeners();
+        if (notify) maybeNotifyUser(status);
+        return { ...storageStats };
+    }
+
+    function scheduleStorageStatsRefresh(notifyOnEscalation) {
+        clearTimeout(statsRefreshTimer);
+        statsRefreshTimer = setTimeout(() => {
+            refreshStorageStats({ notify: notifyOnEscalation });
+        }, 400);
+    }
+
+    function onStorageStatsChange(callback) {
+        if (typeof callback === 'function') statsListeners.add(callback);
+        return () => statsListeners.delete(callback);
+    }
+
+    function getStorageStats() {
+        return { ...storageStats };
+    }
+
+    function getStorageSummaryText(stats) {
+        const s = stats || storageStats;
+        const used = formatBytes(s.sizeBytes);
+        const limit = formatBytes(s.limitBytes);
+        const statusLabels = {
+            ok: '正常',
+            warn: '偏高',
+            critical: '接近上限',
+            over: '已超限',
+            unknown: '計算中'
+        };
+        return `${used} / ${limit}（${s.percent}%）· ${s.noteCount} 張貼紙 · ${statusLabels[s.status] || s.status}`;
+    }
+
     async function loadModules() {
         if (Y) return;
         try {
@@ -60,6 +194,7 @@ PostIt.YjsSync = (function () {
 
             // 手動觸發一次 UI 更新 (確保載入後畫面刷新)
             triggerUpdate();
+            refreshStorageStats({ notify: true });
         });
 
         // 每當「本地」資料改變，延遲寫入 Firestore 備份
@@ -67,7 +202,11 @@ PostIt.YjsSync = (function () {
         //    遠端同步（Y.applyUpdate 帶 'remote' origin）不觸發備份，避免 Echo 無限迴圈
         //    詳見：多分頁拖曳座標回彈 (0,0) 問題
         currentDoc.on('update', (update, origin) => {
-            if (origin === 'remote') return;
+            if (origin === 'remote') {
+                scheduleStorageStatsRefresh(false);
+                return;
+            }
+            scheduleStorageStatsRefresh(true);
             clearTimeout(backupTimeout);
             backupTimeout = setTimeout(() => backupToCloud(boardId), 800);
         });
@@ -253,14 +392,25 @@ PostIt.YjsSync = (function () {
 
     async function backupToCloud(boardId) {
         if (!currentDoc) return;
+        const sizeBytes = measureCurrentSize();
+        refreshStorageStats({ notify: false });
+
+        if (sizeBytes >= FIRESTORE_LIMIT_BYTES) {
+            const msg = `備份資料 ${formatBytes(sizeBytes)} 超過 Firebase 1MB 上限，已停止上傳`;
+            console.error('[Yjs] ⚠️', msg);
+            storageStats.lastBackupOk = false;
+            storageStats.lastBackupError = msg;
+            storageStats.lastBackupAt = Date.now();
+            storageStats.status = 'over';
+            notifyStatsListeners();
+            maybeNotifyUser('over');
+            return;
+        }
+
         try {
             const stateVector = Y.encodeStateAsUpdate(currentDoc);
             console.log('[Yjs] stateVector size:', stateVector.byteLength, 'bytes');
-            
-            if (stateVector.byteLength > 1000000) {
-                console.error('[Yjs] ⚠️ stateVector size exceeds 1MB limit! Firebase will reject this update.');
-            }
-            
+
             const blob = firebase.firestore.Blob.fromUint8Array(stateVector);
             const db = PostIt.Firebase.getDb();
             await db.collection('boards').doc(boardId).update({
@@ -268,7 +418,24 @@ PostIt.YjsSync = (function () {
                 yjs_updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             console.log('[Yjs] 已備份至雲端');
-        } catch(e) { console.error('[Yjs] Cloud backup failed', e); }
+            storageStats.lastBackupOk = true;
+            storageStats.lastBackupError = '';
+            storageStats.lastBackupAt = Date.now();
+            refreshStorageStats({ notify: false });
+        } catch (e) {
+            console.error('[Yjs] Cloud backup failed', e);
+            storageStats.lastBackupOk = false;
+            storageStats.lastBackupError = e.message || '雲端備份失敗';
+            storageStats.lastBackupAt = Date.now();
+            refreshStorageStats({ notify: false });
+
+            const errText = String(e.message || e.code || '');
+            if (sizeBytes >= FIRESTORE_LIMIT_BYTES * WARN_RATIO || /longer than|maximum|size|1\s*mb/i.test(errText)) {
+                maybeNotifyUser(getStatusFromSize(sizeBytes));
+            } else if (window.PostIt && PostIt.Board && PostIt.Board.showToast) {
+                PostIt.Board.showToast('⚠️ 雲端備份失敗，資料可能無法同步到其他裝置', 'error', null, 8000);
+            }
+        }
     }
 
     function cleanup() {
@@ -286,6 +453,8 @@ PostIt.YjsSync = (function () {
         currentDoc = null;
         yNotesMap = null;
         clearTimeout(backupTimeout);
+        clearTimeout(statsRefreshTimer);
+        lastNotifiedStatus = 'unknown';
         if (_renderRAF) {
             cancelAnimationFrame(_renderRAF);
             _renderRAF = null;
@@ -295,5 +464,10 @@ PostIt.YjsSync = (function () {
     function getNotesMap() { return yNotesMap; }
     function getY() { return Y; }
 
-    return { init, cleanup, getNotesMap, getY };
+    return {
+        init, cleanup, getNotesMap, getY,
+        getStorageStats, refreshStorageStats, onStorageStatsChange,
+        formatBytes, getStorageSummaryText,
+        FIRESTORE_LIMIT_BYTES
+    };
 })();
