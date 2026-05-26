@@ -2632,7 +2632,7 @@ PostIt.Board = (function () {
             if (btnOpenTdealsToken) {
                 btnOpenTdealsToken.onclick = (e) => {
                     e.preventDefault();
-                    window.open('https://smart.tdeals.cc/settings?tab=my-account', '_blank', 'noopener');
+                    window.open('https://smart.tdeals.cc/#/settings?tab=my-account', '_blank', 'noopener');
                 };
             }
 
