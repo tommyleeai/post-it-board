@@ -435,6 +435,23 @@ PostIt.StockAlert = (function () {
                     const pollPhase = getMarketPhase();
                     const pollMarketStatus = pollPhase === 'market' ? 'live' : pollPhase;
                     updateStockCardDOM(alert.noteId, currentPrice, quote.change, quote.changePercent, Date.now(), pollMarketStatus);
+
+                    // 節流回寫 Yjs：每 5 分鐘把最新報價存入快取，避免 reload 時顯示太舊的價格
+                    const existingData = note.stockCardData || {};
+                    const lastYjsWrite = existingData._lastYjsSync || 0;
+                    if (Date.now() - lastYjsWrite > 300000) { // 5 分鐘
+                        PostIt.Note.updateNote(alert.noteId, {
+                            stockCardData: {
+                                ...existingData,
+                                currentPrice: currentPrice,
+                                priceChange: quote.change,
+                                priceChangePercent: quote.changePercent,
+                                marketStatus: pollMarketStatus,
+                                lastUpdated: Date.now(),
+                                _lastYjsSync: Date.now()
+                            }
+                        });
+                    }
                 }
             }
 
