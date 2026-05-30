@@ -1225,13 +1225,18 @@ PostIt.Board = (function () {
 
         // === stock_card 專用差量 DOM 更新（不重建整個 DOM，只更新價格文字） ===
         if (note.type === 'stock_card' && contentEl) {
-            // 如果從純文字剛轉為股票卡，或「目前沒在翻面設定警報」時，可以直接完整重建 DOM 以獲得最新圖表與 Logo
+            // 偵測翻面狀態（設定警報面板）
             const noteElForFlip = contentEl.closest('.sticky-note');
             const isFlipped = noteElForFlip && noteElForFlip.classList.contains('is-flipped');
 
-            if (!contentEl.querySelector('.stock-card-front') || !isFlipped) {
+            if (!contentEl.querySelector('.stock-card-front')) {
+                // 首次渲染：完整建構 DOM
                 contentEl.innerHTML = renderContentText(note, null, null);
+            } else if (isFlipped) {
+                // 翻面中（正在設定警報）：不做任何 DOM 更新，避免打斷使用者操作
+                return;
             }
+            // 已有 front 元素且沒在翻面 → 進入下方差量更新（只更新價格等文字）
 
             const sd = note.stockCardData || {};
             
@@ -1264,7 +1269,7 @@ PostIt.Board = (function () {
                 }
                 const statusTooltipEl = contentEl.querySelector('.market-status-tooltip');
                 if (statusTooltipEl) {
-                    const statusMap = { 'live': '連線中 (盤中)', 'closed': '連線中 (盤後)', 'fetching': '抓取資料中...', 'rate_limit': 'API 請求頻繁被限制', 'error': '連線錯誤', 'paused': '暫停監控', 'invalid': '無效的股票代碼' };
+                    const statusMap = { 'live': '連線中 (盤中)', 'pre_market': '連線中 (盤前)', 'after_hours': '連線中 (盤後)', 'closed': '休市中', 'fetching': '抓取資料中...', 'rate_limit': 'API 請求頻繁被限制', 'error': '連線錯誤', 'paused': '暫停監控', 'invalid': '無效的股票代碼' };
                     statusTooltipEl.textContent = statusMap[sd.marketStatus] || '未知狀態';
                 }
             }
@@ -1636,7 +1641,7 @@ PostIt.Board = (function () {
                 let statusIndicatorHtml = '';
                 if (typeof PostIt !== 'undefined' && PostIt.StockAlert) {
                     const statusClass = sd.marketStatus || (PostIt.StockAlert.isMarketOpen() ? 'live' : 'closed');
-                    const statusMap = { 'live': '連線中 (盤中)', 'closed': '連線中 (盤後)', 'fetching': '抓取資料中...', 'rate_limit': 'API 請求頻繁被限制', 'error': '連線錯誤', 'paused': '暫停監控', 'invalid': '無效的股票代碼' };
+                    const statusMap = { 'live': '連線中 (盤中)', 'pre_market': '連線中 (盤前)', 'after_hours': '連線中 (盤後)', 'closed': '休市中', 'fetching': '抓取資料中...', 'rate_limit': 'API 請求頻繁被限制', 'error': '連線錯誤', 'paused': '暫停監控', 'invalid': '無效的股票代碼' };
                     const statusText = statusMap[statusClass] || '未知狀態';
                     
                     let timeStr = '尚未取得更新';
@@ -1682,11 +1687,11 @@ PostIt.Board = (function () {
                     const max = Math.max(...prices);
                     const range = max - min || 1;
                     const width = 280;
-                    const height = 80; // 繪圖區高度
+                    const CHART_HEIGHT = 80;  // 繪圖區高度
+                    const CHART_PADDING = 10; // 上下邊界
+                    const DRAW_HEIGHT = CHART_HEIGHT - CHART_PADDING * 2;
                     
                     // 為了美觀，上下留點邊界，讓最高最低點不要貼死
-                    const padding = 10;
-                    const drawHeight = height - padding * 2;
                     
                     const step = width / (prices.length - 1);
                     
@@ -1695,27 +1700,30 @@ PostIt.Board = (function () {
                         const x = i * step;
                         // 價格越大，y越小(越靠近上面)
                         const normalized = (p - min) / range;
-                        const y = padding + drawHeight - (normalized * drawHeight);
+                        const y = CHART_PADDING + DRAW_HEIGHT - (normalized * DRAW_HEIGHT);
                         points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
                     });
                     
                     const pathStr = `M${points.join(' L')}`;
                     svgPath = `<path class="stock-card-sparkline-path" d="${pathStr}"></path>`;
                     
-                    // Area (封閉路徑)
-                    const areaStr = `${pathStr} L${width},${height} L0,${height} Z`;
-                    svgArea = `<path class="stock-card-sparkline-area" d="${areaStr}"></path>`;
+                    // Area (封閉路徑，用 inline fill 引用獨立 gradient ID)
+                    const areaStr = `${pathStr} L${width},${CHART_HEIGHT} L0,${CHART_HEIGHT} Z`;
+                    const gradientId = trendClass === 'up' ? `gradient-up-${note.id}` : `gradient-down-${note.id}`;
+                    svgArea = `<path class="stock-card-sparkline-area" d="${areaStr}" fill="url(#${gradientId})"></path>`;
                 }
 
-                // 取出的最後一個價格位置用來放呼吸燈
+                // 取出的最後一個價格位置用來放呼吸燈（使用與 sparkline 相同的常數）
                 let pulseDotTop = '0px';
                 if (sd.prices && sd.prices.length > 0) {
                     const lastP = sd.prices[sd.prices.length - 1];
                     const min = Math.min(...sd.prices);
                     const max = Math.max(...sd.prices);
                     const range = max - min || 1;
+                    const CHART_PADDING_DOT = 10;
+                    const DRAW_HEIGHT_DOT = 60; // 80 - 10*2
                     const normalized = (lastP - min) / range;
-                    const y = 10 + 60 - (normalized * 60); // padding:10, drawHeight:60
+                    const y = CHART_PADDING_DOT + DRAW_HEIGHT_DOT - (normalized * DRAW_HEIGHT_DOT);
                     pulseDotTop = `${y.toFixed(1)}px`;
                 }
 
@@ -1783,11 +1791,11 @@ PostIt.Board = (function () {
                         <div class="stock-card-chart-container">
                             <svg class="stock-card-sparkline ${trendClass}" viewBox="0 0 280 80" preserveAspectRatio="none">
                                 <defs>
-                                    <linearGradient id="gradient-up" x1="0" y1="0" x2="0" y2="1">
+                                    <linearGradient id="gradient-up-${note.id}" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="0%" stop-color="#10b981" stop-opacity="0.3"></stop>
                                         <stop offset="100%" stop-color="#10b981" stop-opacity="0"></stop>
                                     </linearGradient>
-                                    <linearGradient id="gradient-down" x1="0" y1="0" x2="0" y2="1">
+                                    <linearGradient id="gradient-down-${note.id}" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="0%" stop-color="#ef4444" stop-opacity="0.3"></stop>
                                         <stop offset="100%" stop-color="#ef4444" stop-opacity="0"></stop>
                                     </linearGradient>
@@ -1802,7 +1810,7 @@ PostIt.Board = (function () {
                         <div class="stock-card-metrics-grid">
                             <div class="stock-card-metric-item">
                                 <span class="stock-card-metric-label">Market Cap</span>
-                                <span class="stock-card-metric-value">${sd.marketCap ? (sd.marketCap / 1000).toFixed(2) + 'B' : '--'}</span>
+                                <span class="stock-card-metric-value">${sd.marketCap ? (sd.marketCap / 1000).toFixed(2) + 'B' : '--'}</span><!-- marketCap 單位：百萬美元（來自 Finnhub API），除以 1000 得到十億(B) -->
                             </div>
                             <div class="stock-card-metric-item">
                                 <span class="stock-card-metric-label">P/E Ratio</span>

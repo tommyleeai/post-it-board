@@ -57,19 +57,46 @@ PostIt.StockAlert = (function () {
         return new Date(etStr);
     }
 
-    // --- 美股開盤判斷 ---
-    // 使用 Intl API 取得正確的美東時間，自動處理夏令時切換
-    function isMarketOpen() {
+    // --- 美股國定假日（NYSE 休市日）---
+    // 包含 2025-2027 年，每年需更新
+    const US_MARKET_HOLIDAYS = [
+        // 2025
+        '2025-01-01', '2025-01-20', '2025-02-17', '2025-04-18', '2025-05-26',
+        '2025-06-19', '2025-07-04', '2025-09-01', '2025-11-27', '2025-12-25',
+        // 2026
+        '2026-01-01', '2026-01-19', '2026-02-16', '2026-04-03', '2026-05-25',
+        '2026-06-19', '2026-07-03', '2026-09-07', '2026-11-26', '2026-12-25',
+        // 2027
+        '2027-01-01', '2027-01-18', '2027-02-15', '2027-03-26', '2027-05-31',
+        '2027-06-18', '2027-07-05', '2027-09-06', '2027-11-25', '2027-12-24'
+    ];
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+
+    // --- 市場階段判斷 ---
+    // 回傳 'pre_market' | 'market' | 'after_hours' | 'closed'
+    function getMarketPhase() {
         const etTime = getEasternTime();
         const hour = etTime.getHours();
         const minute = etTime.getMinutes();
         const day = etTime.getDay(); // 0=Sun, 6=Sat
+        const dateStr = `${etTime.getFullYear()}-${pad2(etTime.getMonth() + 1)}-${pad2(etTime.getDate())}`;
 
-        // 週末不開盤
-        if (day === 0 || day === 6) return false;
-        // 9:30 - 16:00
-        if (hour < 9 || (hour === 9 && minute < 30) || hour >= 16) return false;
-        return true;
+        // 週末 / 假日 → closed
+        if (day === 0 || day === 6 || US_MARKET_HOLIDAYS.includes(dateStr)) return 'closed';
+
+        // 時段判斷（美東時間）
+        const totalMin = hour * 60 + minute;
+        if (totalMin < 240) return 'closed';          // 00:00-03:59 → closed
+        if (totalMin < 570) return 'pre_market';      // 04:00-09:29 → 盤前
+        if (totalMin < 960) return 'market';           // 09:30-15:59 → 開盤
+        if (totalMin < 1200) return 'after_hours';     // 16:00-19:59 → 盤後
+        return 'closed';                               // 20:00-23:59 → closed
+    }
+
+    // --- 美股開盤判斷（向後相容）---
+    function isMarketOpen() {
+        return getMarketPhase() === 'market';
     }
 
     // --- 取得當前應使用的輪詢間隔 ---
@@ -181,7 +208,9 @@ PostIt.StockAlert = (function () {
             return;
         }
 
-        let marketStatus = isMarketOpen() ? 'live' : 'closed';
+        // 根據市場階段設定狀態（pre_market / market=live / after_hours / closed）
+        const phase = getMarketPhase();
+        let marketStatus = phase === 'market' ? 'live' : phase; // market 對應 live，其餘直接用 phase
         const cacheKey = symbol.toUpperCase();
         const lastFullFetch = _profileChartCache[cacheKey] || 0;
         const needFullRefresh = forceFullRefresh || (Date.now() - lastFullFetch > PROFILE_CHART_CACHE_TTL);
@@ -403,7 +432,9 @@ PostIt.StockAlert = (function () {
             if (PostIt.Note) {
                 const note = PostIt.Note.getNote(alert.noteId);
                 if (note && note.type === 'stock_card') {
-                    updateStockCardDOM(alert.noteId, currentPrice, quote.change, quote.changePercent, Date.now(), isMarketOpen() ? 'live' : 'closed');
+                    const pollPhase = getMarketPhase();
+                    const pollMarketStatus = pollPhase === 'market' ? 'live' : pollPhase;
+                    updateStockCardDOM(alert.noteId, currentPrice, quote.change, quote.changePercent, Date.now(), pollMarketStatus);
                 }
             }
 
@@ -461,7 +492,9 @@ PostIt.StockAlert = (function () {
             if (tooltipEl) {
                 const statusMap = {
                     'live': '連線中 (盤中)',
-                    'closed': '連線中 (盤後)',
+                    'pre_market': '連線中 (盤前)',
+                    'after_hours': '連線中 (盤後)',
+                    'closed': '休市中',
                     'fetching': '抓取資料中...',
                     'rate_limit': 'API 請求頻繁被限制',
                     'error': '連線錯誤',
@@ -836,7 +869,7 @@ PostIt.StockAlert = (function () {
         startPolling, stopPolling,
         setMarketFreq, setAfterHoursFreq, setApiToken,
         getMarketFreq, getAfterHoursFreq, getApiToken,
-        getActiveAlerts, isMarketOpen, fetchCardData,
+        getActiveAlerts, isMarketOpen, getMarketPhase, fetchCardData,
         showDashboard, locateAlert, removeAlertFromDashboard,
         FREQ_OPTIONS, manualRefresh, testApiToken
     };

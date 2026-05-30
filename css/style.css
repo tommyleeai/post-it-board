@@ -4089,9 +4089,9 @@ body.pin-mode {
 }
 
 .stock-card-sparkline.up .stock-card-sparkline-path { stroke: #10b981; }
-.stock-card-sparkline.up .stock-card-sparkline-area { fill: url(#gradient-up); }
+.stock-card-sparkline.up .stock-card-sparkline-area { /* fill 由 inline style 引用獨立 gradient ID */ }
 .stock-card-sparkline.down .stock-card-sparkline-path { stroke: #ef4444; }
-.stock-card-sparkline.down .stock-card-sparkline-area { fill: url(#gradient-down); }
+.stock-card-sparkline.down .stock-card-sparkline-area { /* fill 由 inline style 引用獨立 gradient ID */ }
 
 .stock-card-pulse-dot {
     position: absolute;
@@ -4320,9 +4320,16 @@ body.pin-mode {
 .market-status-indicator.live { background-color: #3b82f6; animation: blink-blue 2s infinite; }
 @keyframes blink-blue { 0%, 100% { opacity: 1; box-shadow: 0 0 6px #3b82f6; } 50% { opacity: 0.4; box-shadow: none; } }
 
-/* 2. 連線中 (盤後) - 黃色呼吸 */
-.market-status-indicator.closed { background-color: #eab308; animation: blink-yellow 2s infinite; }
+/* 2. 連線中 (盤前) - 青色呼吸 */
+.market-status-indicator.pre_market { background-color: #06b6d4; animation: blink-cyan 2s infinite; }
+@keyframes blink-cyan { 0%, 100% { opacity: 1; box-shadow: 0 0 6px #06b6d4; } 50% { opacity: 0.4; box-shadow: none; } }
+
+/* 3. 連線中 (盤後) - 黃色呼吸 */
+.market-status-indicator.after_hours { background-color: #eab308; animation: blink-yellow 2s infinite; }
 @keyframes blink-yellow { 0%, 100% { opacity: 1; box-shadow: 0 0 6px #eab308; } 50% { opacity: 0.4; box-shadow: none; } }
+
+/* 4. 休市中 - 灰色靜止 */
+.market-status-indicator.closed { background-color: #9ca3af; box-shadow: inset 0 0 2px rgba(0,0,0,0.2); }
 
 /* 3. 抓取中 - 紫色快閃 */
 .market-status-indicator.fetching { background-color: #a855f7; animation: blink-fast-purple 0.5s infinite; }
