@@ -4,6 +4,13 @@
 
 專案遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 的版本控制原則。
 
+## [2.7.22] - 2026-05-30
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   **白板名稱輸入框修復**：修正新增白板 Modal 中 `.settings-input` 無 CSS 定義導致輸入框過小、上框線被裁切的問題，新增完整的 padding、border-radius、focus 光暈效果
+*   **Emoji 選擇器大擴充**：從 12 個擴充至 64 個，涵蓋工作、學習、生活、運動、娛樂、食物、旅行、情感等 8 大分類
+*   **Emoji picker 可捲動**：新增 max-height 限制與美化捲軸，避免 Modal 過長
+
 ## [2.7.21] - 2026-05-30
 
 ### 🔧 股票卡牌系統全面修復 (18 項)
