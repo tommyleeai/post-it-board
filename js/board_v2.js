@@ -1226,8 +1226,8 @@ PostIt.Board = (function () {
         // === stock_card 專用差量 DOM 更新（不重建整個 DOM，只更新價格文字） ===
         if (note.type === 'stock_card' && contentEl) {
             // 如果從純文字剛轉為股票卡，或「目前沒在翻面設定警報」時，可以直接完整重建 DOM 以獲得最新圖表與 Logo
-            const wrapper = contentEl.querySelector('.stock-card-3d-wrapper');
-            const isFlipped = wrapper && wrapper.classList.contains('card-flipped');
+            const noteElForFlip = contentEl.closest('.sticky-note');
+            const isFlipped = noteElForFlip && noteElForFlip.classList.contains('is-flipped');
 
             if (!contentEl.querySelector('.stock-card-front') || !isFlipped) {
                 contentEl.innerHTML = renderContentText(note, null, null);

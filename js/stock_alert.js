@@ -51,18 +51,16 @@ PostIt.StockAlert = (function () {
         }
     }
 
+    // --- 取得美東時間（自動處理 DST）---
+    function getEasternTime() {
+        const etStr = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+        return new Date(etStr);
+    }
+
     // --- 美股開盤判斷 ---
-    // 美東 9:30-16:00（含盤前盤後大概 4:00-20:00）
-    // 這裡用簡化版：開盤 = 美東 9:30-16:00
+    // 使用 Intl API 取得正確的美東時間，自動處理夏令時切換
     function isMarketOpen() {
-        const now = new Date();
-        // 取得美東時間（UTC-5，夏令時 UTC-4）
-        const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-        // 簡化：假設夏令時（3月-11月）
-        const month = now.getMonth() + 1;
-        const isDST = month >= 3 && month <= 11;
-        const etOffset = isDST ? -4 : -5;
-        const etTime = new Date(utc + etOffset * 3600000);
+        const etTime = getEasternTime();
         const hour = etTime.getHours();
         const minute = etTime.getMinutes();
         const day = etTime.getDay(); // 0=Sun, 6=Sat
@@ -136,38 +134,44 @@ PostIt.StockAlert = (function () {
         if (!token) {
             console.warn('[StockAlert] 未設定 API Token，無法查詢報價');
             showErrorOnce('📈 股價監控失敗：未設定 API Token。請到設定頁面填入好物報報 API Token。');
-            return {};
+            return { success: false, data: {}, error: 'no_token' };
         }
 
         try {
-            const url = `${API_BASE}/api/stock/batch?symbols=${symbols.join(',')}&token=${encodeURIComponent(token)}`;
-            const resp = await fetch(url);
+            const url = `${API_BASE}/api/stock/batch?symbols=${symbols.join(',')}`;
+            const resp = await fetch(url, {
+                headers: { 'X-API-Token': token }
+            });
             if (!resp.ok) {
                 console.error('[StockAlert] API 回應錯誤:', resp.status);
                 if (resp.status === 429) {
                     showErrorOnce('📈 股價監控：API 請求次數已達上限，請稍後再試。');
-                    return { _error: 'rate_limit' };
+                    return { success: false, data: {}, error: 'rate_limit' };
                 } else if (resp.status === 401) {
                     showErrorOnce('📈 股價監控失敗：API Token 無效，請確認 Token 是否正確。');
-                    return { _error: 'error' };
+                    return { success: false, data: {}, error: 'auth' };
                 } else if (resp.status === 503) {
                     showErrorOnce('📈 股價監控失敗：伺服器尚未設定 Finnhub API Key。');
-                    return { _error: 'error' };
+                    return { success: false, data: {}, error: 'server' };
                 } else {
                     showErrorOnce(`📈 股價監控暫時無法使用（HTTP ${resp.status}），將自動重試。`);
-                    return { _error: 'error' };
+                    return { success: false, data: {}, error: 'http_error' };
                 }
             }
             const data = await resp.json();
-            return data.quotes || {};
+            return { success: true, data: data.quotes || {}, error: null };
         } catch (e) {
             console.error('[StockAlert] 查詢報價失敗:', e);
             showErrorOnce('📈 股價監控：無法連線到報價伺服器，請確認網路連線。');
-            return { _error: 'error' };
+            return { success: false, data: {}, error: 'network' };
         }
     }
 
-    async function fetchCardData(noteId, symbol) {
+    // --- 卡片完整資料快取時間戳 ---
+    const _profileChartCache = {}; // { symbol: lastFetchTime } 避免頻繁拉 profile/chart
+    const PROFILE_CHART_CACHE_TTL = 3600000; // profile/chart 快取 1 小時
+
+    async function fetchCardData(noteId, symbol, forceFullRefresh = false) {
         const token = getApiToken();
         if (!token) {
             if (typeof PostIt.Note !== 'undefined') {
@@ -178,53 +182,72 @@ PostIt.StockAlert = (function () {
         }
 
         let marketStatus = isMarketOpen() ? 'live' : 'closed';
+        const cacheKey = symbol.toUpperCase();
+        const lastFullFetch = _profileChartCache[cacheKey] || 0;
+        const needFullRefresh = forceFullRefresh || (Date.now() - lastFullFetch > PROFILE_CHART_CACHE_TTL);
+
         try {
-            const [profileResp, chartResp, quotesDict] = await Promise.all([
-                fetch(`${API_BASE}/api/stock/profile?symbol=${symbol}&token=${encodeURIComponent(token)}`),
-                fetch(`${API_BASE}/api/stock/chart?symbol=${symbol}&token=${encodeURIComponent(token)}`),
-                fetchQuotes([symbol])
-            ]);
+            let profile = null;
+            let chart = null;
+            const quotesResult = await fetchQuotes([symbol]);
 
-            if (profileResp.status === 429 || chartResp.status === 429 || quotesDict._error === 'rate_limit') {
-                marketStatus = 'rate_limit';
-            } else if (!profileResp.ok || quotesDict._error === 'error') {
-                marketStatus = 'error';
-            }
-
-            if (marketStatus === 'rate_limit' || marketStatus === 'error') {
-                 if (typeof PostIt.Note !== 'undefined') {
-                     const existingData = PostIt.Note.getNote(noteId)?.stockCardData || {};
-                     PostIt.Note.updateNote(noteId, { stockCardData: { ...existingData, marketStatus: marketStatus, lastUpdated: Date.now() } });
-                 }
-                 return;
-            }
-
-            const profile = await profileResp.json();
-            if (!profile.success) {
-                marketStatus = 'invalid';
+            if (!quotesResult.success) {
+                marketStatus = quotesResult.error === 'rate_limit' ? 'rate_limit' : 'error';
                 if (typeof PostIt.Note !== 'undefined') {
                     const existingData = PostIt.Note.getNote(noteId)?.stockCardData || {};
-                    PostIt.Note.updateNote(noteId, { stockCardData: { ...existingData, marketStatus: marketStatus, lastUpdated: Date.now() } });
+                    PostIt.Note.updateNote(noteId, { stockCardData: { ...existingData, marketStatus, lastUpdated: Date.now() } });
                 }
                 return;
             }
 
-            const chart = chartResp.ok ? await chartResp.json() : { success: true, prices: [] };
-            const quote = (quotesDict && quotesDict[symbol.toUpperCase()]) ? quotesDict[symbol.toUpperCase()] : null;
+            // 只有需要完整刷新時才拉 profile 和 chart（減少 API 用量）
+            if (needFullRefresh) {
+                const [profileResp, chartResp] = await Promise.all([
+                    fetch(`${API_BASE}/api/stock/profile?symbol=${symbol}`, { headers: { 'X-API-Token': token } }),
+                    fetch(`${API_BASE}/api/stock/chart?symbol=${symbol}`, { headers: { 'X-API-Token': token } })
+                ]);
+
+                if (profileResp.status === 429 || chartResp.status === 429) {
+                    marketStatus = 'rate_limit';
+                    if (typeof PostIt.Note !== 'undefined') {
+                        const existingData = PostIt.Note.getNote(noteId)?.stockCardData || {};
+                        PostIt.Note.updateNote(noteId, { stockCardData: { ...existingData, marketStatus, lastUpdated: Date.now() } });
+                    }
+                    return;
+                }
+
+                if (profileResp.ok) {
+                    profile = await profileResp.json();
+                    if (!profile.success) {
+                        if (typeof PostIt.Note !== 'undefined') {
+                            const existingData = PostIt.Note.getNote(noteId)?.stockCardData || {};
+                            PostIt.Note.updateNote(noteId, { stockCardData: { ...existingData, marketStatus: 'invalid', lastUpdated: Date.now() } });
+                        }
+                        return;
+                    }
+                }
+
+                chart = chartResp.ok ? await chartResp.json() : { success: true, prices: [] };
+                _profileChartCache[cacheKey] = Date.now();
+            }
+
+            const quote = quotesResult.data[symbol.toUpperCase()] || null;
+            const existingData = PostIt.Note?.getNote(noteId)?.stockCardData || {};
 
             const cardData = {
-                symbol: profile.symbol,
-                name: profile.name,
-                logo: profile.logo,
-                marketCap: profile.marketCap,
-                peRatio: profile.peRatio,
-                high52: profile.high52,
-                low52: profile.low52,
-                recommendation: profile.recommendation,
-                prices: chart.success ? chart.prices : [],
-                currentPrice: quote ? quote.price : null,
-                priceChange: quote ? quote.change : null,
-                priceChangePercent: quote ? quote.changePercent : null,
+                // profile 資料：有新的就用新的，沒有就沿用舊的
+                symbol: profile?.symbol || existingData.symbol || symbol,
+                name: profile?.name || existingData.name || 'Loading...',
+                logo: profile?.logo || existingData.logo || null,
+                marketCap: profile?.marketCap ?? existingData.marketCap ?? null,        // 單位：百萬美元（來自 Finnhub API）
+                peRatio: profile?.peRatio ?? existingData.peRatio ?? null,
+                high52: profile?.high52 ?? existingData.high52 ?? null,
+                low52: profile?.low52 ?? existingData.low52 ?? null,
+                recommendation: profile?.recommendation || existingData.recommendation || null,
+                prices: chart?.success ? chart.prices : (existingData.prices || []),
+                currentPrice: quote ? quote.price : existingData.currentPrice,
+                priceChange: quote ? quote.change : existingData.priceChange,
+                priceChangePercent: quote ? quote.changePercent : existingData.priceChangePercent,
                 lastUpdated: Date.now(),
                 marketStatus: marketStatus
             };
@@ -244,13 +267,14 @@ PostIt.StockAlert = (function () {
     async function manualRefresh(noteId, symbol, iconEl) {
         if (iconEl) {
             iconEl.classList.add('refreshing');
-            iconEl.style.pointerEvents = 'none'; // Prevent double clicks
+            iconEl.style.pointerEvents = 'none';
             iconEl.style.opacity = '0.5';
         }
         
         updateStockCardDOM(noteId, null, undefined, undefined, undefined, 'fetching');
         
-        await fetchCardData(noteId, symbol);
+        // 手動刷新預設只拉報價（快速），profile/chart 遵循快取週期
+        await fetchCardData(noteId, symbol, false);
         
         if (iconEl) {
             iconEl.classList.remove('refreshing');
@@ -273,9 +297,16 @@ PostIt.StockAlert = (function () {
     }
 
     // --- 觸發通知 ---
-    // --- 觸發通知 ---
+    const _triggeredCooldown = new Set(); // 觸發冷卻期，防止 Yjs 非同步延遲導致重複觸發
+
     function triggerStockNotification(noteId, alert, currentPrice) {
         if (!alert || alert.alertId === 'quote_only') return;
+
+        // 冷卻期檢查：60 秒內同一條警報不重複觸發
+        const cooldownKey = `${noteId}:${alert.alertId}`;
+        if (_triggeredCooldown.has(cooldownKey)) return;
+        _triggeredCooldown.add(cooldownKey);
+        setTimeout(() => _triggeredCooldown.delete(cooldownKey), 60000);
 
         const direction = alert.condition === '>=' ? '漲到' : '跌到';
         const msg = `📈 ${alert.symbol} 已${direction} $${currentPrice.toFixed(2)}！（目標: $${alert.targetPrice}）`;
@@ -338,21 +369,22 @@ PostIt.StockAlert = (function () {
 
         // 收集不重複的 symbol
         const symbols = [...new Set(alerts.map(a => a.symbol))];
-        const quotes = await fetchQuotes(symbols);
-        const now = new Date().toISOString();
+        const quotesResult = await fetchQuotes(symbols);
 
-        if (quotes._error) {
+        if (!quotesResult.success) {
+            const errorStatus = quotesResult.error === 'rate_limit' ? 'rate_limit' : 'error';
             for (const alert of alerts) {
                 if (PostIt.Note) {
                     const note = PostIt.Note.getNote(alert.noteId);
                     if (note && note.type === 'stock_card') {
-                        updateStockCardDOM(alert.noteId, null, undefined, undefined, Date.now(), quotes._error);
+                        updateStockCardDOM(alert.noteId, null, undefined, undefined, Date.now(), errorStatus);
                     }
                 }
             }
             return;
         }
 
+        const quotes = quotesResult.data;
         for (const alert of alerts) {
             const quote = quotes[alert.symbol];
             if (!quote || !quote.price) {
@@ -382,14 +414,7 @@ PostIt.StockAlert = (function () {
 
             // 原有的股價達標檢查 (只有設定了 alert 的才有 condition)
             if (alert.condition && alert.alertId !== 'quote_only') {
-                if (PostIt.Note && PostIt.Note.updateStockAlertStatus) {
-                    PostIt.Note.updateStockAlertStatus(alert.noteId, alert.alertId, 'watching', {
-                        lastPrice: currentPrice,
-                        lastChecked: now
-                    });
-                }
-
-                // 檢查是否達標
+                // 檢查是否達標（只在狀態變更 triggered 時才寫入 Yjs，避免每分鐘不必要的同步流量）
                 if (checkCondition(alert, currentPrice)) {
                     triggerStockNotification(alert.noteId, alert, currentPrice);
                 }
@@ -483,33 +508,35 @@ PostIt.StockAlert = (function () {
     // --- 啟動/停止 ---
     function startPolling() {
         stopPolling();
-        const interval = getCurrentInterval();
-        if (interval <= 0) {
-            console.log('[StockAlert] 輪詢已關閉 (freq=none)');
-            return;
-        }
-
         isRunning = true;
         // 立即查一次
         poll();
-        // 設定定期輪詢
-        pollTimer = setInterval(() => {
-            // 動態切換開盤/盤後頻率
-            const newInterval = getCurrentInterval();
-            if (newInterval <= 0) {
-                stopPolling();
-                return;
-            }
-            poll();
-        }, interval);
+        // 排程下一次（使用 setTimeout 遞迴，每次動態取得最新間隔）
+        scheduleNextPoll();
 
         const freqLabel = isMarketOpen() ? getMarketFreq() : getAfterHoursFreq();
+        const interval = getCurrentInterval();
         console.log(`[StockAlert] 輪詢啟動，頻率: ${freqLabel}，間隔: ${interval / 1000}s`);
+    }
+
+    function scheduleNextPoll() {
+        if (!isRunning) return;
+        const interval = getCurrentInterval();
+        if (interval <= 0) {
+            console.log('[StockAlert] 輪詢已關閉 (freq=none)');
+            isRunning = false;
+            return;
+        }
+        pollTimer = setTimeout(async () => {
+            if (!isRunning) return;
+            await poll();
+            scheduleNextPoll(); // 遞迴：每次 poll 完成後重新計算間隔
+        }, interval);
     }
 
     function stopPolling() {
         if (pollTimer) {
-            clearInterval(pollTimer);
+            clearTimeout(pollTimer);
             pollTimer = null;
         }
         isRunning = false;
@@ -524,10 +551,24 @@ PostIt.StockAlert = (function () {
     }
 
     // --- 初始化（由 board_v2.js 呼叫）---
+    let _lastMarketState = null; // 追蹤盤中⇆盤後狀態切換
+
     function init() {
         console.log('[StockAlert] 初始化股價監控引擎');
-        // 每 30 秒檢查是否有新的 alert 需要監控
+        // 每 30 秒檢查：新增/移除 alert、市場狀態切換
         setInterval(() => {
+            const currentMarketState = isMarketOpen();
+
+            // 偵測盤中⇆盤後切換，自動重啟 polling 以套用新頻率
+            if (_lastMarketState !== null && _lastMarketState !== currentMarketState) {
+                console.log(`[StockAlert] 市場狀態切換: ${_lastMarketState ? '盤中→盤後' : '盤後→盤中'}，重啟輪詢`);
+                if (isRunning) {
+                    restartPolling();
+                }
+            }
+            _lastMarketState = currentMarketState;
+
+            // 原有邏輯：有 alert 但沒在跑就啟動，沒 alert 但在跑就停止
             const alerts = getActiveAlerts();
             if (alerts.length > 0 && !isRunning) {
                 startPolling();
@@ -537,6 +578,7 @@ PostIt.StockAlert = (function () {
         }, 30000);
 
         // 初始啟動
+        _lastMarketState = isMarketOpen();
         if (getActiveAlerts().length > 0) {
             startPolling();
         }
@@ -549,7 +591,7 @@ PostIt.StockAlert = (function () {
                 Object.values(notes).forEach(n => {
                     if (n.type === 'stock_card') {
                         const symbol = (n.stockCardData && n.stockCardData.symbol) || String(n.content).trim().toUpperCase();
-                        if (symbol && fetchCardData) {
+                        if (symbol) {
                             // 只有在資料嚴重缺漏時，才去重新拉 profile 與 chart API，不然一般只需靠 poll() 更新股價即可
                             if (!n.stockCardData || !n.stockCardData.prices || n.stockCardData.prices.length === 0) {
                                 setTimeout(() => fetchCardData(n.id, symbol), delay);
