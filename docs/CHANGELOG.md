@@ -4,6 +4,37 @@
 
 專案遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 的版本控制原則。
 
+## [2.7.21] - 2026-05-30
+
+### 🔧 股票卡牌系統全面修復 (18 項)
+
+#### 🔴 核心邏輯修正
+1. **DST 夏令時判斷修正**：用 `Intl.DateTimeFormat` 取代月份判斷，自動處理 3 月初/11 月初的 DST 切換
+2. **輪詢系統重構**：`setInterval` 改為 `setTimeout` 遞迴，盤中⇆盤後頻率現在會動態切換
+3. **市場狀態切換偵測**：每 30 秒偵測開盤/收盤狀態變化，自動 restart polling
+
+#### 🟡 警報與通知修正
+4. **警報觸發冷卻期**：60 秒內同一條警報不重複觸發，防止 Yjs 非同步延遲導致重複通知
+5. **減少 Yjs 寫入**：poll 時不再每分鐘寫入 lastPrice/lastChecked 到 Yjs，只在 triggered 時才寫入
+
+#### 🟡 API 安全與效能
+6. **API Token 改用 Header**：所有 API 呼叫改用 `X-API-Token` header，不再暴露於 URL query string
+7. **錯誤回傳格式統一**：`fetchQuotes()` 回傳格式改為 `{ success, data, error }`
+8. **手動刷新減少 API 呼叫**：profile/chart 快取 1 小時，手動刷新預設只拉報價
+
+#### 🟡 UI/DOM 修正
+9. **差量更新條件修正**：修正 `.stock-card-3d-wrapper` 幽靈引用導致差量更新永遠失效的問題
+10. **SVG gradient ID 唯一化**：多張卡片不再共用 gradient-up/down ID，避免漸層填色錯亂
+11. **呼吸燈位置計算統一**：sparkline 和 pulse dot 改用相同常數計算 Y 軸位置
+12. **統一 DOM 更新路徑**：翻面中不做 DOM 更新，避免打斷使用者設定操作
+
+#### 🟢 功能補全與品質
+13. **美股假日支援**：新增 2025-2027 年 NYSE 休市日，假日不再以開盤頻率打 API
+14. **盤前/盤後區分**：新增 `getMarketPhase()` 回傳 pre_market/market/after_hours/closed
+15. **盤前指示燈**：新增青色呼吸燈表示盤前、黃色表示盤後、灰色表示休市
+16. **Market Cap 單位註解**：加入 API 回傳單位說明（百萬美元，除以 1000 得到十億 B）
+17. **恆真條件修正**：移除 `fetchCardData` 永遠為 truthy 的多餘判斷
+
 
 
 
