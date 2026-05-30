@@ -165,7 +165,7 @@ PostIt.StockAlert = (function () {
         }
 
         try {
-            const url = `${API_BASE}/api/stock/batch?symbols=${symbols.join(',')}`;
+            const url = `${API_BASE}/api/stock/batch?symbols=${symbols.join(',')}&token=${encodeURIComponent(token)}`;
             const resp = await fetch(url, {
                 headers: { 'X-API-Token': token }
             });
@@ -232,8 +232,8 @@ PostIt.StockAlert = (function () {
             // 只有需要完整刷新時才拉 profile 和 chart（減少 API 用量）
             if (needFullRefresh) {
                 const [profileResp, chartResp] = await Promise.all([
-                    fetch(`${API_BASE}/api/stock/profile?symbol=${symbol}`, { headers: { 'X-API-Token': token } }),
-                    fetch(`${API_BASE}/api/stock/chart?symbol=${symbol}`, { headers: { 'X-API-Token': token } })
+                    fetch(`${API_BASE}/api/stock/profile?symbol=${symbol}&token=${encodeURIComponent(token)}`, { headers: { 'X-API-Token': token } }),
+                    fetch(`${API_BASE}/api/stock/chart?symbol=${symbol}&token=${encodeURIComponent(token)}`, { headers: { 'X-API-Token': token } })
                 ]);
 
                 if (profileResp.status === 429 || chartResp.status === 429) {
