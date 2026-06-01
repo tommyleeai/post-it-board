@@ -138,6 +138,33 @@ PostIt.Settings = (function () {
         }
     }
 
+    // -------- MiniMax API Key & 引擎管理 (純本地端儲存) --------
+    const MINIMAX_KEY_STORAGE_KEY = 'postit_minimax_api_key';
+    const AI_ENGINE_STORAGE_KEY = 'postit_ai_engine'; // 'gemini' | 'minimax'
+
+    function getMinimaxKey() {
+        const key = localStorage.getItem(MINIMAX_KEY_STORAGE_KEY);
+        return key ? key.trim() : '';
+    }
+
+    function setMinimaxKey(key) {
+        if (!key || key.trim() === '') {
+            localStorage.removeItem(MINIMAX_KEY_STORAGE_KEY);
+        } else {
+            localStorage.setItem(MINIMAX_KEY_STORAGE_KEY, key.trim());
+        }
+    }
+
+    function getAiEngine() {
+        const engine = localStorage.getItem(AI_ENGINE_STORAGE_KEY);
+        return engine ? engine.trim() : 'gemini';
+    }
+
+    function setAiEngine(engine) {
+        localStorage.setItem(AI_ENGINE_STORAGE_KEY, engine || 'gemini');
+    }
+
+
     // -------- Ollama 本地備援設定 (純本地端儲存) --------
     const OLLAMA_SETTINGS_KEY = 'postit_ollama_settings';
     const DEFAULT_OLLAMA_SETTINGS = {
@@ -189,6 +216,8 @@ PostIt.Settings = (function () {
         getEffective, getAccountSettings, getDefaults,
         getFontOptions, getFontColorPresets,
         getAiKey, setAiKey,
+        getMinimaxKey, setMinimaxKey,
+        getAiEngine, setAiEngine,
         getOllamaSettings, setOllamaSettings
     };
 })();

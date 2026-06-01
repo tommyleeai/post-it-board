@@ -2607,9 +2607,35 @@ PostIt.Board = (function () {
             const bgImageInput = document.getElementById('account-bg-image-url');
             if (bgImageInput) bgImageInput.value = settings.boardBgImage || '';
 
+            // 填充 AI 引擎
+            const aiEngineSelect = document.getElementById('account-ai-engine');
+            const aiEngine = (typeof PostIt.Settings.getAiEngine === 'function') ? PostIt.Settings.getAiEngine() : 'gemini';
+            if (aiEngineSelect) {
+                aiEngineSelect.value = aiEngine;
+                const geminiGroup = document.getElementById('ai-engine-gemini-group');
+                const minimaxGroup = document.getElementById('ai-engine-minimax-group');
+                if (geminiGroup && minimaxGroup) {
+                    geminiGroup.style.display = aiEngine === 'gemini' ? 'block' : 'none';
+                    minimaxGroup.style.display = aiEngine === 'minimax' ? 'block' : 'none';
+                }
+                aiEngineSelect.onchange = (e) => {
+                    const engine = e.target.value;
+                    if (geminiGroup && minimaxGroup) {
+                        geminiGroup.style.display = engine === 'gemini' ? 'block' : 'none';
+                        minimaxGroup.style.display = engine === 'minimax' ? 'block' : 'none';
+                    }
+                };
+            }
+
             // 填充 AI 金鑰
             const aiKeyInput = document.getElementById('account-ai-key');
             aiKeyInput.value = PostIt.Settings.getAiKey();
+
+            // 填充 MiniMax 金鑰
+            const minimaxKeyInput = document.getElementById('account-minimax-key');
+            if (minimaxKeyInput && typeof PostIt.Settings.getMinimaxKey === 'function') {
+                minimaxKeyInput.value = PostIt.Settings.getMinimaxKey();
+            }
 
             // 填充好物報報 API Token
             const externalTokenInput = document.getElementById('account-external-api-token');
@@ -2699,6 +2725,34 @@ PostIt.Board = (function () {
                     
                     btnTestGemini.innerHTML = originalText;
                     btnTestGemini.disabled = false;
+                };
+            }
+
+            // 綁定 MiniMax 測試按鈕
+            const btnTestMinimax = document.getElementById('btn-test-minimax');
+            if (btnTestMinimax) {
+                btnTestMinimax.onclick = async (e) => {
+                    e.preventDefault();
+                    const apiKeyInput = document.getElementById('account-minimax-key');
+                    const apiKey = apiKeyInput ? apiKeyInput.value : '';
+                    if (!apiKey.trim()) {
+                        showToast('請先填寫 MiniMax API 金鑰', 'error');
+                        return;
+                    }
+                    
+                    const originalText = btnTestMinimax.innerHTML;
+                    btnTestMinimax.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 測試中';
+                    btnTestMinimax.disabled = true;
+                    
+                    const result = await PostIt.AI.testMinimax(apiKey.trim());
+                    if (result.success) {
+                        showToast(result.msg, 'success');
+                    } else {
+                        showToast(`測試失敗: ${result.msg}`, 'error', null, 6000);
+                    }
+                    
+                    btnTestMinimax.innerHTML = originalText;
+                    btnTestMinimax.disabled = false;
                 };
             }
 
@@ -2872,6 +2926,16 @@ PostIt.Board = (function () {
                 // 儲存 AI Key (本地)
                 const aiKeyInput = document.getElementById('account-ai-key');
                 PostIt.Settings.setAiKey(aiKeyInput.value);
+
+                // 儲存 AI 引擎選擇與 MiniMax Key (本地)
+                const aiEngineSelect = document.getElementById('account-ai-engine');
+                if (aiEngineSelect && typeof PostIt.Settings.setAiEngine === 'function') {
+                    PostIt.Settings.setAiEngine(aiEngineSelect.value);
+                }
+                const minimaxKeyInput = document.getElementById('account-minimax-key');
+                if (minimaxKeyInput && typeof PostIt.Settings.setMinimaxKey === 'function') {
+                    PostIt.Settings.setMinimaxKey(minimaxKeyInput.value);
+                }
 
                 // 儲存好物報報 API Token (本地)
                 const externalTokenInput = document.getElementById('account-external-api-token');
