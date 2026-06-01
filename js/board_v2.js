@@ -1596,16 +1596,14 @@ PostIt.Board = (function () {
             const allDone = doneCount === totalCount;
             const progressPct = Math.round((doneCount / totalCount) * 100);
             
-            let titleHtml = '';
-            if (note.todoTitle) {
-                titleHtml = `<div class="todo-title">${escapeHtml(note.todoTitle)}</div>`;
-            }
+            const displayTitle = (note.todoTitle && note.todoTitle.trim() !== '') ? note.todoTitle.trim() : '待辦事項';
+            const titleHtml = `<div class="todo-title">${escapeHtml(displayTitle)}</div>`;
 
             let itemsHtml = note.todoItems.map((item, idx) => {
                 const checkedClass = item.done ? 'done' : '';
-                const checkIcon = item.done ? 'fa-square-check' : 'fa-square';
+                const checkMark = item.done ? '<i class="fa-solid fa-check todo-check-mark"></i>' : '';
                 return `<div class="todo-item ${checkedClass}" data-todo-index="${idx}" onclick="event.stopPropagation(); if(window.PostIt && PostIt.Note) PostIt.Note.toggleTodoItem('${note.id}', ${idx});">
-                    <i class="fa-regular ${checkIcon} todo-checkbox"></i>
+                    <span class="todo-custom-checkbox">${checkMark}</span>
                     <span class="todo-text">${escapeHtml(item.text)}</span>
                 </div>`;
             }).join('');
