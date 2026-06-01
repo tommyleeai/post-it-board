@@ -4,6 +4,11 @@
 
 專案遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 的版本控制原則。
 
+
+## [2.7.23] - 2026-06-01
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   優化 Gemini 403 帳單欠費處理及 Ollama 備援機制，當發生任何雲端錯誤時自動導向本地端備援
 ## [2.7.22] - 2026-05-30
 
 ### 🔧 優化與修正 (Improved & Fixed)
