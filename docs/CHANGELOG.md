@@ -5,6 +5,11 @@
 專案遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 的版本控制原則。
 
 
+
+## [2.7.24] - 2026-06-01
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   修復待辦清單被誤判為時間提醒的問題，加入強制的 JS 端與 SYSTEM_PROMPT 規則防呆
 ## [2.7.23] - 2026-06-01
 
 ### 🔧 優化與修正 (Improved & Fixed)
