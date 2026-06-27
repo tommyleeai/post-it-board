@@ -110,56 +110,98 @@ PostIt.DealNotifier = (function () {
         // 1. 語音廣播 (Web Speech API)
         announceViaAudio();
 
-        // 2. 建立專屬便利貼前，先尋找場上是否已有好物卡片，以繼承其座標
-        // x: 5, y: 15 代表畫面左上角 (5% width, 15% height)，因為座標對應的是卡片的「左上角」，這樣往下長才不會破圖跑出畫面
-        let spawnPos = { x: 5, y: 15 }; 
-        let existingSuperDeal = null;
+        // 2. 決定放置策略：找場上所有 super_deal 卡片，判斷是否有可合併的群組
+        // 白板中央座標（百分比）— 稍微偏上以避免卡片往下展開時超出畫面
+        const CENTER_POS = { x: 40, y: 30 };
+        const MAX_GROUP_CARDS = 10;
+
+        let spawnPos = { ...CENTER_POS };
+        let mergeTarget = null; // 要合併進去的現有卡片（群組代表）
 
         if (window.PostIt && window.PostIt.Note && typeof window.PostIt.Note.getCache === 'function') {
             const allNotes = Object.values(window.PostIt.Note.getCache());
-            existingSuperDeal = allNotes.find(n => n.type === 'super_deal');
-            
-            if (existingSuperDeal) {
-                // 讀取現有卡片的座標（支援跨裝置架構）
+            const superDeals = allNotes.filter(n => n.type === 'super_deal');
+
+            if (superDeals.length > 0) {
+                // 找到最新的（有群組的）super_deal 群組，檢查成員數量
+                // 優先找有 groupId 的，代表已經有群組存在
+                const grouped = superDeals.filter(n => n.groupId);
+                const ungrouped = superDeals.filter(n => !n.groupId);
+
+                if (grouped.length > 0) {
+                    // 找出最新的群組（以 groupId 分群，取成員數最多或最新的）
+                    const groupMap = {};
+                    grouped.forEach(n => {
+                        if (!groupMap[n.groupId]) groupMap[n.groupId] = [];
+                        groupMap[n.groupId].push(n);
+                    });
+
+                    // 取最後一個活躍群組（最大 groupOrder 或最新建立的）
+                    let latestGroupId = null;
+                    let latestGroupCards = [];
+                    for (const [gid, members] of Object.entries(groupMap)) {
+                        // 使用 getGroupNotes 取得精確成員數（包含非 super_deal 的成員）
+                        const fullMembers = (typeof PostIt.Note.getGroupNotes === 'function')
+                            ? PostIt.Note.getGroupNotes(gid)
+                            : members;
+                        if (!latestGroupId || fullMembers.length > latestGroupCards.length) {
+                            latestGroupId = gid;
+                            latestGroupCards = fullMembers;
+                        }
+                    }
+
+                    if (latestGroupId && latestGroupCards.length < MAX_GROUP_CARDS) {
+                        // 群組未滿 → 合併進此群組
+                        mergeTarget = grouped.find(n => n.groupId === latestGroupId);
+                    }
+                    // 群組已滿 (≥10) → mergeTarget 維持 null，走「放中央開新群組」流程
+                } else if (ungrouped.length > 0) {
+                    // 只有散落的單張 super_deal → 合併第一張
+                    mergeTarget = ungrouped[0];
+                }
+            }
+
+            // 如果有合併目標，繼承其座標
+            if (mergeTarget) {
                 const mode = (window.PostIt && PostIt.getDeviceMode) ? PostIt.getDeviceMode() : 'desktop';
-                const layoutData = (existingSuperDeal.layouts && existingSuperDeal.layouts[mode]) ? existingSuperDeal.layouts[mode] : existingSuperDeal;
-                
-                let targetX = typeof layoutData.x === 'number' && !isNaN(layoutData.x) ? layoutData.x : existingSuperDeal.x;
-                let targetY = typeof layoutData.y === 'number' && !isNaN(layoutData.y) ? layoutData.y : existingSuperDeal.y;
-                
-                spawnPos = { 
-                    x: typeof targetX === 'number' && !isNaN(targetX) ? targetX : 5, 
-                    y: typeof targetY === 'number' && !isNaN(targetY) ? targetY : 15 
+                const layoutData = (mergeTarget.layouts && mergeTarget.layouts[mode]) ? mergeTarget.layouts[mode] : mergeTarget;
+
+                let targetX = typeof layoutData.x === 'number' && !isNaN(layoutData.x) ? layoutData.x : mergeTarget.x;
+                let targetY = typeof layoutData.y === 'number' && !isNaN(layoutData.y) ? layoutData.y : mergeTarget.y;
+
+                spawnPos = {
+                    x: typeof targetX === 'number' && !isNaN(targetX) ? targetX : CENTER_POS.x,
+                    y: typeof targetY === 'number' && !isNaN(targetY) ? targetY : CENTER_POS.y
                 };
             }
+            // 沒有合併目標 → spawnPos 維持白板中央
         }
 
-        // 建立專屬便利貼 (這裡我們把結構化資料轉成字串塞進 content)
+        // 3. 建立專屬便利貼
         const payloadStr = JSON.stringify(deal);
-        
-        // 呼叫底層新增，type 為 'super_deal'
-        // color 給予白色，確保卡片呈現乾淨的商品預設色
         const newNoteId = await PostIt.Note.create(payloadStr, 'super_deal', '#FFFFFF', 'system', spawnPos);
-        
+
         if (newNoteId) {
-            // 將新卡片加入其群組中
-            if (existingSuperDeal) {
-                // 延遲一點執行合併，確保新卡片先呈現在畫面上
+            // 4. 群組合併邏輯
+            if (mergeTarget) {
                 setTimeout(async () => {
-                    await window.PostIt.Note.mergeToGroup(existingSuperDeal.id, newNoteId);
-                    console.log('🔗 [DealNotifier] 已自動將新好物加入群組並繼承原座標');
+                    // mergeToGroup(A, B)：A 疊在 B 上面
+                    // 我們要新卡片在最上方，所以新卡片是 A (dragged)，舊卡片是 B (target)
+                    await window.PostIt.Note.mergeToGroup(newNoteId, mergeTarget.id);
+                    console.log('🔗 [DealNotifier] 已自動將新好物加入群組（新卡片在最上方）');
                 }, 600);
+            } else {
+                console.log('📍 [DealNotifier] 新好物放置於白板中央（新群組起點）');
             }
 
-            // 利用 setTimeout 等待 React/DOM 重新渲染，再為它掛上過場動畫
+            // 5. 過場動畫
             setTimeout(() => {
                 const noteEl = document.querySelector(`[data-note-id="${newNoteId}"]`);
                 if (noteEl) {
                     noteEl.classList.add('super-deal-entrance');
-                    // 為了避免一直抖，動畫播完後可以移除
                     setTimeout(() => {
                         noteEl.classList.remove('super-deal-entrance');
-                    }, 4000); 
+                    }, 4000);
                 }
             }, 300);
         }
