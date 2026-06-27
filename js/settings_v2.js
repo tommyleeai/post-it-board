@@ -10,7 +10,8 @@ PostIt.Settings = (function () {
         fontSize: 20,
         fontColor: 'rgba(0,0,0,0.78)',
         defaultNoteColor: 'random',
-        boardBgImage: '' // 白板背景（空白表示預設紋理）
+        boardBgImage: '', // 白板背景（空白表示預設紋理）
+        enableDealRadar: true // 使用者自行控制是否啟用好物雷達
     };
 
     // 可用字型清單
@@ -34,6 +35,7 @@ PostIt.Settings = (function () {
     ];
 
     let accountSettings = null; // 當前帳號設定（從 Firestore 載入）
+    let dealRadarAuthorized = null; // 管理員授權狀態（從 Firestore 使用者文件根層級讀取）
 
     // -------- 載入帳號設定 --------
     // ⚠️ 重要前置條件：auth.js 的 saveProfile() 必須在本函式被呼叫前完成（需 await）。
@@ -57,6 +59,13 @@ PostIt.Settings = (function () {
                         '可能是 auth.js saveProfile 的 await 被移除，導致延遲補償快取競爭。',
                         '請檢查 auth.js onAuthStateChanged 中的 saveProfile 是否有 await。');
                 }
+            }
+
+            // 讀取管理員授權狀態（存放在使用者文件根層級，非 settings 內）
+            if (doc.exists && typeof doc.data().dealRadarAuthorized === 'boolean') {
+                dealRadarAuthorized = doc.data().dealRadarAuthorized;
+            } else {
+                dealRadarAuthorized = null; // 尚未設定（由 isDealRadarAuthorized 判斷）
             }
             console.log('[Settings] 帳號設定已載入:', accountSettings);
         } catch (error) {
@@ -211,6 +220,26 @@ PostIt.Settings = (function () {
         return FONT_COLOR_PRESETS;
     }
 
+    // -------- 好物雷達授權判斷 --------
+    // 管理員永遠授權；非管理員需由管理員在後台明確開啟
+    function isDealRadarAuthorized() {
+        // 管理員帳號永遠自動授權
+        if (typeof PostIt.AdminAccess !== 'undefined') {
+            const user = (typeof PostIt.Auth !== 'undefined') ? PostIt.Auth.getUser() : null;
+            if (user && user.email && PostIt.AdminAccess.isAdmin(user.email)) {
+                return true;
+            }
+        }
+        // 非管理員：需要 dealRadarAuthorized 明確為 true
+        return dealRadarAuthorized === true;
+    }
+
+    // -------- 好物雷達開關（使用者自行控制） --------
+    function getDealRadarEnabled() {
+        const settings = accountSettings || DEFAULTS;
+        return settings.enableDealRadar !== false; // 預設 true
+    }
+
     return {
         load, save, reset,
         getEffective, getAccountSettings, getDefaults,
@@ -218,6 +247,7 @@ PostIt.Settings = (function () {
         getAiKey, setAiKey,
         getMinimaxKey, setMinimaxKey,
         getAiEngine, setAiEngine,
-        getOllamaSettings, setOllamaSettings
+        getOllamaSettings, setOllamaSettings,
+        isDealRadarAuthorized, getDealRadarEnabled
     };
 })();

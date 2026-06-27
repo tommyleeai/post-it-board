@@ -121,7 +121,8 @@
                     urlCount: 0,
                     boardCount: 0,
                     boardNames: [],
-                    lastActive: null
+                    lastActive: null,
+                    dealRadarAuthorized: data.dealRadarAuthorized === true
                 };
             });
 
@@ -294,7 +295,7 @@
                         ? `<img src="${escapeHtml(user.photo)}" class="user-avatar-small" alt="">`
                         : '<i class="fa-solid fa-user-circle" style="font-size:36px;color:var(--admin-text-dim)"></i>'}
                 </td>
-                <td><strong>${escapeHtml(user.name)}</strong></td>
+                <td><strong>${escapeHtml(user.name)}</strong>${user.dealRadarAuthorized ? ' <span style="display:inline-block;font-size:11px;padding:1px 6px;border-radius:4px;background:rgba(0,184,148,0.15);color:#00b894;vertical-align:middle;margin-left:4px;">✓ 雷達</span>' : ''}</td>
                 <td style="color:var(--admin-text-dim)">${escapeHtml(user.email || user.uid.substring(0, 12) + '...')}</td>
                 <td><span class="badge badge-notes">${user.noteCount}</span></td>
                 <td><span class="badge badge-images">${user.imageCount}</span></td>
@@ -438,10 +439,44 @@
         }
 
         document.getElementById('user-modal').classList.remove('hidden');
+
+        // 好物雷達授權 Toggle
+        const radarAuthCheckbox = document.getElementById('modal-deal-radar-auth');
+        const radarSlider = document.getElementById('modal-radar-slider');
+        if (radarAuthCheckbox) {
+            radarAuthCheckbox.checked = user.dealRadarAuthorized;
+            updateRadarSliderStyle(radarSlider, user.dealRadarAuthorized);
+
+            // 移除舊的事件監聽器，用新的取代
+            const newCheckbox = radarAuthCheckbox.cloneNode(true);
+            radarAuthCheckbox.parentNode.replaceChild(newCheckbox, radarAuthCheckbox);
+            newCheckbox.addEventListener('change', async () => {
+                const isChecked = newCheckbox.checked;
+                try {
+                    await db.collection('users').doc(uid).set({ dealRadarAuthorized: isChecked }, { merge: true });
+                    user.dealRadarAuthorized = isChecked;
+                    updateRadarSliderStyle(radarSlider, isChecked);
+                    renderUsersTable();
+                    const statusText = isChecked ? '✅ 已授權' : '❌ 已撤銷授權';
+                    console.log(`[Admin] 好物雷達授權: ${user.name} → ${statusText}`);
+                } catch (err) {
+                    alert('授權變更失敗：' + err.message);
+                    newCheckbox.checked = !isChecked; // 回復
+                }
+            });
+        }
     }
 
     function closeModal() {
         document.getElementById('user-modal').classList.add('hidden');
+    }
+
+    // ======== Toggle 滑動開關視覺樣式 ========
+    function updateRadarSliderStyle(slider, isOn) {
+        if (!slider) return;
+        slider.style.backgroundColor = isOn ? '#00b894' : '#ccc';
+        // 圓點用 ::before 的替代方案（純 JS 動態控制）
+        slider.innerHTML = `<span style="position:absolute;height:18px;width:18px;left:${isOn ? '22px' : '3px'};bottom:3px;background:white;transition:.3s;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>`;
     }
 
     // ======== 刪除操作（支援多白板路徑） ========

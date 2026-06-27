@@ -25,13 +25,37 @@ PostIt.DealNotifier = (function () {
     }
 
     /**
+     * 檢查授權與開關狀態，回傳是否可以啟用雷達
+     */
+    function canActivateRadar() {
+        if (typeof PostIt.Settings === 'undefined') return false;
+        // 雙重檢查：管理員授權 + 使用者開關
+        return PostIt.Settings.isDealRadarAuthorized() && PostIt.Settings.getDealRadarEnabled();
+    }
+
+    /**
+     * 更新浮動按鈕的可見性
+     */
+    function updateButtonVisibility() {
+        const btn = document.getElementById('btn-deal-radar-float');
+        if (!btn) return;
+        const show = canActivateRadar() && getApiToken();
+        btn.style.display = show ? '' : 'none';
+    }
+
+    /**
      * 啟動輪詢排程器
      */
     function start() {
         if (timer) clearInterval(timer);
+
+        updateButtonVisibility();
+
+        if (!canActivateRadar()) {
+            console.log('[DealNotifier] ⛔ 雷達未授權或已關閉，不啟動輪詢。');
+            return;
+        }
         
-        // 初次載入就先檢查一次 (也可以選擇不要，避免重新整理時一直吵)
-        // 為了安全起見先不立刻 trigger，改為倒數計時後才開始
         timer = setInterval(checkDeals, POLL_INTERVAL_MS);
         console.log('[DealNotifier] 📡 超級好物雷達已啟動，每10分鐘掃描一次。');
     }
@@ -169,6 +193,13 @@ PostIt.DealNotifier = (function () {
      * 手動強制呼叫好物雷達，獲取過去 1 小時最高分
      */
     async function triggerRadarManual() {
+        // 前置授權檢查
+        if (!canActivateRadar()) {
+            if (window.PostIt && window.PostIt.Board) {
+                window.PostIt.Board.showToast('您的帳號尚未取得好物雷達授權，請聯繫管理員', 'error');
+            }
+            return;
+        }
         console.log('[DealNotifier] 手動偵測雷達啟動...');
         const apiUrl = buildApiUrl(`hours=1&offset=${manualOffsetCount}`);
         if (!apiUrl) {
@@ -338,10 +369,18 @@ PostIt.DealNotifier = (function () {
     return {
         init: function() {
             initDraggableButton();
+            updateButtonVisibility();
         },
         start,
         stop,
-        triggerRadarManual
+        triggerRadarManual,
+        refreshVisibility: function() {
+            updateButtonVisibility();
+            // 如果當前狀態不允許，即刻停止輪詢
+            if (!canActivateRadar()) {
+                stop();
+            }
+        }
     };
 })();
 

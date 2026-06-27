@@ -2662,6 +2662,21 @@ PostIt.Board = (function () {
             // 產生字體顏色色票
             renderFontColorSwatches();
 
+            // 填充好物雷達開關狀態
+            const dealRadarEnableCheckbox = document.getElementById('account-deal-radar-enable');
+            const dealRadarSection = document.getElementById('deal-radar-toggle-section');
+            if (dealRadarEnableCheckbox) {
+                dealRadarEnableCheckbox.checked = PostIt.Settings.getDealRadarEnabled();
+            }
+            // 如果未授權，隱藏整個區塊並顯示提示
+            if (dealRadarSection) {
+                if (PostIt.Settings.isDealRadarAuthorized()) {
+                    dealRadarSection.style.display = '';
+                } else {
+                    dealRadarSection.style.display = 'none';
+                }
+            }
+
             // 綁定好物報報 Token 按鈕
             const btnOpenTdealsToken = document.getElementById('btn-open-tdeals-token');
             if (btnOpenTdealsToken) {
@@ -2955,13 +2970,25 @@ PostIt.Board = (function () {
 
                 // 儲存其他設定 (雲端)
                 const bgImageUrl = document.getElementById('account-bg-image-url') ? document.getElementById('account-bg-image-url').value.trim() : '';
+                const dealRadarEnableCheckbox = document.getElementById('account-deal-radar-enable');
+                const enableDealRadar = dealRadarEnableCheckbox ? dealRadarEnableCheckbox.checked : true;
                 await PostIt.Settings.save({
                     fontFamily: fontFamily.value,
                     fontSize: parseInt(fontSize.value),
                     fontColor: selectedFontColor,
                     defaultNoteColor: selectedNoteColor,
-                    boardBgImage: bgImageUrl
+                    boardBgImage: bgImageUrl,
+                    enableDealRadar: enableDealRadar
                 });
+
+                // 即時套用好物雷達狀態
+                if (typeof PostIt.DealNotifier !== 'undefined' && PostIt.DealNotifier.refreshVisibility) {
+                    PostIt.DealNotifier.refreshVisibility();
+                    // 如果開封後且已授權，重新啟動輪詢
+                    if (enableDealRadar && PostIt.Settings.isDealRadarAuthorized()) {
+                        PostIt.DealNotifier.start();
+                    }
+                }
                 
                 // 套用到 UI
                 applyBoardBgImage(bgImageUrl);
