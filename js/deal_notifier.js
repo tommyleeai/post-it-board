@@ -154,9 +154,11 @@ PostIt.DealNotifier = (function () {
                         // 群組未滿 → 合併進此群組
                         mergeTarget = grouped.find(n => n.groupId === latestGroupId);
                     }
-                    // 群組已滿 (≥10) → mergeTarget 維持 null，走「放中央開新群組」流程
-                } else if (ungrouped.length > 0) {
-                    // 只有散落的單張 super_deal → 合併第一張
+                    // 群組已滿 → 往下 fallback 檢查散落卡片
+                }
+
+                // 所有群組都滿了（或沒有群組），但有散落的單張 super_deal → 合併它
+                if (!mergeTarget && ungrouped.length > 0) {
                     mergeTarget = ungrouped[0];
                 }
             }
