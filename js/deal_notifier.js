@@ -25,6 +25,31 @@ PostIt.DealNotifier = (function () {
     }
 
     /**
+     * 等待指定貼紙 ID 出現在本地快取中
+     */
+    function waitForNoteInCache(noteId, maxAttempts = 20, delayMs = 100) {
+        return new Promise((resolve) => {
+            let attempts = 0;
+            function check() {
+                if (window.PostIt && window.PostIt.Note && typeof window.PostIt.Note.getCache === 'function') {
+                    const cache = window.PostIt.Note.getCache();
+                    if (cache && cache[noteId]) {
+                        resolve(true);
+                        return;
+                    }
+                }
+                attempts++;
+                if (attempts >= maxAttempts) {
+                    resolve(false);
+                    return;
+                }
+                setTimeout(check, delayMs);
+            }
+            check();
+        });
+    }
+
+    /**
      * 檢查授權與開關狀態，回傳是否可以啟用雷達
      */
     function canActivateRadar() {
@@ -186,12 +211,27 @@ PostIt.DealNotifier = (function () {
         if (newNoteId) {
             // 4. 群組合併邏輯
             if (mergeTarget) {
-                setTimeout(async () => {
-                    // mergeToGroup(A, B)：A 疊在 B 上面
-                    // 我們要新卡片在最上方，所以新卡片是 A (dragged)，舊卡片是 B (target)
-                    await window.PostIt.Note.mergeToGroup(newNoteId, mergeTarget.id);
-                    console.log('🔗 [DealNotifier] 已自動將新好物加入群組（新卡片在最上方）');
-                }, 600);
+                console.log(`⏳ [DealNotifier] 等待新卡片 ${newNoteId} 寫入快取...`);
+                waitForNoteInCache(newNoteId).then((found) => {
+                    if (found) {
+                        // 額外延遲一小段時間確保 Yjs 本地快取完全與 DOM 同步穩定
+                        setTimeout(async () => {
+                            try {
+                                console.log(`🔗 [DealNotifier] 開始合併: 新卡片 ${newNoteId} -> 舊卡片 ${mergeTarget.id}`);
+                                const res = await window.PostIt.Note.mergeToGroup(newNoteId, mergeTarget.id);
+                                if (res) {
+                                    console.log('🎉 [DealNotifier] 已自動將新好物加入群組（新卡片在最上方）');
+                                } else {
+                                    console.warn('⚠️ [DealNotifier] mergeToGroup 回傳 null，合併失敗。');
+                                }
+                            } catch (e) {
+                                console.error('❌ [DealNotifier] 合併群組發生錯誤:', e);
+                            }
+                        }, 150);
+                    } else {
+                        console.warn('⚠️ [DealNotifier] 等待新卡片寫入快取逾時，放棄自動合併。');
+                    }
+                });
             } else {
                 console.log('📍 [DealNotifier] 新好物放置於白板中央（新群組起點）');
             }
