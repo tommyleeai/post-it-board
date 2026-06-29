@@ -25,27 +25,20 @@ PostIt.DealNotifier = (function () {
     }
 
     /**
-     * 等待指定貼紙 ID 出現在本地快取中
+     * 等待 Yjs observeDeep 的 rAF 防抖完成，確保 notesCache 已同步最新資料。
+     * Yjs 的 observeDeep 使用 requestAnimationFrame 防抖（yjs_sync.js L215-221），
+     * 所以 create() 後 notesCache 不會立刻更新。
+     * 用「雙重 rAF」確保 Yjs 的 rAF callback 已執行完畢。
      */
-    function waitForNoteInCache(noteId, maxAttempts = 20, delayMs = 100) {
+    function waitForYjsCacheSync() {
         return new Promise((resolve) => {
-            let attempts = 0;
-            function check() {
-                if (window.PostIt && window.PostIt.Note && typeof window.PostIt.Note.getCache === 'function') {
-                    const cache = window.PostIt.Note.getCache();
-                    if (cache && cache[noteId]) {
-                        resolve(true);
-                        return;
-                    }
-                }
-                attempts++;
-                if (attempts >= maxAttempts) {
-                    resolve(false);
-                    return;
-                }
-                setTimeout(check, delayMs);
-            }
-            check();
+            // 第 1 個 rAF：排在 Yjs observeDeep 的 rAF 之後（或同一幀）
+            requestAnimationFrame(() => {
+                // 第 2 個 rAF：確保前一幀的所有 rAF（包含 Yjs 的 triggerUpdate）已完成
+                requestAnimationFrame(() => {
+                    resolve();
+                });
+            });
         });
     }
 
@@ -211,25 +204,32 @@ PostIt.DealNotifier = (function () {
         if (newNoteId) {
             // 4. 群組合併邏輯
             if (mergeTarget) {
-                console.log(`⏳ [DealNotifier] 等待新卡片 ${newNoteId} 寫入快取...`);
-                waitForNoteInCache(newNoteId).then((found) => {
-                    if (found) {
-                        // 額外延遲一小段時間確保 Yjs 本地快取完全與 DOM 同步穩定
-                        setTimeout(async () => {
-                            try {
-                                console.log(`🔗 [DealNotifier] 開始合併: 新卡片 ${newNoteId} -> 舊卡片 ${mergeTarget.id}`);
-                                const res = await window.PostIt.Note.mergeToGroup(newNoteId, mergeTarget.id);
-                                if (res) {
-                                    console.log('🎉 [DealNotifier] 已自動將新好物加入群組（新卡片在最上方）');
-                                } else {
-                                    console.warn('⚠️ [DealNotifier] mergeToGroup 回傳 null，合併失敗。');
-                                }
-                            } catch (e) {
-                                console.error('❌ [DealNotifier] 合併群組發生錯誤:', e);
-                            }
-                        }, 150);
-                    } else {
-                        console.warn('⚠️ [DealNotifier] 等待新卡片寫入快取逾時，放棄自動合併。');
+                const mergeTargetId = mergeTarget.id;
+                console.log(`⏳ [DealNotifier] 等待 Yjs rAF 防抖完成... 新卡片=${newNoteId}, 目標=${mergeTargetId}`);
+                
+                // 等待 Yjs observeDeep 的 rAF 防抖完成，notesCache 才會包含新卡片
+                waitForYjsCacheSync().then(async () => {
+                    try {
+                        // 驗證兩張卡片都在快取中
+                        const cache = window.PostIt.Note.getCache();
+                        const hasNew = !!(cache && cache[newNoteId]);
+                        const hasTarget = !!(cache && cache[mergeTargetId]);
+                        console.log(`🔍 [DealNotifier] 快取驗證: 新卡片=${hasNew}, 目標卡片=${hasTarget}`);
+                        
+                        if (!hasNew || !hasTarget) {
+                            console.warn('⚠️ [DealNotifier] 快取中找不到卡片，放棄合併。');
+                            return;
+                        }
+                        
+                        console.log(`🔗 [DealNotifier] 開始合併: ${newNoteId} -> ${mergeTargetId}`);
+                        const res = await window.PostIt.Note.mergeToGroup(newNoteId, mergeTargetId);
+                        if (res) {
+                            console.log('🎉 [DealNotifier] 已自動將新好物加入群組（新卡片在最上方）');
+                        } else {
+                            console.warn('⚠️ [DealNotifier] mergeToGroup 回傳 null，合併失敗。');
+                        }
+                    } catch (e) {
+                        console.error('❌ [DealNotifier] 合併群組發生錯誤:', e);
                     }
                 });
             } else {

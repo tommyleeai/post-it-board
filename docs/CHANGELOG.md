@@ -7,6 +7,13 @@
 
 
 
+## [2.7.32] - 2026-06-29
+
+### 🔧 優化與修正 (Improved & Fixed)
+*   **徹底修復超級好物自動群組合併失敗**：
+    *   **根因**：Yjs 的 `observeDeep` 使用 `requestAnimationFrame` 防抖（yjs_sync.js L215-221），導致 `PostIt.Note.create()` 寫入 Yjs map 後，`notesCache` 不會立刻同步更新。先前的 `waitForNoteInCache`（setTimeout 100ms 輪詢）與 rAF 的執行順序不確定，導致 `mergeToGroup` 在快取未更新時被呼叫，兩張卡片都查不到而回傳 null。
+    *   **修正**：用「雙重 `requestAnimationFrame`」取代 setTimeout 輪詢，精準等待 Yjs 的 rAF 防抖週期完成後再執行合併，從根本保證 `notesCache` 已包含新卡片。
+
 ## [2.7.31] - 2026-06-28
 
 ### 🔧 優化與修正 (Improved & Fixed)
